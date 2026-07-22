@@ -1,0 +1,1029 @@
+// Supabase-backed data layer for the live Inbox.
+// Maps raw DB rows into the shape the UI components already expect.
+import { supabase } from './supabaseClient';
+
+const AVATAR_COLORS = ['#356E63', '#2E7BA8', '#7A5BB9', '#B6743A', '#C7503B', '#2E9E4F', '#15514B', '#4A6EA8'];
+
+// Deterministic avatar colour from a stable key (wa_id), so a contact keeps the same colour.
+function colorFor(key = '') {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function relativeTime(isoString) {
+  if (!isoString) return '';
+  const diff = Date.now() - new Date(isoString).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return 'a few seconds ago';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m === 1 ? '1 minute ago' : `${m} minutes ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return h === 1 ? '1 hour ago' : `${h} hours ago`;
+  const d = Math.floor(h / 24);
+  if (d === 1) return 'a day ago';
+  if (d < 7) return `${d} days ago`;
+  return new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+// Exact local timestamp (IST) — e.g. "26 Jun 2026, 11:04 PM"
+function exactTime(isoString) {
+  if (!isoString) return '—';
+  return new Date(isoString).toLocaleString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+    timeZone: 'Asia/Kolkata',
+  });
+}
+
+function msgTime(isoString) {
+  const d = new Date(isoString);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const isYesterday = new Date(now - 86400000).toDateString() === d.toDateString();
+  const time = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (isToday) return time;
+  if (isYesterday) return `Yesterday ${time}`;
+  return d.toLocaleDateString('en-IN', { weekday: 'short' }) + ' ' + time;
+}
+
+function mapContact(c) {
+  if (!c) return null;
+  const name = c.profile_name || c.wa_id || 'Unknown';
+  const parts = name.trim().split(' ');
+  return {
+    id: c.id,
+    wa_id: c.wa_id,
+    profile_name: name,
+    firstName: c.first_name || parts[0] || '',
+    lastName: c.last_name || parts.slice(1).join(' ') || '',
+    company: c.company || '—',
+    jobTitle: c.job_title || '—',
+    email: c.email || '',
+    phone: c.wa_id || '',
+    lead_score: c.lead_score ?? 0,
+    lead_status: c.lead_status || 'New',
+    source: c.source || '—',
+    attributes: c.attributes || {},
+    color: colorFor(c.wa_id || c.id),
+  };
+}
+
+// ─── Conversations ────────────────────────────────────────────────────────────
+export async function getConversationsLive() {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('id, contact_id, last_message_at, window_expires_at, unread_count, status, contacts(*)')
+    .order('last_message_at', { ascending: false, nullsFirst: false });
+
+  if (error) {
+    console.error('getConversationsLive', error);
+    return [];
+  }
+
+  // Fetch the latest message body per conversation for the list preview, and in
+  // the same pass work out when each contact was last on WhatsApp.
+  const ids = data.map(c => c.id);
+  let previews = {};
+  let lastRead = {};
+  if (ids.length) {
+    const { data: msgs } = await supabase
+      .from('messages')
+      .select('conversation_id, body, created_at, direction, status, updated_at')
+      .in('conversation_id', ids)
+      .order('created_at', { ascending: false });
+    for (const m of msgs || []) {
+      if (!previews[m.conversation_id]) previews[m.conversation_id] = m.body || '';
+      // A read receipt on one of ours means they actually had the chat open at
+      // that moment, which is the strongest presence signal we can get.
+      if (m.direction === 'out' && m.status === 'read' && m.updated_at) {
+        const seen = lastRead[m.conversation_id];
+        if (!seen || m.updated_at > seen) lastRead[m.conversation_id] = m.updated_at;
+      }
+    }
+  }
+
+  return data.map(conv => ({
+    id: conv.id,
+    contact_id: conv.contact_id,
+    contact: mapContact(conv.contacts),
+    last_message_at: conv.last_message_at,
+    windowExpiresAt: conv.window_expires_at,
+    windowOpen: conv.window_expires_at ? new Date(conv.window_expires_at) > new Date() : false,
+    unread_count: conv.unread_count || 0,
+    status: conv.status || 'open',
+    preview: previews[conv.id] || '',
+    relativeTime: relativeTime(conv.last_message_at),
+    lastSeen: laterOf(conv.contacts?.last_inbound_at, lastRead[conv.id]),
+  }));
+}
+
+// WhatsApp's Cloud API reports no presence at all: there is no last-seen or
+// online endpoint, by design. So we derive it from the only two moments we can
+// actually prove they had WhatsApp open — a message they sent us, or a read
+// receipt on one of ours. Null when we have neither (e.g. read receipts off and
+// they have never replied).
+function laterOf(a, b) {
+  if (!a) return b || null;
+  if (!b) return a;
+  return new Date(a) > new Date(b) ? a : b;
+}
+
+// Mark a conversation read — clears the unread dot/badge once it's opened.
+export async function markConversationRead(convId) {
+  const { error } = await supabase.from('conversations').update({ unread_count: 0 }).eq('id', convId);
+  return !error;
+}
+
+// Open or close a conversation (status pill / filter).
+export async function markConversationStatus(convId, status) {
+  const { error } = await supabase.from('conversations').update({ status }).eq('id', convId);
+  return !error;
+}
+
+// Contact ids that were enrolled in a flow AND have replied (for the "Flows" filter).
+export async function getFlowRepliedContactIds() {
+  const { data, error } = await supabase.from('flow_runs').select('contact_id, last_reply').not('last_reply', 'is', null);
+  if (error) { console.error('getFlowRepliedContactIds', error); return []; }
+  return [...new Set((data || []).map(r => r.contact_id))];
+}
+
+// ─── Messages ─────────────────────────────────────────────────────────────────
+export async function getMessagesLive(convId) {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', convId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('getMessagesLive', error);
+    return [];
+  }
+  return data.map(m => ({
+    id: m.id,
+    wa_message_id: m.wa_message_id,
+    direction: m.direction,
+    type: m.type,
+    body: m.body,
+    template_name: m.template_name,
+    payload: m.payload,
+    // Only ever surface https media URLs — blocks javascript:/data: URIs from
+    // being rendered into <a href>/<img src> (stored-XSS guard).
+    media_url: /^https:\/\//i.test(m.media_url || '') ? m.media_url : null,
+    media_filename: m.media_filename,
+    status: m.status,
+    error: m.error,
+    sent_by: m.sent_by,
+    created_at: m.created_at,
+    timeStr: msgTime(m.created_at),
+  }));
+}
+
+// ─── Send (via the send-message Edge Function — enforces 24h window server-side) ─
+export async function sendMessageLive(wa_id, payload) {
+  const { type, body, template_name, language, components } = payload;
+  const reqBody = type === 'template'
+    ? { wa_id, type: 'template', template: { name: template_name, language: language || 'en', components: components || [] } }
+    : { wa_id, type: 'text', text: body };
+
+  const { data, error } = await supabase.functions.invoke('send-message', { body: reqBody });
+
+  if (error) {
+    // Edge function returned non-2xx; try to surface its JSON error.
+    let detail = error.message;
+    try {
+      const ctx = await error.context?.json?.();
+      if (ctx?.error) detail = ctx.error;
+    } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return { ok: true, message: data?.message };
+}
+
+// Upload a file to public storage, then send it to the contact via Meta (by link).
+export async function sendMediaLive(wa_id, file, caption = '') {
+  try {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const path = `out/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('wa-media').upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+    if (upErr) return { ok: false, error: 'Upload failed: ' + upErr.message };
+    const { data: pub } = supabase.storage.from('wa-media').getPublicUrl(path);
+    const media_type = (file.type || '').startsWith('image/') ? 'image' : (file.type || '').startsWith('video/') ? 'video' : 'document';
+    const { data, error } = await supabase.functions.invoke('send-media', {
+      body: { wa_id, media_url: pub.publicUrl, media_type, caption, filename: file.name },
+    });
+    if (error) {
+      let detail = error.message;
+      try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* ignore */ }
+      return { ok: false, error: detail };
+    }
+    return { ok: true, message: data?.message };
+  } catch (e) {
+    return { ok: false, error: e.message || 'Failed to send attachment' };
+  }
+}
+
+// ─── Realtime ─────────────────────────────────────────────────────────────────
+// Subscribe to all message inserts/updates. callback receives the raw new row.
+export function subscribeMessages(callback) {
+  const channel = supabase
+    .channel('messages-stream')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+      callback(payload);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, payload => {
+      callback({ ...payload, _conversation: true });
+    })
+    .subscribe();
+
+  return () => { supabase.removeChannel(channel); };
+}
+
+// ─── Templates ────────────────────────────────────────────────────────────────
+export async function getTemplatesLive() {
+  const { data, error } = await supabase
+    .from('templates')
+    .select('*')
+    .order('name', { ascending: true });
+  if (error) {
+    console.error('getTemplatesLive', error);
+    return [];
+  }
+  return data;
+}
+
+// ── Template cache (so the Automation flow nodes can read templates synchronously) ──
+let _tplCache = [];
+export async function loadTemplatesCache() {
+  const t = await getTemplatesLive();
+  _tplCache = (t || []).map(x => ({ ...x, buttons: Array.isArray(x.buttons) ? x.buttons : [] }));
+  return _tplCache;
+}
+export function getCachedTemplates() { return _tplCache; }
+export function getCachedTemplateButtons(name) {
+  const t = _tplCache.find(x => x.name === name);
+  return t && Array.isArray(t.buttons) ? t.buttons : [];
+}
+
+// Creates a new WhatsApp template on Meta (status PENDING until reviewed).
+// payload: { name, language, category, components }
+export async function createTemplateLive(payload) {
+  const { data, error } = await supabase.functions.invoke('create-template', { body: payload });
+  if (error) {
+    let detail = error.message;
+    try {
+      const ctx = await error.context?.json?.();
+      if (ctx?.error) detail = ctx.error;
+    } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return { ok: true, id: data?.id, status: data?.status };
+}
+
+// Upload a sample media file and get a Meta header_handle (for media-header /
+// carousel templates). Returns { ok, handle, url }.
+export async function getMediaHandle(file) {
+  try {
+    const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+    const path = `tpl/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('wa-media').upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+    if (upErr) return { ok: false, error: 'Upload failed: ' + upErr.message };
+    const { data: pub } = supabase.storage.from('wa-media').getPublicUrl(path);
+    const { data, error } = await supabase.functions.invoke('get-media-handle', {
+      body: { media_url: pub.publicUrl, file_type: file.type, file_name: file.name },
+    });
+    if (error) {
+      let detail = error.message;
+      try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* ignore */ }
+      return { ok: false, error: detail };
+    }
+    return { ok: true, handle: data.handle, url: pub.publicUrl };
+  } catch (e) {
+    return { ok: false, error: e.message || 'Failed to upload media' };
+  }
+}
+
+// Send a test of a flow's template to a number (variables filled from that contact).
+export async function sendTemplateTest(wa_id, template_name, variables) {
+  const { data, error } = await supabase.functions.invoke('send-template-test', { body: { wa_id, template_name, variables } });
+  if (error) {
+    let detail = error.message;
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return { ok: true, preview: data?.preview, sent_to: data?.sent_to };
+}
+
+// Delete a template (on Meta + locally).
+export async function deleteTemplateLive(name) {
+  const { data, error } = await supabase.functions.invoke('delete-template', { body: { name } });
+  if (error) {
+    let detail = error.message;
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return { ok: data?.ok };
+}
+
+// Pulls the latest templates from Meta into the DB, then returns the count.
+export async function syncTemplatesFromMeta() {
+  const { data, error } = await supabase.functions.invoke('sync-templates', { body: {} });
+  if (error) {
+    let detail = error.message;
+    try {
+      const ctx = await error.context?.json?.();
+      if (ctx?.error) detail = ctx.error;
+    } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return { ok: true, synced: data?.synced ?? 0 };
+}
+
+// ─── Meta Ads dashboard (Done For You) ──────────────────────────────────────────
+// Live, on-demand pull from the read-only meta-ads-insights edge function.
+export async function getMetaAdsInsights() {
+  const { data, error } = await supabase.functions.invoke('meta-ads-insights', { body: {} });
+  if (error) {
+    let detail = error.message;
+    try {
+      const ctx = await error.context?.json?.();
+      if (ctx?.error) detail = ctx.error;
+    } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return data;
+}
+
+// Upload an image (template header) to the public wa-media bucket → returns a URL.
+export async function uploadHeaderImage(file) {
+  if (!file) return { ok: false, error: 'No file selected.' };
+  if (!file.type?.startsWith('image/')) return { ok: false, error: 'Please choose an image file.' };
+  if (file.size > 5 * 1024 * 1024) return { ok: false, error: 'Image must be under 5 MB.' };
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = `headers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from('wa-media').upload(path, file, { contentType: file.type, upsert: false });
+  if (error) return { ok: false, error: error.message };
+  const { data } = supabase.storage.from('wa-media').getPublicUrl(path);
+  return { ok: true, url: data.publicUrl };
+}
+
+// ─── Lead Tracking / Conversions API ────────────────────────────────────────────
+export const QUALIFICATIONS = ['Intake', 'Qualified', 'NotQualified', 'Junk'];
+export const QUALIFICATION_LABELS = { Intake: 'Intake', Qualified: 'Qualified', NotQualified: 'Not Qualified', Junk: 'Junk' };
+
+// All leads for the Tracking panel: form/manual contacts + CSV-imported rows.
+export async function getTrackingLeads() {
+  const [{ data: contacts }, { data: csv }] = await Promise.all([
+    supabase.from('contacts')
+      .select('id, profile_name, wa_id, email, attributes, qualification, qualified_at, capi_status, created_at, source')
+      .order('created_at', { ascending: false }),
+    supabase.from('tracking_leads').select('*').order('created_at', { ascending: false }),
+  ]);
+  const rows = [];
+  for (const c of contacts || []) rows.push({
+    key: 'contact:' + c.id, source: 'contact', id: c.id,
+    name: c.profile_name || c.wa_id, phone: c.wa_id, email: c.email,
+    leadId: (c.attributes && c.attributes.meta_lead_id) || '',
+    attributes: c.attributes || {}, qualification: c.qualification, capiStatus: c.capi_status,
+    date: c.created_at, origin: c.source || 'Meta Lead Ads',
+  });
+  for (const t of csv || []) rows.push({
+    key: 'tracking:' + t.id, source: 'tracking', id: t.id,
+    name: t.name || t.lead_id || '(no name)', phone: t.phone, email: t.email,
+    leadId: t.lead_id || '', attributes: t.attributes || {}, qualification: t.qualification, capiStatus: t.capi_status,
+    date: t.upload_date || t.created_at, origin: 'CSV upload',
+  });
+  rows.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return rows;
+}
+
+// Set a lead's qualification and fire the CAPI event to Meta.
+export async function setLeadQualification(source, id, qualification) {
+  const { data, error } = await supabase.functions.invoke('capi-lead-event', { body: { source, id, qualification } });
+  if (error) {
+    let detail = error.message;
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return data;
+}
+
+// Counts by qualification (for the Home lead-quality chart).
+export async function getQualificationStats() {
+  const [{ data: c }, { data: t }] = await Promise.all([
+    supabase.from('contacts').select('qualification'),
+    supabase.from('tracking_leads').select('qualification'),
+  ]);
+  const counts = { Intake: 0, Qualified: 0, NotQualified: 0, Junk: 0, Untagged: 0 };
+  const tally = (arr) => (arr || []).forEach((r) => {
+    if (r.qualification && counts[r.qualification] != null) counts[r.qualification]++;
+    else counts.Untagged++;
+  });
+  tally(c); tally(t);
+  counts.total = counts.Intake + counts.Qualified + counts.NotQualified + counts.Junk + counts.Untagged;
+  counts.tagged = counts.total - counts.Untagged;
+  return counts;
+}
+
+// Bulk-import CSV rows of lead-gen ids into tracking_leads.
+export async function uploadTrackingLeads(rows) {
+  if (!rows.length) return { ok: false, error: 'No rows to import.' };
+  const { data, error } = await supabase.from('tracking_leads')
+    .upsert(rows, { onConflict: 'lead_id', ignoreDuplicates: false })
+    .select('id');
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, count: data?.length ?? rows.length };
+}
+
+// Remove a lead from Tracking (deletes the contact + its data, or the CSV row).
+export async function removeTrackingLead(source, id) {
+  if (source === 'contact') return deletePersonLive(id);
+  const { error } = await supabase.from('tracking_leads').delete().eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// ─── Campaigns (bulk template sends) ────────────────────────────────────────────
+const firstNameOf = (name = '') => (name || '').trim().split(/\s+/)[0] || '';
+
+// Count {{n}} body variables in a template body.
+export function templateVars(body = '') {
+  const set = new Set((body.match(/\{\{\s*\d+\s*\}\}/g) || []));
+  return set.size;
+}
+
+// Contacts matching campaign filters (for preview + recipient build).
+async function resolveAudience(filters) {
+  let q = supabase.from('contacts').select('id, wa_id, profile_name');
+  if (filters.date_from) q = q.gte('created_at', filters.date_from);
+  if (filters.date_to) q = q.lte('created_at', filters.date_to + 'T23:59:59');
+  if (filters.qualifications?.length) q = q.in('qualification', filters.qualifications);
+  if (filters.lead_statuses?.length) q = q.in('lead_status', filters.lead_statuses);
+  // Lead-age segment: 'old' = the historical/imported list; 'new' = everything else.
+  if (filters.segment === 'old') q = q.eq('attributes->>imported', 'true');
+  else if (filters.segment === 'new') q = q.or('attributes->>imported.is.null,attributes->>imported.neq.true');
+  const { data, error } = await q;
+  if (error) { console.error('resolveAudience', error); return []; }
+  return data || [];
+}
+
+export async function previewAudience(filters) {
+  const rows = await resolveAudience(filters);
+  return rows.length;
+}
+
+// Create + launch a campaign: resolve audience, insert recipients, set sending.
+export async function createCampaign({ name, template_name, template_language, variables, filters, header_image, maxRetries = 3 }) {
+  const audience = await resolveAudience(filters);
+  if (audience.length === 0) return { ok: false, error: 'No people match those filters.' };
+
+  const { data: camp, error: ce } = await supabase.from('campaigns')
+    .insert({ name, template_name, template_language: template_language || 'en', variables, filters, header_image: header_image || null, status: 'sending' })
+    .select('id').single();
+  if (ce) return { ok: false, error: ce.message };
+
+  const recipients = audience.map((c) => ({
+    campaign_id: camp.id, contact_id: c.id, wa_id: c.wa_id,
+    first_name: firstNameOf(c.profile_name), status: 'queued',
+    max_attempts: Math.max(1, (Number(maxRetries) || 0) + 1), next_attempt_at: new Date().toISOString(),
+  }));
+  for (let i = 0; i < recipients.length; i += 500) {
+    const { error } = await supabase.from('campaign_recipients').insert(recipients.slice(i, i + 500));
+    if (error) return { ok: false, error: error.message };
+  }
+  return { ok: true, id: camp.id, count: recipients.length };
+}
+
+// True per-recipient status uses the message's delivery status (updated by the
+// webhook), not just the send-time result — so 131049-type failures count.
+async function msgStatusMap(recs) {
+  const ids = recs.map(r => r.wa_message_id).filter(Boolean);
+  const map = {};
+  for (let i = 0; i < ids.length; i += 300) {
+    const { data: msgs } = await supabase.from('messages').select('wa_message_id, status, error').in('wa_message_id', ids.slice(i, i + 300));
+    (msgs || []).forEach(m => { map[m.wa_message_id] = { status: m.status, error: m.error }; });
+  }
+  return map;
+}
+// Meta stores message errors as an array of { code, title, message, error_data }.
+// Recipient.error is a plain string. Normalise either into one readable line.
+function formatError(err) {
+  if (!err) return null;
+  if (typeof err === 'string') return err;
+  const e = Array.isArray(err) ? err[0] : err;
+  if (!e || typeof e !== 'object') return String(err);
+  const text = e.error_data?.details || e.title || e.message || 'delivery failed';
+  return e.code ? `${text} (#${e.code})` : text;
+}
+function classifyRecipient(r, map) {
+  const dl = r.wa_message_id ? (map[r.wa_message_id]?.status || r.status) : r.status;
+  if (r.status === 'failed' || dl === 'failed') return 'failed';
+  if (r.status === 'sent' || ['sent', 'delivered', 'read'].includes(dl)) return 'sent';
+  return 'pending'; // queued | retry
+}
+function tallyStatuses(recs, map) {
+  const s = { total: recs.length, sent: 0, queued: 0, failed: 0, retrying: 0, retryAttempts: 0, recovered: 0, gaveUp: 0, nextRetryAt: null };
+  recs.forEach(r => {
+    const st = classifyRecipient(r, map);
+    if (st === 'failed') s.failed++; else if (st === 'sent') s.sent++; else s.queued++;
+    // Every attempt beyond the first is a retry that actually fired.
+    if ((r.attempts || 0) > 1) s.retryAttempts += (r.attempts - 1);
+    // Retry outcomes: succeeded after a retry, or still failed after retrying.
+    if ((r.attempts || 0) > 1 && st === 'sent') s.recovered++;
+    if ((r.attempts || 0) > 1 && st === 'failed') s.gaveUp++;
+    if (r.status === 'retry') {
+      s.retrying++;
+      if (r.next_attempt_at && (!s.nextRetryAt || r.next_attempt_at < s.nextRetryAt)) s.nextRetryAt = r.next_attempt_at;
+    }
+  });
+  return s;
+}
+
+export async function getCampaigns() {
+  const { data: camps } = await supabase.from('campaigns').select('*').order('created_at', { ascending: false });
+  const out = [];
+  for (const c of camps || []) {
+    const { data: recs } = await supabase.from('campaign_recipients').select('status, wa_message_id, attempts, next_attempt_at').eq('campaign_id', c.id);
+    const map = await msgStatusMap(recs || []);
+    out.push({ ...c, ...tallyStatuses(recs || [], map) });
+  }
+  return out;
+}
+
+export async function getCampaign(id) {
+  const { data: c } = await supabase.from('campaigns').select('*').eq('id', id).maybeSingle();
+  if (!c) return null;
+  const { data: recs } = await supabase.from('campaign_recipients')
+    .select('id, wa_id, first_name, status, attempts, max_attempts, next_attempt_at, last_attempt_at, error, wa_message_id, contact_id, attempt_log')
+    .eq('campaign_id', id).order('created_at', { ascending: true });
+  const map = await msgStatusMap(recs || []);
+  const rows = (recs || []).map(r => {
+    const st = classifyRecipient(r, map);
+    const msgErr = r.wa_message_id ? map[r.wa_message_id]?.error : null;
+    return { ...r, delivery: st === 'failed' ? 'failed' : (r.wa_message_id ? (map[r.wa_message_id]?.status || r.status) : r.status), error: formatError(r.error || msgErr) };
+  });
+  return { ...c, ...tallyStatuses(recs || [], map), recipients: rows };
+}
+
+export async function pauseCampaign(id, pause = true) {
+  const { error } = await supabase.from('campaigns').update({ status: pause ? 'paused' : 'sending' }).eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// Re-queue every failed recipient (send-time OR delivery failure) for up to
+// `maxRetries` more attempts over 24h, and re-open the campaign.
+// NOTE: we keep `attempts` climbing (never reset it) and raise `max_attempts`
+// to attempts + maxRetries, so the retry counter stays meaningful and the
+// recovered/gave-up outcome logic (which keys off attempts > 1) works. We also
+// clear wa_message_id so a re-queued recipient shows as "retrying" (not the old
+// failed message) while it waits — the attempt history lives in attempt_log.
+export async function retryCampaignFailed(campaignId, maxRetries = 3) {
+  const { data: recs } = await supabase.from('campaign_recipients').select('id, status, attempts, wa_message_id').eq('campaign_id', campaignId);
+  const map = await msgStatusMap(recs || []);
+  const failed = (recs || []).filter(r => classifyRecipient(r, map) === 'failed');
+  if (!failed.length) return { ok: false, error: 'No failed recipients to retry.' };
+  const nextIso = nextRetryAtISO();
+  const extra = Math.max(1, Number(maxRetries) || 0);
+  for (const r of failed) {
+    const { error } = await supabase.from('campaign_recipients')
+      .update({ status: 'retry', max_attempts: (r.attempts || 0) + extra, next_attempt_at: nextIso, error: null, wa_message_id: null })
+      .eq('id', r.id);
+    if (error) return { ok: false, error: error.message };
+  }
+  await supabase.from('campaigns').update({ status: 'sending' }).eq('id', campaignId);
+  return { ok: true, count: failed.length };
+}
+
+// Failed messages are retried the NEXT day at 00:05 IST (India), matching the
+// campaign-run and webhook schedulers, so retries don't hammer Meta's rate cap.
+function nextRetryAtISO() {
+  const IST_OFFSET_MS = 330 * 60 * 1000; // +05:30
+  const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+  const y = nowIST.getUTCFullYear(), mo = nowIST.getUTCMonth(), d = nowIST.getUTCDate();
+  return new Date(Date.UTC(y, mo, d + 1, 0, 5, 0) - IST_OFFSET_MS).toISOString();
+}
+
+// ─── Flows / Sequences (Automation) ────────────────────────────────────────────
+export async function getFlowsLive() {
+  const { data, error } = await supabase
+    .from('sequences')
+    .select('*, sequence_steps(count), sequence_enrollments(count)')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('getFlowsLive', error); return []; }
+  return data.map(s => ({
+    ...s,
+    stepCount: s.sequence_steps?.[0]?.count ?? 0,
+    enrolledCount: s.sequence_enrollments?.[0]?.count ?? 0,
+  }));
+}
+
+export async function getFlowSteps(sequenceId) {
+  const { data, error } = await supabase
+    .from('sequence_steps')
+    .select('*')
+    .eq('sequence_id', sequenceId)
+    .order('position', { ascending: true });
+  if (error) { console.error('getFlowSteps', error); return []; }
+  return data;
+}
+
+// Create or update a flow and replace its steps in one go.
+// flow = { id?, name, trigger_type, exit_on_reply, status }
+// steps = [{ template_name, template_language, delay_after_minutes }]
+export async function saveFlow(flow, steps) {
+  const payload = {
+    name: flow.name,
+    trigger_type: flow.trigger_type,
+    exit_on_reply: flow.exit_on_reply,
+    status: flow.status ?? 'draft',
+  };
+  let seqId = flow.id;
+
+  if (seqId) {
+    const { error } = await supabase.from('sequences').update(payload).eq('id', seqId);
+    if (error) return { ok: false, error: error.message };
+  } else {
+    const { data, error } = await supabase.from('sequences').insert(payload).select('id').single();
+    if (error) return { ok: false, error: error.message };
+    seqId = data.id;
+  }
+
+  // Replace steps: delete existing, insert current.
+  await supabase.from('sequence_steps').delete().eq('sequence_id', seqId);
+  if (steps.length) {
+    const rows = steps.map((s, i) => ({
+      sequence_id: seqId,
+      position: i + 1,
+      template_name: s.template_name,
+      template_language: s.template_language || 'en',
+      delay_after_minutes: s.delay_after_minutes || 0,
+    }));
+    const { error } = await supabase.from('sequence_steps').insert(rows);
+    if (error) return { ok: false, error: error.message };
+  }
+  return { ok: true, id: seqId };
+}
+
+export async function setFlowStatus(id, status) {
+  const { error } = await supabase.from('sequences').update({ status }).eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteFlow(id) {
+  const { error } = await supabase.from('sequences').delete().eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// ─── App settings ───────────────────────────────────────────────────────────────
+// Delete a contact and its dependent rows (conversations, messages, flow runs).
+export async function deletePersonLive(id) {
+  try { await supabase.from('flow_runs').delete().eq('contact_id', id); } catch { /* may be service-role only */ }
+  const { data: convs } = await supabase.from('conversations').select('id').eq('contact_id', id);
+  const convIds = (convs || []).map(c => c.id);
+  if (convIds.length) {
+    await supabase.from('messages').delete().in('conversation_id', convIds);
+    await supabase.from('conversations').delete().eq('contact_id', id);
+  }
+  const { error } = await supabase.from('contacts').delete().eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// Move a lead to a pipeline stage (CRM Kanban drag-drop).
+export async function updateLeadStatusLive(id, status) {
+  const { error } = await supabase.from('contacts').update({ lead_status: status }).eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// Add a lead from the CRM (richer than addContactLive — stage, score, attributes, form).
+export async function addLeadLive(d) {
+  const clean = String(d.phone || '').replace(/[\s\-()]/g, '');
+  const wa_id = clean.startsWith('+') ? clean : '+' + clean;
+  if (wa_id.length < 8) return { ok: false, error: 'A valid phone number is required.' };
+  const score = Number(d.lead_score);
+  const row = {
+    wa_id,
+    profile_name: d.name || wa_id,
+    email: d.email || null,
+    company: d.company || null,
+    job_title: d.jobTitle || null,
+    lead_status: d.lead_status || 'New',
+    lead_score: Number.isFinite(score) ? score : 0,
+    source: d.source || 'Manual',
+    form_id: d.form_id || null,
+    attributes: d.attributes || {},
+  };
+  const { data, error } = await supabase.from('contacts')
+    .upsert(row, { onConflict: 'wa_id', ignoreDuplicates: false })
+    .select('id').single();
+  return error ? { ok: false, error: error.message } : { ok: true, id: data.id };
+}
+
+// Count of conversations with unread inbound messages (for the Inbox nav badge).
+export async function getUnreadCount() {
+  const { count } = await supabase.from('conversations').select('*', { count: 'exact', head: true }).gt('unread_count', 0);
+  return count || 0;
+}
+
+// Manually add a contact from the People screen.
+export async function addContactLive({ name, phone, email, company, source }) {
+  const clean = String(phone || '').replace(/[\s\-()]/g, '');
+  const wa_id = clean.startsWith('+') ? clean : '+' + clean;
+  if (wa_id.length < 8) return { ok: false, error: 'A valid phone number is required.' };
+  const { data, error } = await supabase.from('contacts').insert({
+    wa_id,
+    profile_name: name || wa_id,
+    email: email || null,
+    company: company || null,
+    lead_status: 'New',
+    source: source || 'Manual',
+  }).select('id').single();
+  return error ? { ok: false, error: error.message } : { ok: true, id: data.id };
+}
+
+// Real dashboard metrics aggregated from the live DB.
+export async function getHomeStatsLive() {
+  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+  const iso = monthStart.toISOString();
+  const cnt = async (table, build) => {
+    let q = supabase.from(table).select('*', { count: 'exact', head: true });
+    if (build) q = build(q);
+    const { count } = await q;
+    return count || 0;
+  };
+  const [leadsIn, leadsMonth, conversations, qualified, won, sent, received, flowRuns, activeFlows, completedRuns] = await Promise.all([
+    cnt('contacts'),
+    cnt('contacts', q => q.gte('created_at', iso)),
+    cnt('conversations'),
+    cnt('contacts', q => q.in('lead_status', ['Warm', 'Hot', 'Won'])),
+    cnt('contacts', q => q.eq('lead_status', 'Won')),
+    cnt('messages', q => q.eq('direction', 'out')),
+    cnt('messages', q => q.eq('direction', 'in')),
+    cnt('flow_runs'),
+    cnt('flows', q => q.eq('status', 'active')),
+    cnt('flow_runs', q => q.eq('status', 'completed')),
+  ]);
+  const { data: recent } = await supabase.from('contacts')
+    .select('id, profile_name, wa_id, source, lead_status, created_at')
+    .order('created_at', { ascending: false }).limit(6);
+  const { data: flows } = await supabase.from('flows')
+    .select('id, name, status').order('updated_at', { ascending: false }).limit(6);
+  return {
+    leadsIn, leadsMonth, conversations, qualified, won, sent, received, flowRuns, activeFlows, completedRuns,
+    recent: (recent || []).map(c => ({
+      id: c.id, name: c.profile_name || c.wa_id, source: c.source || '—',
+      status: c.lead_status || 'New', received: exactTime(c.created_at),
+    })),
+    flows: flows || [],
+  };
+}
+
+export async function getSettings() {
+  const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).maybeSingle();
+  if (error) { console.error('getSettings', error); return null; }
+  return data;
+}
+
+export async function saveSettings(patch) {
+  const { error } = await supabase.from('app_settings').update(patch).eq('id', 1);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export const DEFAULT_STAGES = ['New', 'Cool', 'Warm', 'Hot', 'Won', 'Lost'];
+export async function getPipelineStages() {
+  const s = await getSettings();
+  const st = s?.pipeline_stages;
+  return Array.isArray(st) && st.length ? st : DEFAULT_STAGES;
+}
+export async function savePipelineStages(stages) {
+  const clean = (stages || []).map(s => String(s).trim()).filter(Boolean);
+  if (!clean.length) return { ok: false, error: 'Keep at least one stage.' };
+  return saveSettings({ pipeline_stages: clean });
+}
+
+// ─── Team roster ────────────────────────────────────────────────────────────────
+export async function getTeamLive() {
+  const { data, error } = await supabase.from('team_members').select('*').order('created_at', { ascending: true });
+  if (error) { console.error('getTeamLive', error); return []; }
+  return data || [];
+}
+export async function addTeamMember({ name, email, role }) {
+  if (!String(name || '').trim() && !String(email || '').trim()) return { ok: false, error: 'Add a name or email.' };
+  const { data, error } = await supabase.from('team_members')
+    .insert({ name: name?.trim() || null, email: email?.trim() || null, role: role || 'Member' })
+    .select('*').single();
+  return error ? { ok: false, error: error.message } : { ok: true, member: data };
+}
+export async function removeTeamMember(id) {
+  const { error } = await supabase.from('team_members').delete().eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// ─── People / Forms ─────────────────────────────────────────────────────────────
+export async function getFormsLive() {
+  const { data, error } = await supabase
+    .from('fb_forms')
+    .select('id, form_id, name, fields')
+    .order('name', { ascending: true });
+  if (error) { console.error('getFormsLive', error); return []; }
+  return data;
+}
+
+export async function getPeopleLive() {
+  const { data, error } = await supabase
+    .from('contacts')
+    .select('*, fb_forms(id, name)')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('getPeopleLive', error); return []; }
+  return data.map(c => {
+    const name = c.profile_name || c.wa_id || 'Unknown';
+    const parts = name.trim().split(' ');
+    return {
+      id: c.id,
+      profile_name: name,
+      firstName: c.first_name || parts[0] || '',
+      lastName: c.last_name || parts.slice(1).join(' ') || '',
+      phone: c.wa_id,
+      email: c.email || '',
+      company: c.company || '—',
+      jobTitle: c.job_title || '—',
+      lead_status: c.lead_status || 'New',
+      lead_score: c.lead_score ?? 0,
+      source: c.source || '—',
+      attributes: c.attributes || {},
+      color: colorFor(c.wa_id || c.id),
+      lastContacted: relativeTime(c.last_inbound_at || c.created_at),
+      received: exactTime(c.created_at),
+      form_uuid: c.form_id,
+      formName: c.fb_forms?.name || null,
+    };
+  });
+}
+
+// Read-only feed for the Leads Overview page. Each row is tagged with a derived
+// SOURCE (ctwa | instant_form | unknown), a human FUNNEL name, and its TYPE
+// (qualification). Reads the stored `source_type`, falling back to deriving it
+// for any row not yet backfilled. No writes.
+export async function getLeadsOverview() {
+  const { data, error } = await supabase
+    .from('contacts')
+    .select('id, profile_name, wa_id, source_type, ctwa_clid, form_id, qualification, created_at, attributes, fb_forms(name)')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('getLeadsOverview', error); return []; }
+  return (data || []).map(c => {
+    const attrs = c.attributes || {};
+    const source = c.source_type
+      || (c.ctwa_clid ? 'ctwa' : ((attrs.meta_lead_id || c.form_id) ? 'instant_form' : 'unknown'));
+    let funnel = '—';
+    if (source === 'ctwa') funnel = attrs.ctwa_headline || attrs.ctwa_source_id || attrs.ctwa_ad_id || 'CTWA ad';
+    else if (source === 'instant_form') funnel = c.fb_forms?.name || attrs.form_name || attrs.campaign_name || '—';
+    return {
+      id: c.id,
+      name: c.profile_name || c.wa_id || 'Unknown',
+      phone: c.wa_id || '',
+      source,                       // 'ctwa' | 'instant_form' | 'unknown'
+      funnel,
+      type: c.qualification || 'Intake',
+      created_at: c.created_at,
+      created_rel: relativeTime(c.created_at),
+    };
+  });
+}
+
+// Pull the latest lead forms from Meta (page) into the DB, then return count.
+export async function syncFormsFromMeta() {
+  const { data, error } = await supabase.functions.invoke('sync-forms', { body: {} });
+  if (error) {
+    let detail = error.message;
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return { ok: true, synced: data?.synced ?? 0 };
+}
+
+// ─── Visual Flow Builder graph (flows / flow_nodes / flow_edges) ─────────────────
+export async function getFlowList() {
+  const [{ data, error }, { data: metrics }] = await Promise.all([
+    supabase.from('flows').select('id, name, status, updated_at').order('updated_at', { ascending: false }),
+    supabase.rpc('flow_metrics'),
+  ]);
+  if (error) { console.error('getFlowList', error); return []; }
+  const mById = {};
+  (metrics || []).forEach(m => { mById[m.flow_id] = m; });
+  return (data || []).map(f => {
+    const m = mById[f.id] || {};
+    return {
+      ...f,
+      triggered: m.triggered || 0,
+      sent: m.sent || 0,
+      failed: m.failed || 0,
+      costRupees: (Number(m.cost_paise) || 0) / 100,
+    };
+  });
+}
+
+export async function createFlowRecord(name = 'Untitled flow') {
+  const { data, error } = await supabase.from('flows').insert({ name }).select('id').single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: data.id };
+}
+
+export async function getFlowGraphLive(flowId) {
+  const [{ data: flow }, { data: nodes }, { data: edges }] = await Promise.all([
+    supabase.from('flows').select('id, name, status').eq('id', flowId).maybeSingle(),
+    supabase.from('flow_nodes').select('*').eq('flow_id', flowId),
+    supabase.from('flow_edges').select('*').eq('flow_id', flowId),
+  ]);
+  if (!flow) return null;
+  return {
+    id: flow.id,
+    name: flow.name,
+    status: flow.status,
+    nodes: (nodes || []).map(n => ({
+      id: n.node_key, type: n.type, position: { x: n.position_x, y: n.position_y }, data: n.data || {},
+    })),
+    edges: (edges || []).map(e => ({
+      id: e.edge_key || `${e.source_node_key}-${e.target_node_key}-${e.source_handle || ''}`,
+      source: e.source_node_key,
+      target: e.target_node_key,
+      sourceHandle: e.source_handle || undefined,
+      label: e.label || undefined,
+      data: { sourceButton: e.source_button ?? null },
+    })),
+  };
+}
+
+// Replace the whole graph for a flow (nodes + edges) and update name/status.
+export async function saveFlowGraphLive(flowId, graph) {
+  if (graph.name != null || graph.status != null) {
+    const patch = {};
+    if (graph.name != null) patch.name = graph.name;
+    if (graph.status != null) patch.status = graph.status;
+    const { error } = await supabase.from('flows').update(patch).eq('id', flowId);
+    if (error) return { ok: false, error: error.message };
+  }
+
+  await supabase.from('flow_nodes').delete().eq('flow_id', flowId);
+  await supabase.from('flow_edges').delete().eq('flow_id', flowId);
+
+  if (graph.nodes?.length) {
+    const nodeRows = graph.nodes.map(n => ({
+      flow_id: flowId, node_key: n.id, type: n.type, data: n.data || {},
+      position_x: n.position?.x ?? 0, position_y: n.position?.y ?? 0,
+    }));
+    const { error } = await supabase.from('flow_nodes').insert(nodeRows);
+    if (error) return { ok: false, error: error.message };
+  }
+  if (graph.edges?.length) {
+    const edgeRows = graph.edges.map(e => ({
+      flow_id: flowId, edge_key: e.id,
+      source_node_key: e.source, target_node_key: e.target,
+      source_handle: e.sourceHandle ?? null,
+      source_button: e.data?.sourceButton ?? e.sourceButton ?? null,
+      label: e.label ?? null,
+    }));
+    const { error } = await supabase.from('flow_edges').insert(edgeRows);
+    if (error) return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
+export async function setFlowGraphStatus(flowId, status) {
+  const { error } = await supabase.from('flows').update({ status }).eq('id', flowId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteFlowRecord(flowId) {
+  const { error } = await supabase.from('flows').delete().eq('id', flowId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// ─── Contact notes (call remarks / log, Zoho-style) ─────────────────────────────
+export async function getNotesLive(contactId) {
+  if (!contactId) return [];
+  const { data, error } = await supabase
+    .from('contact_notes')
+    .select('*')
+    .eq('contact_id', contactId)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('getNotesLive', error); return []; }
+  return data || [];
+}
+
+export async function addNoteLive(contactId, body) {
+  const text = (body || '').trim();
+  if (!contactId || !text) return { ok: false, error: 'Note is empty.' };
+  const { data: u } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from('contact_notes')
+    .insert({ contact_id: contactId, body: text, created_by: u?.user?.id ?? null })
+    .select('*')
+    .single();
+  return error ? { ok: false, error: error.message } : { ok: true, note: data };
+}
+
+export async function deleteNoteLive(noteId) {
+  const { error } = await supabase.from('contact_notes').delete().eq('id', noteId);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export { msgTime, relativeTime };

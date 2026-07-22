@@ -1,0 +1,169 @@
+{
+  "name": "DFY WhatsApp — Meta Leads",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "dfy-whatsapp-meta-leads",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-verify-get",
+      "name": "Meta Verify Challenge",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 120],
+      "webhookId": "dfy-whatsapp-meta-leads-get"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "node-respond-challenge",
+      "name": "Respond with Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [480, 120]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dfy-whatsapp-meta-leads",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-lead-post",
+      "name": "Meta Lead Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 420],
+      "webhookId": "dfy-whatsapp-meta-leads-post"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-token",
+              "name": "meta_token",
+              "value": "PASTE_YOUR_META_SYSTEM_USER_TOKEN_HERE",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "node-config",
+      "name": "① Config — Meta token",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Meta Lead Trigger').first().json.body || {};\nconst entry = body.entry?.[0] || {};\nconst change = entry.changes?.[0] || {};\nconst v = change.value || {};\n\nif (!v.leadgen_id) {\n  throw new Error('No leadgen_id in webhook payload');\n}\n\nreturn [{ json: {\n  page_id: entry.id || '',\n  leadgen_id: v.leadgen_id,\n  form_id: v.form_id || ''\n} }];"
+      },
+      "id": "node-extract-id",
+      "name": "Extract Lead ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 420]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.page_id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "fields", "value": "access_token" },
+            { "name": "access_token", "value": "={{ $('① Config — Meta token').item.json.meta_token }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-page-token",
+      "name": "Get Page Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 420]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Extract Lead ID').item.json.leadgen_id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "fields", "value": "field_data,form_id,created_time" },
+            { "name": "access_token", "value": "={{ $json.access_token }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-fetch-lead",
+      "name": "Fetch Lead from Meta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = $input.first().json;\nconst fields = j.field_data;\n\nif (!fields || fields.length === 0) {\n  throw new Error('No field_data returned. Check the Meta token and leads_retrieval permission.');\n}\n\nconst lead = {};\nfor (const f of fields) {\n  lead[f.name] = f.values?.[0] ?? '';\n}\n\n// --- Mapped to the DFY Media lead form's exact internal field keys ---\n// Edit these keys here if you change the form fields on Meta.\nreturn [{\n  json: {\n    name:               lead['full_name'] || '',\n    phone_number:       lead['phone_number'] || '',\n    email:              lead['work_email_address'] || lead['email'] || '',\n    company_name:       lead['company_name'] || '',\n    city:               lead['city'] || '',\n    biggest_challenge:  lead[\"what's_your_biggest_challenge_with_lead_generation_right_now?\"] || '',\n    monthly_ad_spend:   lead[\"what's_your_current_*monthly*_ad_spend?\"] || '',\n    timeline:           lead[\"when_are_you_looking_to_improve_your_performance?\"] || '',\n    form_id:            j.form_id || $('Extract Lead ID').item.json.form_id || '',\n    source:             'Meta Lead Ads'\n  }\n}];"
+      },
+      "id": "node-parse",
+      "name": "Parse Lead Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rkmngnkgesteohigvsxe.supabase.co/functions/v1/ingest-lead",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-ingest-secret", "value": "IA04S1eWguiRmNcbKOvq7XoFBGzCxk5p3ashDdV6" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node-ingest",
+      "name": "Send to WhatsApp Tool",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok' }) }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "node-respond-meta",
+      "name": "Respond to Meta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 420]
+    }
+  ],
+  "connections": {
+    "Meta Verify Challenge": { "main": [[{ "node": "Respond with Challenge", "type": "main", "index": 0 }]] },
+    "Meta Lead Trigger": { "main": [[{ "node": "① Config — Meta token", "type": "main", "index": 0 }]] },
+    "① Config — Meta token": { "main": [[{ "node": "Extract Lead ID", "type": "main", "index": 0 }]] },
+    "Extract Lead ID": { "main": [[{ "node": "Get Page Token", "type": "main", "index": 0 }]] },
+    "Get Page Token": { "main": [[{ "node": "Fetch Lead from Meta", "type": "main", "index": 0 }]] },
+    "Fetch Lead from Meta": { "main": [[{ "node": "Parse Lead Fields", "type": "main", "index": 0 }]] },
+    "Parse Lead Fields": { "main": [[{ "node": "Send to WhatsApp Tool", "type": "main", "index": 0 }]] },
+    "Send to WhatsApp Tool": { "main": [[{ "node": "Respond to Meta", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

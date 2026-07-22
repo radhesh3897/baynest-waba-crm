@@ -1,0 +1,47 @@
+@import url('https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable.min.css');
+@import "tailwindcss";
+
+:root {
+  /* Brand tokens — the default values. src/config/client.js overrides these at
+     startup (applyBrand). Change them there per client, not here. The whole
+     --dfy-* palette below references these, so the app re-themes from one place. */
+  --brand-primary:       #15514B;
+  --brand-primary-dark:  #0E3A35;
+  --brand-primary-light: #1C5E56;
+  --brand-accent:        #5BB957;
+
+  --dfy-forest-900: var(--brand-primary-dark);
+  --dfy-forest-800: var(--brand-primary);
+  --dfy-forest-700: var(--brand-primary-light);
+  --dfy-pine-600:   #356E63;
+  --dfy-pine-500:   #4E8579;
+  --dfy-green-600:  var(--brand-accent);
+  --dfy-green-500:  #73CF6F;
+  --dfy-green-400:  #8AD685;
+  --dfy-green-300:  #A9E0A0;
+  --dfy-mint-200:   #D8F1CE;
+  --dfy-mint-100:   #E7F6E0;
+  --font-sans: "Pretendard Variable", "Pretendard", -apple-system, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; padding: 0; height: 100%; font-family: var(--font-sans); color: var(--brand-primary); background: #EEF3F0; -webkit-font-smoothing: antialiased; }
+
+/* Mobile: behave like a native app shell — no rubber-band scroll, no tap
+   highlight flash, and let the layout use the dynamic viewport height so the
+   browser chrome doesn't cover the bottom nav. */
+@media (max-width: 760px) {
+  html, body, #root { height: 100dvh; overflow: hidden; overscroll-behavior: none; }
+  body { -webkit-tap-highlight-color: transparent; }
+  /* Keep iOS from zooming when focusing inputs (needs >=16px font). */
+  input, textarea, select { font-size: 16px; }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(21,81,75,.18); border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+button { font-family: inherit; cursor: pointer; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp .15s ease; }
