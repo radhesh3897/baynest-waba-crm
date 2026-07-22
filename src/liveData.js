@@ -1,6 +1,7 @@
 // Supabase-backed data layer for the live Inbox.
 // Maps raw DB rows into the shape the UI components already expect.
-import { supabase } from './supabaseClient';
+import { supabase, DEMO } from './supabaseClient';
+import * as demo from './demoData';
 
 const AVATAR_COLORS = ['#356E63', '#2E7BA8', '#7A5BB9', '#B6743A', '#C7503B', '#2E9E4F', '#15514B', '#4A6EA8'];
 
@@ -71,6 +72,7 @@ function mapContact(c) {
 
 // ─── Conversations ────────────────────────────────────────────────────────────
 export async function getConversationsLive() {
+  if (DEMO) return demo.conversations;
   const { data, error } = await supabase
     .from('conversations')
     .select('id, contact_id, last_message_at, window_expires_at, unread_count, status, contacts(*)')
@@ -150,6 +152,7 @@ export async function getFlowRepliedContactIds() {
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 export async function getMessagesLive(convId) {
+  if (DEMO) return demo.messages[convId] || [];
   const { data, error } = await supabase
     .from('messages')
     .select('*')
@@ -720,6 +723,7 @@ export async function addLeadLive(d) {
 
 // Count of conversations with unread inbound messages (for the Inbox nav badge).
 export async function getUnreadCount() {
+  if (DEMO) return demo.unreadCount;
   const { count } = await supabase.from('conversations').select('*', { count: 'exact', head: true }).gt('unread_count', 0);
   return count || 0;
 }
@@ -742,6 +746,7 @@ export async function addContactLive({ name, phone, email, company, source }) {
 
 // Real dashboard metrics aggregated from the live DB.
 export async function getHomeStatsLive() {
+  if (DEMO) return demo.homeStats;
   const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
   const iso = monthStart.toISOString();
   const cnt = async (table, build) => {
@@ -778,6 +783,7 @@ export async function getHomeStatsLive() {
 }
 
 export async function getSettings() {
+  if (DEMO) return demo.settings;
   const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).maybeSingle();
   if (error) { console.error('getSettings', error); return null; }
   return data;
@@ -829,6 +835,7 @@ export async function getFormsLive() {
 }
 
 export async function getPeopleLive() {
+  if (DEMO) return demo.people;
   const { data, error } = await supabase
     .from('contacts')
     .select('*, fb_forms(id, name)')

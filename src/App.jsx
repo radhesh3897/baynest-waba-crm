@@ -17,8 +17,21 @@ import Stub from './screens/Stub';
 import Login from './screens/Login';
 import WhatsAppSettings from './screens/WhatsAppSettings';
 import AccountSettings from './screens/AccountSettings';
-import { supabase } from './supabaseClient';
+import { supabase, DEMO } from './supabaseClient';
 import { IconBack } from './icons';
+
+// Small fixed pill shown only in local demo mode, with a one-click exit.
+function DemoBadge() {
+  const exit = () => { localStorage.removeItem('demo_mode'); location.reload(); };
+  return (
+    <button onClick={exit} title="Exit demo"
+      style={{ position: 'fixed', bottom: 14, right: 14, zIndex: 9999, display: 'flex', alignItems: 'center', gap: 7,
+        background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 999, padding: '8px 14px',
+        fontSize: 12, fontWeight: 800, letterSpacing: '.02em', cursor: 'pointer', boxShadow: '0 8px 24px rgba(8,30,27,.32)' }}>
+      DEMO MODE · Exit
+    </button>
+  );
+}
 
 const STUBS = ['logs', 'help'];
 // Bottom-tab roots reset the nav stack; everything else is a pushed sub-screen
@@ -34,11 +47,12 @@ export default function App() {
     return ROOT_SCREENS.includes(next) ? [next] : [...s, next];
   });
   const goBack = () => setNavStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
-  const [session, setSession] = useState(null);
+  const [session, setSession] = useState(DEMO ? { user: { email: 'demo' } } : null);
   const [authReady, setAuthReady] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
+    if (DEMO) { setAuthReady(true); return; }
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setAuthReady(true);
@@ -101,6 +115,7 @@ export default function App() {
           {content}
         </main>
         <BottomNav screen={screen} onNav={navigate} />
+        {DEMO && <DemoBadge />}
       </div>
     );
   }
@@ -111,6 +126,7 @@ export default function App() {
       <main style={{ flex: 1, minWidth: 0, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#EEF3F0' }}>
         {content}
       </main>
+      {DEMO && <DemoBadge />}
     </div>
   );
 }
