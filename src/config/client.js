@@ -6,29 +6,43 @@
 // ============================================================================
 
 export const CLIENT = {
-  name:      "Done For You",       // full company name, shown across the UI
-  shortName: "DFY",                // short form, used in the browser tab title
-  tagline:   "Internal team access", // small line under the logo on the login screen
-  logo:      "/assets/logo.png",   // drop the client logo in public/assets/logo.png
+  name:      "Baynest Realty",   // full company name, shown across the UI
+  shortName: "Baynest",          // short form, used in the browser tab title
+  tagline:   "Team access",      // small line under the logo on the login screen
+  logo:      "/assets/logo.png", // drop the client logo here (transparent PNG)
 
-  // Brand colours. Change these four and the whole UI re-themes — they are
-  // injected as CSS variables at startup (see applyBrand in main.jsx). Solid hex.
+  // Brand colours — taken from the logo, deliberately muted.
+  // These are injected as CSS variables at startup (see applyBrand), and the
+  // whole UI palette references them, so the app re-themes from this one place.
   colors: {
-    primary:      "#15514B", // main brand colour: sidebar, headers, primary buttons
-    primaryDark:  "#0E3A35", // darker shade
-    primaryLight: "#1C5E56", // lighter shade
-    accent:       "#5BB957", // accent / call-to-action green
+    primary:      "#1B4C5E", // deep teal — logo mark + wordmark
+    primaryDark:  "#123642", // darker teal (active nav, gradients)
+    primaryLight: "#2C6579", // lighter teal
+    accent:       "#C08A45", // muted gold — the logo's sun arc (CTAs, highlights)
+    accentSoft:   "#D2A05C", // lighter gold (badges, active icons)
+    accentPale:   "#E3D2B0", // pale sand (subtle fills)
+    muted:        "#3E6B78", // steel teal, secondary UI
+    tint:         "#EFE7D9", // soft sand fills
+    tintSoft:     "#F6F1E7", // lightest sand
+    appBg:        "#F2EFE9", // warm cream page ground (the logo's background)
   },
 };
 
-// Push the brand colours into CSS custom properties so every `var(--brand-*)`
-// in the app (and the whole --dfy-* palette, which now references them) follows.
+// Push the brand colours into CSS custom properties so every var(--brand-*) /
+// var(--app-bg) in the app follows from this config.
 export function applyBrand(c = CLIENT) {
   const r = document.documentElement.style;
-  r.setProperty("--brand-primary",       c.colors.primary);
-  r.setProperty("--brand-primary-dark",  c.colors.primaryDark);
-  r.setProperty("--brand-primary-light", c.colors.primaryLight);
-  r.setProperty("--brand-accent",        c.colors.accent);
+  const k = c.colors;
+  r.setProperty("--brand-primary",       k.primary);
+  r.setProperty("--brand-primary-dark",  k.primaryDark);
+  r.setProperty("--brand-primary-light", k.primaryLight);
+  r.setProperty("--brand-accent",        k.accent);
+  r.setProperty("--brand-accent-soft",   k.accentSoft);
+  r.setProperty("--brand-accent-pale",   k.accentPale);
+  r.setProperty("--brand-muted",         k.muted);
+  r.setProperty("--brand-tint",          k.tint);
+  r.setProperty("--brand-tint-soft",     k.tintSoft);
+  r.setProperty("--app-bg",              k.appBg);
   document.title = `${c.shortName} WA CRM`;
 }
 

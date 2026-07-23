@@ -8,12 +8,12 @@ const WEBHOOK_URL = 'https://rkmngnkgesteohigvsxe.supabase.co/functions/v1/whats
 function Field({ label, children }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(21,81,75,.6)', display: 'block', marginBottom: 7, letterSpacing: '.03em' }}>{label}</label>
+      <label style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(27,76,94,.6)', display: 'block', marginBottom: 7, letterSpacing: '.03em' }}>{label}</label>
       {children}
     </div>
   );
 }
-const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(21,81,75,.18)', borderRadius: 10, padding: '11px 13px', fontSize: 14, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit' };
+const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 10, padding: '11px 13px', fontSize: 14, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit' };
 
 export default function WhatsAppSettings() {
   const isMobile = useIsMobile();
@@ -47,30 +47,30 @@ export default function WhatsAppSettings() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  if (!s) return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(21,81,75,.5)', fontSize: 14 }}>Loading…</div>;
+  if (!s) return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', fontSize: 14 }}>Loading…</div>;
 
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
       <header style={{ padding: isMobile ? '18px 16px 14px' : '22px 30px 18px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(21,81,75,.45)' }}>COLLECTIONS</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.45)' }}>COLLECTIONS</div>
           <h1 style={{ margin: '5px 0 0', fontSize: 23, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>WhatsApp Settings</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {msg && <span style={{ fontSize: 12.5, fontWeight: 600, color: msg.includes('fail') ? '#C7503B' : '#2E9E4F' }}>{msg}</span>}
-          <button onClick={handleSave} disabled={saving} style={{ background: '#73CF6F', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save changes'}</button>
+          <button onClick={handleSave} disabled={saving} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save changes'}</button>
         </div>
       </header>
 
       <div style={{ padding: isMobile ? '6px 16px 28px' : '6px 30px 40px', maxWidth: 680 }}>
 
         {/* Business identity */}
-        <div style={{ background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 16, padding: 22, marginBottom: 18 }}>
+        <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22, marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 18 }}>
             <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EAF6E4', color: '#2E9E4F', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8 }}><IconWhatsApp size={20} /></div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>Business profile</div>
-              <div style={{ fontSize: 12, color: 'rgba(21,81,75,.55)' }}>How your WhatsApp number is identified.</div>
+              <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)' }}>How your WhatsApp number is identified.</div>
             </div>
           </div>
           <Field label="DISPLAY NAME">
@@ -82,31 +82,31 @@ export default function WhatsAppSettings() {
         </div>
 
         {/* AI lead qualifier */}
-        <div style={{ background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 16, padding: 22, marginBottom: 18 }}>
+        <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22, marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>AI lead qualifier</span>
-                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', color: 'var(--brand-primary-dark)', background: '#73CF6F', padding: '2px 7px', borderRadius: 999 }}>AUTO</span>
+                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', color: 'var(--brand-primary-dark)', background: 'var(--brand-accent-soft)', padding: '2px 7px', borderRadius: 999 }}>AUTO</span>
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(21,81,75,.55)', marginTop: 4, maxWidth: 460, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 4, maxWidth: 460, lineHeight: 1.5 }}>
                 Greets a first-time chat (a Click-to-WhatsApp ad tap), asks the 5 qualifying questions one at a time, then hands the chat to you and fires your Meta conversion event. It steps aside the moment you reply in a chat.
               </div>
             </div>
-            <div onClick={() => setS({ ...s, ai_qualify_enabled: !s.ai_qualify_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.ai_qualify_enabled ? '#2E9E4F' : 'rgba(21,81,75,.22)' }}>
+            <div onClick={() => setS({ ...s, ai_qualify_enabled: !s.ai_qualify_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.ai_qualify_enabled ? '#2E9E4F' : 'rgba(27,76,94,.22)' }}>
               <span style={{ position: 'absolute', top: 2, left: s.ai_qualify_enabled ? 19 : 2, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 2px rgba(0,0,0,.2)' }} />
             </div>
           </div>
         </div>
 
         {/* Auto-reply */}
-        <div style={{ background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 16, padding: 22, marginBottom: 18 }}>
+        <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22, marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: s.auto_reply_enabled ? 16 : 0 }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>Auto-reply to new leads</div>
-              <div style={{ fontSize: 12, color: 'rgba(21,81,75,.55)', marginTop: 2 }}>Send a template automatically when a new lead comes in.</div>
+              <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>Send a template automatically when a new lead comes in.</div>
             </div>
-            <div onClick={() => setS({ ...s, auto_reply_enabled: !s.auto_reply_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.auto_reply_enabled ? '#2E9E4F' : 'rgba(21,81,75,.22)' }}>
+            <div onClick={() => setS({ ...s, auto_reply_enabled: !s.auto_reply_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.auto_reply_enabled ? '#2E9E4F' : 'rgba(27,76,94,.22)' }}>
               <span style={{ position: 'absolute', top: 2, left: s.auto_reply_enabled ? 19 : 2, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 2px rgba(0,0,0,.2)' }} />
             </div>
           </div>
@@ -121,12 +121,12 @@ export default function WhatsAppSettings() {
         </div>
 
         {/* Connection / webhook */}
-        <div style={{ background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 16, padding: 22 }}>
+        <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)', marginBottom: 4 }}>Connection</div>
-          <div style={{ fontSize: 12, color: 'rgba(21,81,75,.55)', marginBottom: 16 }}>Use this URL in Meta → WhatsApp → Configuration → Webhook.</div>
+          <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginBottom: 16 }}>Use this URL in Meta → WhatsApp → Configuration → Webhook.</div>
           <Field label="WEBHOOK URL">
             <div style={{ display: 'flex', gap: 8 }}>
-              <input readOnly value={WEBHOOK_URL} style={{ ...inputStyle, fontSize: 12.5, color: 'rgba(21,81,75,.7)', background: '#F6FAF6' }} />
+              <input readOnly value={WEBHOOK_URL} style={{ ...inputStyle, fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: '#F6FAF6' }} />
               <button onClick={copyWebhook} style={{ flexShrink: 0, background: 'var(--brand-primary)', color: '#EAF6E4', border: 'none', fontSize: 12.5, fontWeight: 700, padding: '0 16px', borderRadius: 10, cursor: 'pointer' }}>{copied ? 'Copied' : 'Copy'}</button>
             </div>
           </Field>

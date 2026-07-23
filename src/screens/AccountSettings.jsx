@@ -7,9 +7,9 @@ import { useIsMobile } from '../useIsMobile';
 import { IconPlus, IconX, IconWhatsApp, IconDb, IconMail, IconZap, IconTemplate, IconPeople } from '../icons';
 import { enablePush, disablePush, pushStatus, pushSupported } from '../push';
 
-const CARD = { background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 16, padding: 22, marginBottom: 18 };
-const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(21,81,75,.18)', borderRadius: 9, padding: '10px 12px', fontSize: 13, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit', background: '#fff' };
-const labelStyle = { fontSize: 11.5, fontWeight: 700, color: 'rgba(21,81,75,.6)', display: 'block', marginBottom: 6, letterSpacing: '.03em' };
+const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22, marginBottom: 18 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 9, padding: '10px 12px', fontSize: 13, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit', background: '#fff' };
+const labelStyle = { fontSize: 11.5, fontWeight: 700, color: 'rgba(27,76,94,.6)', display: 'block', marginBottom: 6, letterSpacing: '.03em' };
 
 function SectionHead({ Icon, title, sub }) {
   return (
@@ -17,7 +17,7 @@ function SectionHead({ Icon, title, sub }) {
       <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EAF6E4', color: '#2E9E4F', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8, flexShrink: 0 }}><Icon size={20} /></div>
       <div>
         <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>{title}</div>
-        <div style={{ fontSize: 12, color: 'rgba(21,81,75,.55)' }}>{sub}</div>
+        <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)' }}>{sub}</div>
       </div>
     </div>
   );
@@ -25,11 +25,11 @@ function SectionHead({ Icon, title, sub }) {
 
 function ConnRow({ Icon, label, value, ok }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(21,81,75,.06)' }}>
-      <div style={{ width: 32, height: 32, borderRadius: 9, background: '#F2F8F2', color: '#356E63', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 7, flexShrink: 0 }}><Icon size={16} /></div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
+      <div style={{ width: 32, height: 32, borderRadius: 9, background: '#F2F8F2', color: 'var(--brand-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 7, flexShrink: 0 }}><Icon size={16} /></div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)' }}>{label}</div>
-        <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+        <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
       </div>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: ok ? '#2E9E4F' : '#B6743A', background: ok ? '#EAF6E4' : '#FFF1DC', padding: '4px 11px', borderRadius: 999, flexShrink: 0 }}>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: ok ? '#2E9E4F' : '#D9A93B' }} />{ok ? 'Connected' : 'Setup needed'}
@@ -110,7 +110,7 @@ export default function AccountSettings() {
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
       <header style={{ padding: isMobile ? '18px 16px 14px' : '22px 30px 18px' }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(21,81,75,.45)' }}>WORKSPACE</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.45)' }}>WORKSPACE</div>
         <h1 style={{ margin: '5px 0 0', fontSize: 23, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>Account Settings</h1>
       </header>
 
@@ -122,7 +122,7 @@ export default function AccountSettings() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {stages.map((s, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(21,81,75,.4)', width: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(27,76,94,.4)', width: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
                 <input value={s} onChange={e => setStage(i, e.target.value)} placeholder="Stage name" style={{ ...inputStyle, flex: 1 }} />
                 <button onClick={() => moveStage(i, -1)} disabled={i === 0} title="Move up" style={{ ...arrowBtn, opacity: i === 0 ? 0.35 : 1 }}>↑</button>
                 <button onClick={() => moveStage(i, 1)} disabled={i === stages.length - 1} title="Move down" style={{ ...arrowBtn, opacity: i === stages.length - 1 ? 0.35 : 1 }}>↓</button>
@@ -130,26 +130,26 @@ export default function AccountSettings() {
               </div>
             ))}
           </div>
-          <button onClick={addStage} style={{ marginTop: 10, border: '1px dashed rgba(21,81,75,.3)', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconPlus size={14} /> Add stage</button>
+          <button onClick={addStage} style={{ marginTop: 10, border: '1px dashed rgba(27,76,94,.3)', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconPlus size={14} /> Add stage</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-            <button onClick={saveStages} disabled={savingStages} style={{ background: '#73CF6F', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: savingStages ? 'default' : 'pointer', opacity: savingStages ? 0.6 : 1 }}>{savingStages ? 'Saving…' : 'Save pipeline'}</button>
+            <button onClick={saveStages} disabled={savingStages} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: savingStages ? 'default' : 'pointer', opacity: savingStages ? 0.6 : 1 }}>{savingStages ? 'Saving…' : 'Save pipeline'}</button>
             {stageMsg && <span style={{ fontSize: 12.5, fontWeight: 600, color: stageMsg.includes('saved') ? '#2E9E4F' : '#C7503B' }}>{stageMsg}</span>}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(21,81,75,.45)', marginTop: 10, lineHeight: 1.5 }}>Renaming a stage won't move leads already in the old one — keep existing names if you have active leads, or re-drag them after.</div>
+          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>Renaming a stage won't move leads already in the old one — keep existing names if you have active leads, or re-drag them after.</div>
         </div>
 
         {/* ── TEAM ── */}
         <div style={CARD}>
           <SectionHead Icon={IconPeople} title="Team" sub="People in your workspace." />
-          {team.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(21,81,75,.5)', marginBottom: 12 }}>No team members added yet.</div>}
+          {team.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)', marginBottom: 12 }}>No team members added yet.</div>}
           {team.map(m => (
-            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderBottom: '1px solid rgba(21,81,75,.06)' }}>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#356E63', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{(m.name || m.email || '?').charAt(0).toUpperCase()}</div>
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{(m.name || m.email || '?').charAt(0).toUpperCase()}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)' }}>{m.name || '—'}</div>
-                <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email || ''}</div>
+                <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email || ''}</div>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)', background: 'rgba(21,81,75,.07)', padding: '3px 10px', borderRadius: 999 }}>{m.role || 'Member'}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)', background: 'rgba(27,76,94,.07)', padding: '3px 10px', borderRadius: 999 }}>{m.role || 'Member'}</span>
               <button onClick={() => handleRemoveMember(m.id)} title="Remove" style={{ width: 30, height: 30, border: 'none', background: 'transparent', cursor: 'pointer', color: 'rgba(199,80,59,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
             </div>
           ))}
@@ -161,13 +161,13 @@ export default function AccountSettings() {
             </select>
             <button onClick={handleAddMember} disabled={addingMember} style={{ background: 'var(--brand-primary)', border: 'none', color: '#EAF6E4', fontSize: 13, fontWeight: 700, padding: '10px 16px', borderRadius: 10, cursor: addingMember ? 'default' : 'pointer', flex: '0 0 auto' }}>{addingMember ? 'Adding…' : 'Add'}</button>
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(21,81,75,.45)', marginTop: 10, lineHeight: 1.5 }}>This is your team directory. To give someone a login, also create their user in Supabase → Authentication.</div>
+          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>This is your team directory. To give someone a login, also create their user in Supabase → Authentication.</div>
         </div>
 
         {/* ── CONNECTIONS ── */}
         <div style={CARD}>
           <SectionHead Icon={IconZap} title="Connections" sub="What's wired up in this workspace." />
-          {!conn ? <div style={{ fontSize: 12.5, color: 'rgba(21,81,75,.5)' }}>Loading…</div> : (
+          {!conn ? <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>Loading…</div> : (
             <div>
               <ConnRow Icon={IconWhatsApp} label="WhatsApp number" value={conn.number || 'Not set'} ok={!!conn.number} />
               <ConnRow Icon={IconZap} label="Lead intake (Meta → n8n)" value="Auto-capturing new leads" ok={true} />
@@ -183,7 +183,7 @@ export default function AccountSettings() {
         <div style={CARD}>
           <SectionHead Icon={IconMail} title="Phone notifications" sub="Get a push on this device when a new Meta lead arrives." />
           {push === 'unsupported' ? (
-            <div style={{ fontSize: 12.5, color: 'rgba(21,81,75,.55)', lineHeight: 1.55 }}>
+            <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.55)', lineHeight: 1.55 }}>
               This browser can’t do push. <b>On iPhone:</b> add this app to your Home Screen first (Safari → Share → Add to Home Screen), then open it from the icon and enable here. Works directly in Chrome on Android/desktop.
             </div>
           ) : push === 'denied' ? (
@@ -193,19 +193,19 @@ export default function AccountSettings() {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <button onClick={togglePush} disabled={pushBusy} style={{
-                background: push === 'enabled' ? '#fff' : '#73CF6F',
+                background: push === 'enabled' ? '#fff' : 'var(--brand-accent-soft)',
                 color: push === 'enabled' ? '#C7503B' : 'var(--brand-primary-dark)',
                 border: push === 'enabled' ? '1px solid rgba(199,80,59,.3)' : 'none',
                 fontSize: 13.5, fontWeight: 800, padding: '11px 18px', borderRadius: 10, cursor: pushBusy ? 'default' : 'pointer', opacity: pushBusy ? 0.7 : 1,
               }}>
                 {pushBusy ? 'Working…' : push === 'enabled' ? 'Turn off notifications' : 'Enable notifications'}
               </button>
-              <span style={{ fontSize: 12, fontWeight: 700, color: push === 'enabled' ? '#2E9E4F' : 'rgba(21,81,75,.5)' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: push === 'enabled' ? '#2E9E4F' : 'rgba(27,76,94,.5)' }}>
                 {push === 'enabled' ? '● On for this device' : '○ Off'}
               </span>
             </div>
           )}
-          {pushMsg && <div style={{ fontSize: 12, color: 'rgba(21,81,75,.7)', marginTop: 10, lineHeight: 1.5 }}>{pushMsg}</div>}
+          {pushMsg && <div style={{ fontSize: 12, color: 'rgba(27,76,94,.7)', marginTop: 10, lineHeight: 1.5 }}>{pushMsg}</div>}
         </div>
 
       </div>
@@ -213,4 +213,4 @@ export default function AccountSettings() {
   );
 }
 
-const arrowBtn = { width: 30, height: 34, flexShrink: 0, border: '1px solid rgba(21,81,75,.16)', background: '#fff', borderRadius: 8, cursor: 'pointer', color: 'var(--brand-primary)', fontSize: 14, fontWeight: 700 };
+const arrowBtn = { width: 30, height: 34, flexShrink: 0, border: '1px solid rgba(27,76,94,.16)', background: '#fff', borderRadius: 8, cursor: 'pointer', color: 'var(--brand-primary)', fontSize: 14, fontWeight: 700 };

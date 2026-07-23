@@ -11,21 +11,21 @@ const FOREST = 'var(--brand-primary)';
 const LEAD_STATUSES = ['New', 'Warm', 'Hot', 'Won', 'Lost'];
 
 const CAMP_STATUS = {
-  draft: { bg: 'rgba(21,81,75,.08)', fg: 'rgba(21,81,75,.6)' },
+  draft: { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.6)' },
   sending: { bg: '#EAF7EC', fg: '#2E7D44' },
   paused: { bg: '#FFF1DC', fg: '#B6743A' },
-  completed: { bg: 'rgba(21,81,75,.10)', fg: 'var(--brand-primary)' },
+  completed: { bg: 'rgba(27,76,94,.10)', fg: 'var(--brand-primary)' },
 };
 const DELIV = {
   queued: { bg: '#FFF7E8', fg: '#B6743A', label: 'Queued' },
   retry: { bg: '#FFF1DC', fg: '#B6743A', label: 'Retrying' },
-  sent: { bg: 'rgba(21,81,75,.08)', fg: 'rgba(21,81,75,.7)', label: 'Sent' },
+  sent: { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.7)', label: 'Sent' },
   delivered: { bg: '#EAF7EC', fg: '#2E7D44', label: 'Delivered' },
   read: { bg: '#E4F5E9', fg: '#1E7D3E', label: 'Read' },
   failed: { bg: '#FDECEA', fg: '#C7503B', label: 'Failed' },
 };
-const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(21,81,75,.18)', borderRadius: 9, padding: '10px 12px', fontSize: 13.5, color: FOREST, outline: 'none', fontFamily: 'inherit', background: '#fff' };
-const labelStyle = { fontSize: 11.5, fontWeight: 700, color: 'rgba(21,81,75,.6)', display: 'block', marginBottom: 6 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 9, padding: '10px 12px', fontSize: 13.5, color: FOREST, outline: 'none', fontFamily: 'inherit', background: '#fff' };
+const labelStyle = { fontSize: 11.5, fontWeight: 700, color: 'rgba(27,76,94,.6)', display: 'block', marginBottom: 6 };
 
 // Human "in 3h", "in 12m", "any moment" for a future ISO timestamp.
 function fromNow(iso) {
@@ -58,14 +58,14 @@ function RecipientRow({ r }) {
   // clean first-try success, and not when a recovered/gave-up phrase already says it.
   const showAttempts = (r.attempts || 0) > 0 && !recovered && !gaveUp && !(delivered && (r.attempts || 0) <= 1);
   return (
-    <div style={{ background: '#fff', border: '1px solid rgba(21,81,75,.08)', borderRadius: 9 }}>
+    <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.08)', borderRadius: 9 }}>
       <div onClick={() => canExpand && setOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '9px 12px', cursor: canExpand ? 'pointer' : 'default' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12.5, fontWeight: 600, color: FOREST, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {canExpand && <span style={{ color: 'rgba(21,81,75,.4)', marginRight: 5 }}>{open ? '▾' : '▸'}</span>}
+            {canExpand && <span style={{ color: 'rgba(27,76,94,.4)', marginRight: 5 }}>{open ? '▾' : '▸'}</span>}
             {r.first_name || r.wa_id}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(21,81,75,.45)' }}>
+          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>
             {r.wa_id}
             {showAttempts ? ` · attempt ${r.attempts}${r.max_attempts ? `/${r.max_attempts}` : ''}` : ''}
             {recovered ? <span style={{ color: '#2E7D44', fontWeight: 700 }}> · recovered on try {r.attempts}</span> : null}
@@ -77,12 +77,12 @@ function RecipientRow({ r }) {
         <span style={{ fontSize: 11, fontWeight: 700, color: d.fg, background: d.bg, padding: '3px 10px', borderRadius: 999, flexShrink: 0 }}>{d.label}</span>
       </div>
       {open && canExpand && (
-        <div style={{ borderTop: '1px solid rgba(21,81,75,.06)', padding: '8px 12px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ borderTop: '1px solid rgba(27,76,94,.06)', padding: '8px 12px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {log.map((a, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 11, alignItems: 'baseline' }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: a.ok ? '#2E7D44' : '#C7503B', flexShrink: 0, marginTop: 3 }} />
               <span style={{ fontWeight: 700, color: FOREST, flexShrink: 0 }}>Try {a.n ?? i + 1}</span>
-              <span style={{ color: 'rgba(21,81,75,.5)', flexShrink: 0 }}>{fmtTime(a.at)}</span>
+              <span style={{ color: 'rgba(27,76,94,.5)', flexShrink: 0 }}>{fmtTime(a.at)}</span>
               <span style={{ color: a.ok ? '#2E7D44' : '#C7503B' }}>
                 {a.ok ? 'sent' : `failed${a.code ? ` (#${a.code})` : ''}${a.error ? ` — ${a.error}` : ''}`}
               </span>
@@ -92,7 +92,7 @@ function RecipientRow({ r }) {
             <div style={{ display: 'flex', gap: 8, fontSize: 11, alignItems: 'baseline', opacity: 0.7 }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: '#B6743A', flexShrink: 0, marginTop: 3 }} />
               <span style={{ fontWeight: 700, color: '#B6743A', flexShrink: 0 }}>Next</span>
-              <span style={{ color: 'rgba(21,81,75,.5)' }}>{fmtTime(r.next_attempt_at)} ({fromNow(r.next_attempt_at)})</span>
+              <span style={{ color: 'rgba(27,76,94,.5)' }}>{fmtTime(r.next_attempt_at)} ({fromNow(r.next_attempt_at)})</span>
             </div>
           )}
         </div>
@@ -103,9 +103,9 @@ function RecipientRow({ r }) {
 
 function Stat({ label, value, color }) {
   return (
-    <div style={{ background: '#F6FAF6', border: '1px solid rgba(21,81,75,.08)', borderRadius: 10, padding: '10px 14px', flex: 1, minWidth: 78 }}>
+    <div style={{ background: '#F6FAF6', border: '1px solid rgba(27,76,94,.08)', borderRadius: 10, padding: '10px 14px', flex: 1, minWidth: 78 }}>
       <div style={{ fontSize: 22, fontWeight: 900, color: color || FOREST }}>{value}</div>
-      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(21,81,75,.5)' }}>{label}</div>
+      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.5)' }}>{label}</div>
     </div>
   );
 }
@@ -120,37 +120,37 @@ export default function Campaigns() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: '#EEF3F0' }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: 'var(--app-bg)' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '16px 12px 32px' : '26px 28px 40px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, color: FOREST }}>Campaigns</div>
-            <div style={{ fontSize: 13, color: 'rgba(21,81,75,.55)' }}>Send an approved template to a segment of your leads</div>
+            <div style={{ fontSize: 13, color: 'rgba(27,76,94,.55)' }}>Send an approved template to a segment of your leads</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={load} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid rgba(21,81,75,.18)', color: FOREST, fontSize: 13, fontWeight: 700, padding: '9px 14px', borderRadius: 10, cursor: 'pointer' }}><IconRefresh size={14} /> Refresh</motion.button>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={() => setBuilding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#73CF6F', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 13, fontWeight: 800, padding: '9px 16px', borderRadius: 10, cursor: 'pointer' }}><IconPlus size={14} /> New campaign</motion.button>
+            <motion.button whileTap={{ scale: 0.96 }} onClick={load} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid rgba(27,76,94,.18)', color: FOREST, fontSize: 13, fontWeight: 700, padding: '9px 14px', borderRadius: 10, cursor: 'pointer' }}><IconRefresh size={14} /> Refresh</motion.button>
+            <motion.button whileTap={{ scale: 0.96 }} onClick={() => setBuilding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 13, fontWeight: 800, padding: '9px 16px', borderRadius: 10, cursor: 'pointer' }}><IconPlus size={14} /> New campaign</motion.button>
           </div>
         </div>
 
         {!list ? (
-          <div style={{ padding: '60px 0', textAlign: 'center', color: 'rgba(21,81,75,.5)' }}>Loading…</div>
+          <div style={{ padding: '60px 0', textAlign: 'center', color: 'rgba(27,76,94,.5)' }}>Loading…</div>
         ) : list.length === 0 ? (
-          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'rgba(21,81,75,.55)', fontSize: 14 }}>No campaigns yet. Click <b>New campaign</b> to send your first bulk template.</div>
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: 'rgba(27,76,94,.55)', fontSize: 14 }}>No campaigns yet. Click <b>New campaign</b> to send your first bulk template.</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {list.map((c) => {
               const st = CAMP_STATUS[c.status] || CAMP_STATUS.draft;
               return (
-                <button key={c.id} onClick={() => setDetailId(c.id)} style={{ textAlign: 'left', background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 14, padding: isMobile ? 14 : '16px 18px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button key={c.id} onClick={() => setDetailId(c.id)} style={{ textAlign: 'left', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: isMobile ? 14 : '16px 18px', cursor: 'pointer', fontFamily: 'inherit' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: FOREST }}>{c.name}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(21,81,75,.5)', marginTop: 2 }}>Template: {c.template_name} · {new Date(c.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(27,76,94,.5)', marginTop: 2 }}>Template: {c.template_name} · {new Date(c.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'capitalize', color: st.fg, background: st.bg, padding: '4px 11px', borderRadius: 999 }}>{c.status}</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 12.5, color: 'rgba(21,81,75,.7)', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 12.5, color: 'rgba(27,76,94,.7)', flexWrap: 'wrap' }}>
                     <span><b style={{ color: FOREST }}>{c.total}</b> total</span>
                     <span style={{ color: '#2E7D44' }}><b>{c.sent}</b> sent</span>
                     <span style={{ color: '#B6743A' }}><b>{c.queued}</b> pending</span>
@@ -158,7 +158,7 @@ export default function Campaigns() {
                     {c.retrying > 0 && <span style={{ color: '#B6743A' }}>↻ <b>{c.retrying}</b> retrying</span>}
                   </div>
                   {(c.recovered > 0 || c.gaveUp > 0) && (
-                    <div style={{ marginTop: 7, fontSize: 11.5, color: 'rgba(21,81,75,.6)' }}>
+                    <div style={{ marginTop: 7, fontSize: 11.5, color: 'rgba(27,76,94,.6)' }}>
                       Retry results: {[
                         c.recovered > 0 ? `${c.recovered} recovered` : null,
                         c.gaveUp > 0 ? `${c.gaveUp} still failed` : null,
@@ -186,7 +186,7 @@ function Modal({ children, onClose, isMobile }) {
       style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.4)', zIndex: 400, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : 20 }}>
       <motion.div initial={{ y: isMobile ? '100%' : 20, opacity: isMobile ? 1 : 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: isMobile ? '100%' : 20, opacity: isMobile ? 1 : 0 }} transition={{ type: 'spring', stiffness: 380, damping: 34 }}
         onClick={(e) => e.stopPropagation()}
-        style={{ background: '#EEF3F0', width: isMobile ? '100%' : 560, maxWidth: '100%', maxHeight: isMobile ? '92vh' : '88vh', overflowY: 'auto', borderRadius: isMobile ? '20px 20px 0 0' : 18, padding: 22 }}>
+        style={{ background: 'var(--app-bg)', width: isMobile ? '100%' : 560, maxWidth: '100%', maxHeight: isMobile ? '92vh' : '88vh', overflowY: 'auto', borderRadius: isMobile ? '20px 20px 0 0' : 18, padding: 22 }}>
         {children}
       </motion.div>
     </motion.div>
@@ -195,7 +195,7 @@ function Modal({ children, onClose, isMobile }) {
 
 function Chip({ on, onClick, children }) {
   return (
-    <button onClick={onClick} style={{ fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 999, cursor: 'pointer', border: '1px solid ' + (on ? FOREST : 'rgba(21,81,75,.16)'), background: on ? FOREST : '#fff', color: on ? '#fff' : 'rgba(21,81,75,.7)' }}>{children}</button>
+    <button onClick={onClick} style={{ fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 999, cursor: 'pointer', border: '1px solid ' + (on ? FOREST : 'rgba(27,76,94,.16)'), background: on ? FOREST : '#fff', color: on ? '#fff' : 'rgba(27,76,94,.7)' }}>{children}</button>
   );
 }
 
@@ -259,7 +259,7 @@ function Builder({ onClose, onDone, isMobile }) {
     <Modal onClose={onClose} isMobile={isMobile}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div style={{ fontSize: 17, fontWeight: 800, color: FOREST }}>New campaign</div>
-        <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(21,81,75,.5)' }}><IconX size={16} /></button>
+        <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(27,76,94,.5)' }}><IconX size={16} /></button>
       </div>
 
       <label style={labelStyle}>Campaign name</label>
@@ -270,13 +270,13 @@ function Builder({ onClose, onDone, isMobile }) {
         <option value="" disabled>Choose a template…</option>
         {templates.map((t) => <option key={t.name} value={t.name}>{t.name} ({t.language})</option>)}
       </select>
-      {tpl && (tpl.body ? <div style={{ fontSize: 12, color: 'rgba(21,81,75,.6)', background: '#fff', border: '1px solid rgba(21,81,75,.1)', borderRadius: 9, padding: '10px 12px', marginBottom: 12, lineHeight: 1.5 }}>{tpl.body}</div> : null)}
+      {tpl && (tpl.body ? <div style={{ fontSize: 12, color: 'rgba(27,76,94,.6)', background: '#fff', border: '1px solid rgba(27,76,94,.1)', borderRadius: 9, padding: '10px 12px', marginBottom: 12, lineHeight: 1.5 }}>{tpl.body}</div> : null)}
       {needsImage && (
         <div style={{ marginBottom: 12 }}>
           <label style={labelStyle}>Header image (this template needs an image)</label>
           <input ref={imgInputRef} type="file" accept="image/*" onChange={onImageFile} style={{ display: 'none' }} />
           <button onClick={() => imgInputRef.current?.click()} disabled={imgUploading}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px dashed rgba(21,81,75,.35)', color: FOREST, fontSize: 13, fontWeight: 700, padding: '10px 14px', borderRadius: 9, cursor: imgUploading ? 'default' : 'pointer' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px dashed rgba(27,76,94,.35)', color: FOREST, fontSize: 13, fontWeight: 700, padding: '10px 14px', borderRadius: 9, cursor: imgUploading ? 'default' : 'pointer' }}>
             <IconClip size={16} /> {imgUploading ? 'Uploading…' : (headerImage ? 'Change image' : 'Upload image')}
           </button>
           {headerImage && <img src={headerImage} alt="" style={{ marginTop: 8, display: 'block', maxWidth: '100%', maxHeight: 130, borderRadius: 8, objectFit: 'cover' }} />}
@@ -289,7 +289,7 @@ function Builder({ onClose, onDone, isMobile }) {
         </div>
       ))}
 
-      <div style={{ height: 1, background: 'rgba(21,81,75,.1)', margin: '16px 0' }} />
+      <div style={{ height: 1, background: 'rgba(27,76,94,.1)', margin: '16px 0' }} />
       <div style={{ fontSize: 13, fontWeight: 800, color: FOREST, marginBottom: 12 }}>Audience</div>
 
       <label style={labelStyle}>Lead age</label>
@@ -318,19 +318,19 @@ function Builder({ onClose, onDone, isMobile }) {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
         {[1, 2, 3].map((n) => <Chip key={n} on={maxRetries === n} onClick={() => setMaxRetries(n)}>{n} {n === 1 ? 'retry' : 'retries'}</Chip>)}
       </div>
-      <div style={{ fontSize: 11, color: 'rgba(21,81,75,.45)', marginBottom: 16, lineHeight: 1.5 }}>How many extra attempts to make for anyone who fails (e.g. Meta rate-caps), spread over ~24h.</div>
+      <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginBottom: 16, lineHeight: 1.5 }}>How many extra attempts to make for anyone who fails (e.g. Meta rate-caps), spread over ~24h.</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button onClick={preview} style={{ background: '#fff', border: '1px solid rgba(21,81,75,.18)', color: FOREST, fontSize: 12.5, fontWeight: 700, padding: '9px 14px', borderRadius: 9, cursor: 'pointer' }}>Preview recipients</button>
+        <button onClick={preview} style={{ background: '#fff', border: '1px solid rgba(27,76,94,.18)', color: FOREST, fontSize: 12.5, fontWeight: 700, padding: '9px 14px', borderRadius: 9, cursor: 'pointer' }}>Preview recipients</button>
         {count !== null && <span style={{ fontSize: 13, fontWeight: 700, color: FOREST }}>{count} {count === 1 ? 'person' : 'people'}{(!dateFrom && !dateTo && !quals.length && !statuses.length) ? ' (everyone)' : ''}</span>}
       </div>
 
       {err && <div style={{ fontSize: 12.5, color: '#C0392B', marginBottom: 12 }}>{err}</div>}
 
-      <button onClick={submit} disabled={busy} style={{ width: '100%', background: '#73CF6F', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 11, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
+      <button onClick={submit} disabled={busy} style={{ width: '100%', background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 11, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
         {busy ? 'Starting…' : 'Create & send'}
       </button>
-      <div style={{ fontSize: 11, color: 'rgba(21,81,75,.45)', marginTop: 10, lineHeight: 1.5 }}>Sends an approved template to everyone matching the filters. Delivery is throttled; failed/rate-capped messages retry over 24h.</div>
+      <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>Sends an approved template to everyone matching the filters. Delivery is throttled; failed/rate-capped messages retry over 24h.</div>
     </Modal>
   );
 }
@@ -359,12 +359,12 @@ function Detail({ id, onClose, isMobile }) {
 
   return (
     <Modal onClose={onClose} isMobile={isMobile}>
-      {!c ? <div style={{ padding: 30, textAlign: 'center', color: 'rgba(21,81,75,.5)' }}>Loading…</div> : (
+      {!c ? <div style={{ padding: 30, textAlign: 'center', color: 'rgba(27,76,94,.5)' }}>Loading…</div> : (
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
             <div><div style={{ fontSize: 17, fontWeight: 800, color: FOREST }}>{c.name}</div>
-              <div style={{ fontSize: 12, color: 'rgba(21,81,75,.5)', marginTop: 2 }}>Template: {c.template_name}</div></div>
-            <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(21,81,75,.5)' }}><IconX size={16} /></button>
+              <div style={{ fontSize: 12, color: 'rgba(27,76,94,.5)', marginTop: 2 }}>Template: {c.template_name}</div></div>
+            <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'rgba(27,76,94,.5)' }}><IconX size={16} /></button>
           </div>
 
           <div style={{ display: 'flex', gap: 8, margin: '14px 0', flexWrap: 'wrap' }}>
@@ -380,13 +380,13 @@ function Detail({ id, onClose, isMobile }) {
                 <IconRefresh size={13} />
                 <span style={{ fontSize: 12.5, fontWeight: 800, color: '#B6743A' }}>Retry activity</span>
               </div>
-              <div style={{ fontSize: 11.8, color: 'rgba(21,81,75,.7)', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 11.8, color: 'rgba(27,76,94,.7)', lineHeight: 1.6 }}>
                 {c.retryAttempts > 0 && <div><strong>{c.retryAttempts}</strong> retry attempt{c.retryAttempts > 1 ? 's' : ''} made so far.</div>}
                 {c.recovered > 0 && <div style={{ color: '#2E7D44' }}>✓ <strong>{c.recovered}</strong> recovered — delivered on a retry.</div>}
                 {c.gaveUp > 0 && <div style={{ color: '#C7503B' }}>✗ <strong>{c.gaveUp}</strong> still failed after retrying.</div>}
                 {c.retrying > 0
                   ? <div><strong>{c.retrying}</strong> recipient{c.retrying > 1 ? 's' : ''} waiting to retry{c.nextRetryAt ? ` — next ${fromNow(c.nextRetryAt)}` : ''}.</div>
-                  : (c.retryAttempts > 0 && <div style={{ color: 'rgba(21,81,75,.5)' }}>All retries finished — nothing else queued.</div>)}
+                  : (c.retryAttempts > 0 && <div style={{ color: 'rgba(27,76,94,.5)' }}>All retries finished — nothing else queued.</div>)}
               </div>
             </div>
           )}
@@ -402,24 +402,24 @@ function Detail({ id, onClose, isMobile }) {
               <div style={{ fontSize: 12.5, fontWeight: 700, color: '#C7503B', marginBottom: 8 }}>
                 {c.failed} message{c.failed > 1 ? 's' : ''} didn’t get delivered
               </div>
-              <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.6)', lineHeight: 1.5, marginBottom: 10 }}>
+              <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.6)', lineHeight: 1.5, marginBottom: 10 }}>
                 Re-queue them for another try, spread over the next 24 hours. Meta rate-caps (error 131049) often clear on a later attempt.
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <label style={{ fontSize: 12, color: 'rgba(21,81,75,.7)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <label style={{ fontSize: 12, color: 'rgba(27,76,94,.7)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   Retries
-                  <select value={retries} onChange={(e) => setRetries(Number(e.target.value))} style={{ fontSize: 12.5, fontWeight: 700, color: FOREST, border: '1px solid rgba(21,81,75,.2)', borderRadius: 8, padding: '5px 8px', background: '#fff', cursor: 'pointer' }}>
+                  <select value={retries} onChange={(e) => setRetries(Number(e.target.value))} style={{ fontSize: 12.5, fontWeight: 700, color: FOREST, border: '1px solid rgba(27,76,94,.2)', borderRadius: 8, padding: '5px 8px', background: '#fff', cursor: 'pointer' }}>
                     {[1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
-                <button onClick={retryFailed} disabled={retrying} style={{ background: '#73CF6F', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 12.5, fontWeight: 800, padding: '9px 16px', borderRadius: 9, cursor: retrying ? 'default' : 'pointer', opacity: retrying ? 0.7 : 1 }}>
+                <button onClick={retryFailed} disabled={retrying} style={{ background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 12.5, fontWeight: 800, padding: '9px 16px', borderRadius: 9, cursor: retrying ? 'default' : 'pointer', opacity: retrying ? 0.7 : 1 }}>
                   {retrying ? 'Re-queuing…' : `Retry ${c.failed} failed`}
                 </button>
               </div>
             </div>
           )}
 
-          <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(21,81,75,.55)', margin: '4px 0 8px' }}>RECIPIENTS</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: 'rgba(27,76,94,.55)', margin: '4px 0 8px' }}>RECIPIENTS</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {c.recipients.map((r) => <RecipientRow key={r.id} r={r} />)}
           </div>

@@ -63,7 +63,7 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EEF3F0', color: 'rgba(21,81,75,.5)', fontFamily: 'var(--font-sans)', fontSize: 14 }}>
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--app-bg)', color: 'rgba(27,76,94,.5)', fontFamily: 'var(--font-sans)', fontSize: 14 }}>
         Loading…
       </div>
     );
@@ -102,16 +102,16 @@ export default function App() {
 
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', width: '100%', overflow: 'hidden', background: '#EEF3F0', fontFamily: 'var(--font-sans)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', width: '100%', overflow: 'hidden', background: 'var(--app-bg)', fontFamily: 'var(--font-sans)' }}>
         {/* Safe-area (notch/status-bar) spacer + Back button on pushed sub-screens */}
-        <div style={{ paddingTop: 'env(safe-area-inset-top)', background: '#EEF3F0', flexShrink: 0 }}>
+        <div style={{ paddingTop: 'env(safe-area-inset-top)', background: 'var(--app-bg)', flexShrink: 0 }}>
           {canGoBack && (
             <button onClick={goBack} aria-label="Back" style={{ display: 'flex', alignItems: 'center', gap: 5, height: 44, padding: '0 12px', border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
               <IconBack size={18} /> Back
             </button>
           )}
         </div>
-        <main style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#EEF3F0' }}>
+        <main style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--app-bg)' }}>
           {content}
         </main>
         <BottomNav screen={screen} onNav={navigate} />
@@ -121,9 +121,9 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: '#EEF3F0', fontFamily: 'var(--font-sans)' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: 'var(--app-bg)', fontFamily: 'var(--font-sans)' }}>
       <Sidebar screen={screen} onNav={navigate} />
-      <main style={{ flex: 1, minWidth: 0, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#EEF3F0' }}>
+      <main style={{ flex: 1, minWidth: 0, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--app-bg)' }}>
         {content}
       </main>
       {DEMO && <DemoBadge />}

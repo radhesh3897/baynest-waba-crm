@@ -26,8 +26,8 @@ export function LeadAnswers({ attributes }) {
       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'var(--brand-primary)', marginBottom: 10 }}>LEAD ANSWERS</div>
       {entries.map(([k, v]) => (
         <div key={k} style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(21,81,75,.45)', marginBottom: 3 }}>{humanLabel(k)}</div>
-          <div style={{ border: '1px solid rgba(21,81,75,.13)', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, color: 'var(--brand-primary)', fontWeight: 500, lineHeight: 1.45, wordBreak: 'break-word' }}>{humanValue(v)}</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.45)', marginBottom: 3 }}>{humanLabel(k)}</div>
+          <div style={{ border: '1px solid rgba(27,76,94,.13)', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, color: 'var(--brand-primary)', fontWeight: 500, lineHeight: 1.45, wordBreak: 'break-word' }}>{humanValue(v)}</div>
         </div>
       ))}
     </div>
@@ -72,21 +72,21 @@ export default function ContactNotes({ contactId }) {
         value={text} onChange={e => setText(e.target.value)}
         onKeyDown={e => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); add(); } }}
         placeholder="Add a call note or remark…" rows={3}
-        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(21,81,75,.18)', borderRadius: 9, padding: '9px 11px', fontSize: 13, color: 'var(--brand-primary)', fontFamily: 'inherit', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
+        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 9, padding: '9px 11px', fontSize: 13, color: 'var(--brand-primary)', fontFamily: 'inherit', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
       />
       <button onClick={add} disabled={!canAdd}
-        style={{ marginTop: 8, width: '100%', background: canAdd ? '#73CF6F' : 'rgba(115,207,111,.5)', color: 'var(--brand-primary-dark)', border: 'none', borderRadius: 9, padding: '9px', fontSize: 12.5, fontWeight: 800, cursor: canAdd ? 'pointer' : 'default' }}>
+        style={{ marginTop: 8, width: '100%', background: canAdd ? 'var(--brand-accent-soft)' : 'rgba(115,207,111,.5)', color: 'var(--brand-primary-dark)', border: 'none', borderRadius: 9, padding: '9px', fontSize: 12.5, fontWeight: 800, cursor: canAdd ? 'pointer' : 'default' }}>
         {saving ? 'Saving…' : 'Add note'}
       </button>
 
       <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {loading && <div style={{ fontSize: 12, color: 'rgba(21,81,75,.5)' }}>Loading notes…</div>}
-        {!loading && notes.length === 0 && <div style={{ fontSize: 12, color: 'rgba(21,81,75,.45)', lineHeight: 1.5 }}>No notes yet. Log your first call remark above.</div>}
+        {loading && <div style={{ fontSize: 12, color: 'rgba(27,76,94,.5)' }}>Loading notes…</div>}
+        {!loading && notes.length === 0 && <div style={{ fontSize: 12, color: 'rgba(27,76,94,.45)', lineHeight: 1.5 }}>No notes yet. Log your first call remark above.</div>}
         {notes.map(n => (
-          <div key={n.id} style={{ background: '#F6FAF6', border: '1px solid rgba(21,81,75,.1)', borderRadius: 10, padding: '10px 11px' }}>
+          <div key={n.id} style={{ background: '#F6FAF6', border: '1px solid rgba(27,76,94,.1)', borderRadius: 10, padding: '10px 11px' }}>
             <div style={{ fontSize: 12.5, color: '#1B3A36', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{n.body}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 }}>
-              <span style={{ fontSize: 10.5, color: 'rgba(21,81,75,.45)', fontWeight: 600 }}>{fmtDateTime(n.created_at)}</span>
+              <span style={{ fontSize: 10.5, color: 'rgba(27,76,94,.45)', fontWeight: 600 }}>{fmtDateTime(n.created_at)}</span>
               <button onClick={() => remove(n.id)} title="Delete note" style={{ border: 'none', background: 'transparent', color: 'rgba(199,80,59,.7)', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: 0 }}>Delete</button>
             </div>
           </div>

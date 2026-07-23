@@ -32,14 +32,14 @@ export default function Login() {
     // On success, the onAuthStateChange listener in App swaps the view.
   }
 
-  const labelStyle = { display: 'block', fontSize: 11.5, fontWeight: 700, color: 'rgba(21,81,75,.6)', marginBottom: 7, letterSpacing: '.06em' };
-  const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(21,81,75,.16)', borderRadius: 11, padding: '12px 13px', fontSize: 14, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit', background: '#F6FAF8' };
+  const labelStyle = { display: 'block', fontSize: 11.5, fontWeight: 700, color: 'rgba(27,76,94,.6)', marginBottom: 7, letterSpacing: '.06em' };
+  const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.16)', borderRadius: 11, padding: '12px 13px', fontSize: 14, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit', background: 'var(--brand-tint-soft)' };
 
   return (
     <div style={{
       minHeight: '100dvh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20, boxSizing: 'border-box', fontFamily: 'var(--font-sans)',
-      background: 'radial-gradient(125% 125% at 50% 0%, #246B61 0%, var(--brand-primary) 40%, var(--brand-primary-dark) 100%)',
+      background: 'radial-gradient(125% 125% at 50% 0%, var(--brand-primary-light) 0%, var(--brand-primary) 40%, var(--brand-primary-dark) 100%)',
     }}>
       <div style={{ width: 'min(400px, 94vw)' }}>
         <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 20, padding: '34px 32px', boxShadow: '0 24px 60px rgba(8,30,27,.38)', border: '1px solid rgba(255,255,255,.5)' }}>
@@ -50,7 +50,7 @@ export default function Login() {
           </div>
 
           <h1 style={{ margin: '0 0 4px', textAlign: 'center', fontSize: 21, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>Welcome back</h1>
-          <p style={{ margin: '0 0 26px', textAlign: 'center', fontSize: 12.5, color: 'rgba(21,81,75,.55)' }}>Sign in to your WhatsApp inbox.</p>
+          <p style={{ margin: '0 0 26px', textAlign: 'center', fontSize: 12.5, color: 'rgba(27,76,94,.55)' }}>Sign in to your WhatsApp inbox.</p>
 
           <label style={labelStyle}>EMAIL ADDRESS</label>
           <input
@@ -69,7 +69,7 @@ export default function Login() {
             <button
               type="button" onClick={() => setShowPw(s => !s)}
               aria-label={showPw ? 'Hide password' : 'Show password'}
-              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(21,81,75,.5)', padding: 0 }}
+              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', padding: 0 }}
             >
               <EyeIcon off={showPw} />
             </button>
@@ -83,7 +83,7 @@ export default function Login() {
 
           <button
             type="submit" disabled={busy}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: busy ? 'rgba(21,81,75,.65)' : 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 15, fontWeight: 800, padding: '13px', borderRadius: 12, cursor: busy ? 'default' : 'pointer' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: busy ? 'rgba(27,76,94,.65)' : 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 15, fontWeight: 800, padding: '13px', borderRadius: 12, cursor: busy ? 'default' : 'pointer' }}
           >
             {busy ? 'Signing in…' : 'Sign in'}{!busy && <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>}
           </button>
@@ -94,7 +94,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => { localStorage.setItem('demo_mode', '1'); location.reload(); }}
-              style={{ width: '100%', marginTop: 12, background: 'transparent', color: 'var(--brand-primary)', border: '1.5px solid rgba(21,81,75,.25)', fontSize: 13.5, fontWeight: 700, padding: '11px', borderRadius: 12, cursor: 'pointer' }}
+              style={{ width: '100%', marginTop: 12, background: 'transparent', color: 'var(--brand-primary)', border: '1.5px solid rgba(27,76,94,.25)', fontSize: 13.5, fontWeight: 700, padding: '11px', borderRadius: 12, cursor: 'pointer' }}
             >
               View demo
             </button>

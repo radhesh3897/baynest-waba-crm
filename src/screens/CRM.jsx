@@ -17,36 +17,36 @@ const LEAD_SOURCES = [
 ];
 
 const STAGE_STYLE = {
-  New:  { col: '#EEF3F0', hd: '#E2EBE6', dot: 'rgba(21,81,75,.25)', fg: 'var(--brand-primary)', count: 'rgba(21,81,75,.08)' },
-  Cool: { col: '#EEF3F0', hd: '#E2EBE6', dot: 'rgba(21,81,75,.42)', fg: 'var(--brand-primary)', count: 'rgba(21,81,75,.08)' },
-  Warm: { col: '#EEF3F0', hd: '#E2EBE6', dot: 'rgba(21,81,75,.62)', fg: 'var(--brand-primary)', count: 'rgba(21,81,75,.10)' },
-  Hot:  { col: '#EEF3F0', hd: '#E2EBE6', dot: 'var(--brand-primary)',            fg: 'var(--brand-primary)', count: 'rgba(21,81,75,.13)' },
-  Won:  { col: '#EEF3F0', hd: '#E2EBE6', dot: '#73CF6F',            fg: 'var(--brand-primary)', count: 'rgba(115,207,111,.25)' },
-  Lost: { col: '#EEF3F0', hd: '#E2EBE6', dot: 'rgba(21,81,75,.18)', fg: 'rgba(21,81,75,.5)', count: 'rgba(21,81,75,.06)' },
+  New:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.25)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
+  Cool: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.42)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
+  Warm: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.62)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' },
+  Hot:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-primary)',            fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.13)' },
+  Won:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)',            fg: 'var(--brand-primary)', count: 'rgba(115,207,111,.25)' },
+  Lost: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
 };
 
 const LEAD_STATUS_STYLE = {
-  New:  { bg: 'rgba(21,81,75,.07)',      fg: 'var(--brand-primary)' },
-  Cool: { bg: 'rgba(21,81,75,.11)',      fg: 'var(--brand-primary)' },
-  Warm: { bg: 'rgba(21,81,75,.16)',      fg: 'var(--brand-primary)' },
-  Hot:  { bg: 'var(--brand-primary)',                 fg: '#EEF3F0' },
+  New:  { bg: 'rgba(27,76,94,.07)',      fg: 'var(--brand-primary)' },
+  Cool: { bg: 'rgba(27,76,94,.11)',      fg: 'var(--brand-primary)' },
+  Warm: { bg: 'rgba(27,76,94,.16)',      fg: 'var(--brand-primary)' },
+  Hot:  { bg: 'var(--brand-primary)',                 fg: 'var(--app-bg)' },
   Won:  { bg: 'rgba(115,207,111,.3)',    fg: 'var(--brand-primary-dark)' },
-  Lost: { bg: 'rgba(21,81,75,.05)',      fg: 'rgba(21,81,75,.45)' },
+  Lost: { bg: 'rgba(27,76,94,.05)',      fg: 'rgba(27,76,94,.45)' },
 };
 
 function leadChip(status) {
-  const c = LEAD_STATUS_STYLE[status] || { bg: 'rgba(21,81,75,.07)', fg: 'var(--brand-primary)' };
+  const c = LEAD_STATUS_STYLE[status] || { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' };
   return { display: 'inline-flex', alignItems: 'center', gap: 5, background: c.bg, color: c.fg, fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 999 };
 }
 // Style for a stage column — falls back gracefully for custom stage names.
 function stageStyle(stage) {
-  return STAGE_STYLE[stage] || { col: '#EEF3F0', hd: '#E2EBE6', dot: 'rgba(21,81,75,.45)', fg: 'var(--brand-primary)', count: 'rgba(21,81,75,.10)' };
+  return STAGE_STYLE[stage] || { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.45)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' };
 }
 
 function scoreColor(score) {
-  if (score >= 75) return '#73CF6F';
+  if (score >= 75) return 'var(--brand-accent-soft)';
   if (score >= 50) return 'var(--brand-primary)';
-  return 'rgba(21,81,75,.4)';
+  return 'rgba(27,76,94,.4)';
 }
 
 // ── Contact detail pop-up (centered modal) ────────────────────────────────────
@@ -55,16 +55,16 @@ function ContactPanel({ contact, formDef, onClose }) {
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(480px,96vw)', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(14,58,53,.3)' }}>
         <div style={{ padding: '16px 20px 0', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(21,81,75,.55)' }}>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
             <IconX size={15} />
           </button>
         </div>
-        <div style={{ padding: '4px 20px 18px', textAlign: 'center', borderBottom: '1px solid rgba(21,81,75,.08)' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: contact.color || '#356E63', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 10px' }}>
+        <div style={{ padding: '4px 20px 18px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: contact.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 10px' }}>
             {contact.profile_name?.charAt(0)}
           </div>
           <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</div>
-          <div style={{ fontSize: 12, color: 'rgba(21,81,75,.55)', marginTop: 2 }}>{contact.jobTitle !== '—' ? `${contact.jobTitle} · ` : ''}{contact.company !== '—' ? contact.company : ''}</div>
+          <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '—' ? `${contact.jobTitle} · ` : ''}{contact.company !== '—' ? contact.company : ''}</div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 13 }}>
             <a href={`https://wa.me/${String(contact.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" title="Open WhatsApp chat"
               style={{ width: 42, height: 42, borderRadius: 12, border: '1px solid rgba(46,158,79,.3)', background: '#EAF6E4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2E9E4F', textDecoration: 'none' }}>
@@ -84,7 +84,7 @@ function ContactPanel({ contact, formDef, onClose }) {
         </div>
         <div style={{ padding: '8px 20px 24px' }}>
           <LeadAnswers attributes={contact.attributes} />
-          <div style={{ borderTop: '1px solid rgba(21,81,75,.08)', paddingTop: 16 }}>
+          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16 }}>
             <ContactNotes contactId={contact.id} />
           </div>
         </div>
@@ -96,10 +96,10 @@ function ContactPanel({ contact, formDef, onClose }) {
 function FieldRow({ label, value }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(21,81,75,.45)', marginBottom: 3 }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(21,81,75,.13)', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, color: 'var(--brand-primary)', fontWeight: 500 }}>
+      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.45)', marginBottom: 3 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(27,76,94,.13)', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, color: 'var(--brand-primary)', fontWeight: 500 }}>
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || '—'}</span>
-        <span style={{ color: 'rgba(21,81,75,.3)', flexShrink: 0, marginLeft: 6, display: 'flex' }}><IconEdit size={12} /></span>
+        <span style={{ color: 'rgba(27,76,94,.3)', flexShrink: 0, marginLeft: 6, display: 'flex' }}><IconEdit size={12} /></span>
       </div>
     </div>
   );
@@ -118,25 +118,25 @@ function KanbanCard({ lead, formDef, onDragStart, onClick }) {
       draggable
       onDragStart={onDragStart}
       onClick={onClick}
-      style={{ background: '#fff', border: '1px solid rgba(21,81,75,.11)', borderRadius: 11, padding: '11px 12px', cursor: 'grab', boxShadow: '0 1px 3px rgba(14,58,53,.07)', marginBottom: 8 }}
+      style={{ background: '#fff', border: '1px solid rgba(27,76,94,.11)', borderRadius: 11, padding: '11px 12px', cursor: 'grab', boxShadow: '0 1px 3px rgba(14,58,53,.07)', marginBottom: 8 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: lead.color || '#356E63', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
           {lead.profile_name?.charAt(0)}
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</div>
-          {lead.company !== '—' && <div style={{ fontSize: 10.5, color: 'rgba(21,81,75,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company}</div>}
+          {lead.company !== '—' && <div style={{ fontSize: 10.5, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company}</div>}
         </div>
       </div>
       {preview.map(p => (
         <div key={p.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
-          <span style={{ color: 'rgba(21,81,75,.5)', fontWeight: 600 }}>{p.label}</span>
+          <span style={{ color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>{p.label}</span>
           <span style={{ color: 'var(--brand-primary)', fontWeight: 700 }}>{p.val}</span>
         </div>
       ))}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(21,81,75,.07)' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(21,81,75,.4)', background: 'rgba(21,81,75,.06)', padding: '2px 7px', borderRadius: 999 }}>Meta Ads</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(27,76,94,.07)' }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(27,76,94,.4)', background: 'rgba(27,76,94,.06)', padding: '2px 7px', borderRadius: 999 }}>Meta Ads</span>
         <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor(lead.lead_score) }}>{lead.lead_score}</span>
       </div>
     </div>
@@ -173,13 +173,13 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
   }
 
   const inputStyle = (err) => ({
-    width: '100%', padding: '9px 12px', border: `1px solid ${err ? '#C7503B' : 'rgba(21,81,75,.18)'}`,
+    width: '100%', padding: '9px 12px', border: `1px solid ${err ? '#C7503B' : 'rgba(27,76,94,.18)'}`,
     borderRadius: 9, fontSize: 13, color: 'var(--brand-primary)', background: '#fff', outline: 'none',
     fontFamily: 'inherit', boxSizing: 'border-box',
   });
-  const labelStyle = { fontSize: 11, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(21,81,75,.5)', display: 'block', marginBottom: 5 };
+  const labelStyle = { fontSize: 11, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.5)', display: 'block', marginBottom: 5 };
   const fieldWrap = { marginBottom: 14 };
-  const sectionHead = { fontSize: 10.5, fontWeight: 800, letterSpacing: '.08em', color: 'rgba(21,81,75,.45)', margin: '18px 0 10px', paddingBottom: 6, borderBottom: '1px solid rgba(21,81,75,.08)' };
+  const sectionHead = { fontSize: 10.5, fontWeight: 800, letterSpacing: '.08em', color: 'rgba(27,76,94,.45)', margin: '18px 0 10px', paddingBottom: 6, borderBottom: '1px solid rgba(27,76,94,.08)' };
 
   return (
     <>
@@ -187,15 +187,15 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.18)', zIndex: 30 }} />
 
       {/* Drawer */}
-      <div className="fade-up" style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: isMobile ? '100vw' : 380, background: '#fff', borderLeft: '1px solid rgba(21,81,75,.12)', boxShadow: '-12px 0 32px rgba(14,58,53,.14)', zIndex: 210, display: 'flex', flexDirection: 'column' }}>
+      <div className="fade-up" style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: isMobile ? '100vw' : 380, background: '#fff', borderLeft: '1px solid rgba(27,76,94,.12)', boxShadow: '-12px 0 32px rgba(14,58,53,.14)', zIndex: 210, display: 'flex', flexDirection: 'column' }}>
 
         {/* Drawer header */}
-        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid rgba(21,81,75,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid rgba(27,76,94,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>Add Lead</div>
-            {formDef && <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.5)', marginTop: 2 }}>{formDef.name}</div>}
+            {formDef && <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', marginTop: 2 }}>{formDef.name}</div>}
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(21,81,75,.55)' }}>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
             <IconX size={14} />
           </button>
         </div>
@@ -244,7 +244,7 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
                 <button
                   key={s.key} type="button"
                   onClick={() => { set('source', s.key); setErrors(er => ({ ...er, source: undefined })); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: form.source === s.key ? 700 : 500, border: `1.5px solid ${form.source === s.key ? 'var(--brand-primary)' : 'rgba(21,81,75,.15)'}`, background: form.source === s.key ? 'var(--brand-primary)' : '#fff', color: form.source === s.key ? '#EEF3F0' : 'var(--brand-primary)', textAlign: 'left' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: form.source === s.key ? 700 : 500, border: `1.5px solid ${form.source === s.key ? 'var(--brand-primary)' : 'rgba(27,76,94,.15)'}`, background: form.source === s.key ? 'var(--brand-primary)' : '#fff', color: form.source === s.key ? 'var(--app-bg)' : 'var(--brand-primary)', textAlign: 'left' }}
                 >
                   <span style={{ fontSize: 14 }}>{s.icon}</span> {s.label}
                 </button>
@@ -282,10 +282,10 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1px solid rgba(21,81,75,.18)', background: '#fff', color: 'var(--brand-primary)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1px solid rgba(27,76,94,.18)', background: '#fff', color: 'var(--brand-primary)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
               Cancel
             </button>
-            <button type="submit" disabled={saving} style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: '#73CF6F', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+            <button type="submit" disabled={saving} style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Adding…' : 'Add Lead'}
             </button>
           </div>
@@ -362,27 +362,27 @@ export default function CRM() {
       <header style={{ padding: isMobile ? '16px 16px 0' : '20px 28px 0', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(21,81,75,.45)' }}>COLLECTIONS</div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.45)' }}>COLLECTIONS</div>
             <h1 style={{ margin: '5px 0 0', fontSize: 22, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>CRM</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
 
             {/* Form selector */}
             <div style={{ position: 'relative', flex: isMobile ? '1 1 100%' : 'none' }}>
-              <button onClick={() => setShowFormDropdown(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: '1px solid rgba(21,81,75,.18)', borderRadius: 10, padding: '9px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', minWidth: isMobile ? '100%' : 210 }}>
-                <span style={{ width: 7, height: 7, borderRadius: 2, background: '#73CF6F', flexShrink: 0 }} />
+              <button onClick={() => setShowFormDropdown(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: '1px solid rgba(27,76,94,.18)', borderRadius: 10, padding: '9px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', minWidth: isMobile ? '100%' : 210 }}>
+                <span style={{ width: 7, height: 7, borderRadius: 2, background: 'var(--brand-accent-soft)', flexShrink: 0 }} />
                 <span style={{ flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formDef?.name || 'All leads'}</span>
-                <span style={{ color: 'rgba(21,81,75,.45)', display: 'flex', flexShrink: 0 }}><IconChevDown size={13} /></span>
+                <span style={{ color: 'rgba(27,76,94,.45)', display: 'flex', flexShrink: 0 }}><IconChevDown size={13} /></span>
               </button>
               {showFormDropdown && (
-                <div style={{ position: 'absolute', top: '110%', left: 0, background: '#fff', border: '1px solid rgba(21,81,75,.14)', borderRadius: 11, boxShadow: '0 8px 24px rgba(14,58,53,.13)', zIndex: 50, minWidth: 250, overflow: 'hidden' }}>
-                  <button onClick={() => switchForm('')} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 14px', background: !formId ? '#F2F8F2' : '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: !formId ? 700 : 500, color: 'var(--brand-primary)', borderBottom: '1px solid rgba(21,81,75,.06)' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: !formId ? '#73CF6F' : 'rgba(21,81,75,.25)', flexShrink: 0 }} />
+                <div style={{ position: 'absolute', top: '110%', left: 0, background: '#fff', border: '1px solid rgba(27,76,94,.14)', borderRadius: 11, boxShadow: '0 8px 24px rgba(14,58,53,.13)', zIndex: 50, minWidth: 250, overflow: 'hidden' }}>
+                  <button onClick={() => switchForm('')} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 14px', background: !formId ? '#F2F8F2' : '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: !formId ? 700 : 500, color: 'var(--brand-primary)', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: !formId ? 'var(--brand-accent-soft)' : 'rgba(27,76,94,.25)', flexShrink: 0 }} />
                     All leads
                   </button>
                   {forms.map(f => (
-                    <button key={f.id} onClick={() => switchForm(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 14px', background: f.id === formId ? '#F2F8F2' : '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: f.id === formId ? 700 : 500, color: 'var(--brand-primary)', borderBottom: '1px solid rgba(21,81,75,.06)' }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: f.id === formId ? '#73CF6F' : 'rgba(21,81,75,.25)', flexShrink: 0 }} />
+                    <button key={f.id} onClick={() => switchForm(f.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '11px 14px', background: f.id === formId ? '#F2F8F2' : '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: f.id === formId ? 700 : 500, color: 'var(--brand-primary)', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: f.id === formId ? 'var(--brand-accent-soft)' : 'rgba(27,76,94,.25)', flexShrink: 0 }} />
                       {f.name}
                     </button>
                   ))}
@@ -391,38 +391,38 @@ export default function CRM() {
             </div>
 
             {/* View toggle */}
-            <div style={{ display: 'flex', gap: 2, background: '#fff', border: '1px solid rgba(21,81,75,.14)', borderRadius: 10, padding: 3 }}>
+            <div style={{ display: 'flex', gap: 2, background: '#fff', border: '1px solid rgba(27,76,94,.14)', borderRadius: 10, padding: 3 }}>
               {[{ key: 'kanban', label: 'Kanban' }, { key: 'list', label: 'List' }].map(v => (
-                <button key={v.key} onClick={() => setView(v.key)} style={{ padding: '7px 15px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, border: 'none', fontWeight: view === v.key ? 700 : 500, background: view === v.key ? 'var(--brand-primary)' : 'transparent', color: view === v.key ? '#EAF6E4' : 'rgba(21,81,75,.65)' }}>
+                <button key={v.key} onClick={() => setView(v.key)} style={{ padding: '7px 15px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, border: 'none', fontWeight: view === v.key ? 700 : 500, background: view === v.key ? 'var(--brand-primary)' : 'transparent', color: view === v.key ? '#EAF6E4' : 'rgba(27,76,94,.65)' }}>
                   {v.label}
                 </button>
               ))}
             </div>
 
-            <button onClick={() => { setShowAddLead(true); setSelContact(null); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#73CF6F', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
+            <button onClick={() => { setShowAddLead(true); setSelContact(null); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
               <IconPlus size={15} /> Add Lead
             </button>
           </div>
         </div>
 
         {/* Form field pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 14, borderBottom: '1px solid rgba(21,81,75,.09)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 14, borderBottom: '1px solid rgba(27,76,94,.09)' }}>
           {formDef ? (
             <>
-              <span style={{ fontSize: 11.5, color: 'rgba(21,81,75,.5)', fontWeight: 600, marginRight: 4 }}>Form fields:</span>
+              <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600, marginRight: 4 }}>Form fields:</span>
               {(formDef.fields || []).map(f => (
-                <span key={f.key} style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)', background: '#fff', border: '1px solid rgba(21,81,75,.15)', padding: '3px 11px', borderRadius: 999 }}>{f.label}</span>
+                <span key={f.key} style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)', background: '#fff', border: '1px solid rgba(27,76,94,.15)', padding: '3px 11px', borderRadius: 999 }}>{f.label}</span>
               ))}
             </>
           ) : (
-            <span style={{ fontSize: 11.5, color: 'rgba(21,81,75,.5)', fontWeight: 600 }}>All leads across every form</span>
+            <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>All leads across every form</span>
           )}
-          <span style={{ fontSize: 11.5, color: 'rgba(21,81,75,.45)', marginLeft: 6 }}>{leads.length} lead{leads.length === 1 ? '' : 's'}</span>
+          <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', marginLeft: 6 }}>{leads.length} lead{leads.length === 1 ? '' : 's'}</span>
         </div>
       </header>
 
       {loading && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(21,81,75,.5)', fontSize: 14 }}>Loading leads…</div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', fontSize: 14 }}>Loading leads…</div>
       )}
 
       {/* ── KANBAN VIEW ── */}
@@ -439,7 +439,7 @@ export default function CRM() {
                   onDragOver={e => { e.preventDefault(); setDragOver(stage); }}
                   onDragLeave={() => setDragOver(null)}
                   onDrop={() => handleDrop(stage)}
-                  style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', borderRadius: 14, background: isOver ? ss.hd : ss.col, border: `1.5px solid ${isOver ? ss.dot : 'rgba(21,81,75,.13)'}`, transition: 'background .15s, border .15s', minHeight: 200 }}
+                  style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', borderRadius: 14, background: isOver ? ss.hd : ss.col, border: `1.5px solid ${isOver ? ss.dot : 'rgba(27,76,94,.13)'}`, transition: 'background .15s, border .15s', minHeight: 200 }}
                 >
                   {/* Column header */}
                   <div style={{ padding: '11px 13px 10px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -460,7 +460,7 @@ export default function CRM() {
                       />
                     ))}
                     {cards.length === 0 && (
-                      <div style={{ padding: '16px 8px', textAlign: 'center', fontSize: 11.5, color: 'rgba(21,81,75,.35)', fontStyle: 'italic' }}>Drop cards here</div>
+                      <div style={{ padding: '16px 8px', textAlign: 'center', fontSize: 11.5, color: 'rgba(27,76,94,.35)', fontStyle: 'italic' }}>Drop cards here</div>
                     )}
                   </div>
                 </div>
@@ -475,14 +475,14 @@ export default function CRM() {
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: isMobile ? '14px 16px 24px' : '16px 28px 32px', position: 'relative' }}>
 
           {/* Search bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(21,81,75,.16)', borderRadius: 10, padding: '9px 14px', background: '#fff', marginBottom: 14, maxWidth: 340 }}>
-            <span style={{ width: 14, height: 14, color: 'rgba(21,81,75,.4)', display: 'flex' }}><IconSearch size={14} /></span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '9px 14px', background: '#fff', marginBottom: 14, maxWidth: 340 }}>
+            <span style={{ width: 14, height: 14, color: 'rgba(27,76,94,.4)', display: 'flex' }}><IconSearch size={14} /></span>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads…" style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--brand-primary)', width: '100%', fontFamily: 'inherit' }} />
           </div>
 
-          <div style={{ background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 14, overflow: 'hidden', minWidth: isMobile ? 620 : 'auto' }}>
+          <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden', minWidth: isMobile ? 620 : 'auto' }}>
             {/* Dynamic column headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1fr .8fr 1fr`, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(21,81,75,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(21,81,75,.5)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1fr .8fr 1fr`, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
               <span>NAME</span>
               {(formDef?.fields || []).map(f => <span key={f.key}>{f.label.toUpperCase()}</span>)}
               <span>STATUS</span>
@@ -492,9 +492,9 @@ export default function CRM() {
 
             {/* Rows */}
             {leads.map(lead => (
-              <div key={lead.id} onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)} style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1fr .8fr 1fr`, gap: 10, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(21,81,75,.05)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(21,81,75,.7)', background: lead.id === selContact?.id ? '#F2F8F2' : 'transparent' }}>
+              <div key={lead.id} onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)} style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1fr .8fr 1fr`, gap: 10, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.05)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: lead.id === selContact?.id ? '#F2F8F2' : 'transparent' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: lead.color || '#356E63', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{lead.profile_name?.charAt(0)}</span>
+                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{lead.profile_name?.charAt(0)}</span>
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
                 </span>
                 {(formDef?.fields || []).map(f => (

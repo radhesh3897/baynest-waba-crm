@@ -42,12 +42,12 @@ function Tab({ label, Icon, active, badge, onClick }) {
     <button onClick={onClick} style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       gap: 3, border: 'none', background: 'transparent', cursor: 'pointer', padding: '7px 0 4px',
-      color: active ? 'var(--brand-primary)' : 'rgba(21,81,75,.5)', position: 'relative', minWidth: 0,
+      color: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.5)', position: 'relative', minWidth: 0,
     }}>
       <span style={{ position: 'relative', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#2E9E4F' : 'currentColor' }}>
         <Icon size={22} />
         {badge > 0 && (
-          <span style={{ position: 'absolute', top: -5, right: -8, background: '#73CF6F', color: 'var(--brand-primary-dark)', fontSize: 9.5, fontWeight: 800, minWidth: 16, height: 16, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', border: '2px solid #fff' }}>{badge}</span>
+          <span style={{ position: 'absolute', top: -5, right: -8, background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', fontSize: 9.5, fontWeight: 800, minWidth: 16, height: 16, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', border: '2px solid #fff' }}>{badge}</span>
         )}
       </span>
       <span style={{ fontSize: 10.5, fontWeight: active ? 800 : 600, letterSpacing: '.01em' }}>{label}</span>
@@ -82,17 +82,17 @@ export default function BottomNav({ screen, onNav }) {
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 380, damping: 34 }}
               onClick={e => e.stopPropagation()}
               style={{ width: '100%', background: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: '10px 16px calc(18px + env(safe-area-inset-bottom))', boxShadow: '0 -12px 40px rgba(14,58,53,.22)' }}>
-              <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(21,81,75,.18)', margin: '6px auto 14px' }} />
+              <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(27,76,94,.18)', margin: '6px auto 14px' }} />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
                 {MORE.map(m => {
                   const active = m.key === screen;
                   return (
                     <button key={m.key} onClick={() => go(m.key)} style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 6px',
-                      border: active ? '1.5px solid #73CF6F' : '1px solid rgba(21,81,75,.12)', borderRadius: 14,
+                      border: active ? '1.5px solid var(--brand-accent-soft)' : '1px solid rgba(27,76,94,.12)', borderRadius: 14,
                       background: active ? '#EAF6E4' : '#fff', cursor: 'pointer', color: 'var(--brand-primary)',
                     }}>
-                      <span style={{ width: 24, height: 24, display: 'flex', color: active ? '#2E9E4F' : 'rgba(21,81,75,.7)' }}><m.Icon size={22} /></span>
+                      <span style={{ width: 24, height: 24, display: 'flex', color: active ? '#2E9E4F' : 'rgba(27,76,94,.7)' }}><m.Icon size={22} /></span>
                       <span style={{ fontSize: 11.5, fontWeight: active ? 800 : 600, textAlign: 'center', lineHeight: 1.2 }}>{m.label}</span>
                     </button>
                   );
@@ -113,7 +113,7 @@ export default function BottomNav({ screen, onNav }) {
 
       <nav style={{
         flexShrink: 0, display: 'flex', alignItems: 'stretch', background: '#fff',
-        borderTop: '1px solid rgba(21,81,75,.10)', paddingBottom: 'env(safe-area-inset-bottom)',
+        borderTop: '1px solid rgba(27,76,94,.10)', paddingBottom: 'env(safe-area-inset-bottom)',
         boxShadow: '0 -2px 12px rgba(14,58,53,.05)', zIndex: 100,
       }}>
         {MAIN.map(item => (

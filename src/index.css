@@ -5,27 +5,33 @@
   /* Brand tokens — the default values. src/config/client.js overrides these at
      startup (applyBrand). Change them there per client, not here. The whole
      --dfy-* palette below references these, so the app re-themes from one place. */
-  --brand-primary:       #15514B;
-  --brand-primary-dark:  #0E3A35;
-  --brand-primary-light: #1C5E56;
-  --brand-accent:        #5BB957;
+  --brand-primary:       #1B4C5E;  /* deep teal (logo mark + wordmark) */
+  --brand-primary-dark:  #123642;
+  --brand-primary-light: #2C6579;
+  --brand-accent:        #C08A45;  /* muted gold (logo sun arc) */
+  --brand-accent-soft:   #D2A05C;
+  --brand-accent-pale:   #E3D2B0;
+  --brand-muted:         #3E6B78;  /* steel teal, secondary UI */
+  --brand-tint:          #EFE7D9;  /* soft sand fills */
+  --brand-tint-soft:     #F6F1E7;
+  --app-bg:              #F2EFE9;  /* warm cream page ground (logo background) */
 
   --dfy-forest-900: var(--brand-primary-dark);
   --dfy-forest-800: var(--brand-primary);
   --dfy-forest-700: var(--brand-primary-light);
-  --dfy-pine-600:   #356E63;
-  --dfy-pine-500:   #4E8579;
+  --dfy-pine-600:   var(--brand-muted);
+  --dfy-pine-500:   var(--brand-muted);
   --dfy-green-600:  var(--brand-accent);
-  --dfy-green-500:  #73CF6F;
-  --dfy-green-400:  #8AD685;
-  --dfy-green-300:  #A9E0A0;
-  --dfy-mint-200:   #D8F1CE;
-  --dfy-mint-100:   #E7F6E0;
+  --dfy-green-500:  var(--brand-accent-soft);
+  --dfy-green-400:  var(--brand-accent-soft);
+  --dfy-green-300:  var(--brand-accent-pale);
+  --dfy-mint-200:   var(--brand-tint);
+  --dfy-mint-100:   var(--brand-tint-soft);
   --font-sans: "Pretendard Variable", "Pretendard", -apple-system, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
-html, body, #root { margin: 0; padding: 0; height: 100%; font-family: var(--font-sans); color: var(--brand-primary); background: #EEF3F0; -webkit-font-smoothing: antialiased; }
+html, body, #root { margin: 0; padding: 0; height: 100%; font-family: var(--font-sans); color: var(--brand-primary); background: var(--app-bg); -webkit-font-smoothing: antialiased; }
 
 /* Mobile: behave like a native app shell — no rubber-band scroll, no tap
    highlight flash, and let the layout use the dynamic viewport height so the
@@ -38,7 +44,7 @@ html, body, #root { margin: 0; padding: 0; height: 100%; font-family: var(--font
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-thumb { background: rgba(21,81,75,.18); border-radius: 999px; }
+::-webkit-scrollbar-thumb { background: rgba(27,76,94,.18); border-radius: 999px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 button { font-family: inherit; cursor: pointer; }

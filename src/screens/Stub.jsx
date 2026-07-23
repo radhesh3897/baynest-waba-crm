@@ -11,7 +11,7 @@ export default function Stub({ screen }) {
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ textAlign: 'center' }}>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--brand-primary)' }}>{s.title}</h2>
-        <p style={{ margin: '10px 0 0', fontSize: 14, color: 'rgba(21,81,75,.55)' }}>{s.sub}</p>
+        <p style={{ margin: '10px 0 0', fontSize: 14, color: 'rgba(27,76,94,.55)' }}>{s.sub}</p>
       </div>
     </div>
   );

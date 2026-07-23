@@ -4,16 +4,16 @@ import { getCachedTemplates as getFlowTemplates, getCachedTemplateButtons as get
 import { IconWhatsApp, IconClock, IconBranch, IconPeople, IconFlow, IconInbox, IconFacebook, IconTemplate, IconDb } from '../icons';
 
 const FOREST = 'var(--brand-primary)';
-const LIME = '#73CF6F';
+const LIME = 'var(--brand-accent-soft)';
 
 const handleStyle = { width: 11, height: 11, background: '#fff', border: `2px solid ${LIME}` };
 const targetStyle = { ...handleStyle, border: '2px solid #9CB7B0' };
 
 function Shell({ icon: Icon, title, tint, headerDark, children, width = 232 }) {
   return (
-    <div style={{ width, background: '#fff', borderRadius: 13, border: '1px solid rgba(21,81,75,.16)', boxShadow: '0 4px 14px rgba(14,58,53,.10)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: headerDark ? `linear-gradient(90deg, ${FOREST}, #356E63)` : '#F4F9F3', borderBottom: headerDark ? 'none' : '1px solid rgba(21,81,75,.08)' }}>
-        <span style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, background: headerDark ? 'rgba(255,255,255,.16)' : (tint || '#EAF6E4'), color: headerDark ? '#A9E0A0' : '#2E9E4F' }}>
+    <div style={{ width, background: '#fff', borderRadius: 13, border: '1px solid rgba(27,76,94,.16)', boxShadow: '0 4px 14px rgba(14,58,53,.10)', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: headerDark ? `linear-gradient(90deg, ${FOREST}, var(--brand-muted))` : '#F4F9F3', borderBottom: headerDark ? 'none' : '1px solid rgba(27,76,94,.08)' }}>
+        <span style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, background: headerDark ? 'rgba(255,255,255,.16)' : (tint || '#EAF6E4'), color: headerDark ? 'var(--brand-accent-pale)' : '#2E9E4F' }}>
           <Icon size={16} />
         </span>
         <span style={{ fontSize: 12.5, fontWeight: 800, color: headerDark ? '#EAF6E4' : FOREST }}>{title}</span>
@@ -23,8 +23,8 @@ function Shell({ icon: Icon, title, tint, headerDark, children, width = 232 }) {
   );
 }
 
-const selectStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(21,81,75,.18)', borderRadius: 8, padding: '7px 9px', fontSize: 12, fontWeight: 600, color: FOREST, fontFamily: 'inherit', background: '#fff' };
-const labelStyle = { fontSize: 10, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(21,81,75,.5)', marginBottom: 5, display: 'block' };
+const selectStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 8, padding: '7px 9px', fontSize: 12, fontWeight: 600, color: FOREST, fontFamily: 'inherit', background: '#fff' };
+const labelStyle = { fontSize: 10, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.5)', marginBottom: 5, display: 'block' };
 
 const TRIGGER_LABELS = { new_lead: 'New Lead (FB form)', inbound: 'Inbound Message', keyword: 'Keyword', manual: 'Manual' };
 const TRIGGER_ICONS  = { new_lead: IconFacebook, inbound: IconInbox, keyword: IconBranch, manual: IconFlow };
@@ -34,8 +34,8 @@ export function TriggerNode({ data }) {
   return (
     <Shell icon={Icon} title="Trigger" headerDark>
       <div style={{ fontSize: 13, fontWeight: 800, color: FOREST }}>{TRIGGER_LABELS[data.trigger] || data.trigger}</div>
-      <div style={{ fontSize: 11, color: 'rgba(21,81,75,.55)', marginTop: 3 }}>Flow starts here</div>
-      {data.trigger === 'keyword' && <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(21,81,75,.6)' }}>Keyword: <strong>{data.keyword || '—'}</strong></div>}
+      <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>Flow starts here</div>
+      {data.trigger === 'keyword' && <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(27,76,94,.6)' }}>Keyword: <strong>{data.keyword || '—'}</strong></div>}
       <Handle type="source" position={Position.Right} id="out" style={handleStyle} />
     </Shell>
   );
@@ -73,7 +73,7 @@ export function SendTemplateNode({ id, data }) {
         {templates.map(t => <option key={t.name} value={t.name}>{t.name}{t.buttons.length ? ` (${t.buttons.length} buttons)` : ''}</option>)}
       </select>
 
-      {tpl && <div style={{ marginTop: 9, fontSize: 11, lineHeight: 1.45, color: 'rgba(21,81,75,.7)', background: '#F4F9F3', borderRadius: 8, padding: '8px 9px' }}>{tpl.body}</div>}
+      {tpl && <div style={{ marginTop: 9, fontSize: 11, lineHeight: 1.45, color: 'rgba(27,76,94,.7)', background: '#F4F9F3', borderRadius: 8, padding: '8px 9px' }}>{tpl.body}</div>}
 
       {bodyVars.length > 0 && (
         <div style={{ marginTop: 10 }}>
@@ -152,7 +152,7 @@ export function DelayNode({ id, data }) {
     <Shell icon={IconClock} title="Delay" tint="#FFF1DC">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <span style={{ fontSize: 12, color: 'rgba(21,81,75,.65)', fontWeight: 600 }}>Wait</span>
+        <span style={{ fontSize: 12, color: 'rgba(27,76,94,.65)', fontWeight: 600 }}>Wait</span>
         <input className="nodrag" type="number" min="0" value={data.amount ?? 1} onChange={e => updateNodeData(id, { amount: Number(e.target.value) })}
           style={{ ...selectStyle, width: 56 }} />
         <select className="nodrag" value={data.unit || 'hours'} onChange={e => updateNodeData(id, { unit: e.target.value })} style={{ ...selectStyle, width: 'auto', flex: 1 }}>
@@ -170,7 +170,7 @@ export function WaitReplyNode() {
   return (
     <Shell icon={IconInbox} title="Wait for Reply">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
-      <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.6)', lineHeight: 1.4, marginBottom: 10 }}>Pause until the customer responds, then branch:</div>
+      <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.6)', lineHeight: 1.4, marginBottom: 10 }}>Pause until the customer responds, then branch:</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#2E9E4F' }}>Button tap</span>

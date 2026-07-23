@@ -3,19 +3,19 @@ import { getHomeStatsLive, getQualificationStats } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
 
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
-const CARD = { background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 14 };
+const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14 };
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
 const STATUS_STYLE = {
-  New: { bg: 'rgba(21,81,75,.07)', fg: 'var(--brand-primary)' },
-  Warm: { bg: 'rgba(21,81,75,.16)', fg: 'var(--brand-primary)' },
-  Hot: { bg: 'var(--brand-primary)', fg: '#EEF3F0' },
+  New: { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' },
+  Warm: { bg: 'rgba(27,76,94,.16)', fg: 'var(--brand-primary)' },
+  Hot: { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
   Won: { bg: 'rgba(115,207,111,.3)', fg: 'var(--brand-primary-dark)' },
-  Lost: { bg: 'rgba(21,81,75,.05)', fg: 'rgba(21,81,75,.45)' },
+  Lost: { bg: 'rgba(27,76,94,.05)', fg: 'rgba(27,76,94,.45)' },
 };
 const FLOW_STATUS = {
   active: { bg: 'rgba(115,207,111,.22)', fg: '#2E7D45', dot: '#2E9E4F' },
-  draft: { bg: 'rgba(21,81,75,.08)', fg: 'rgba(21,81,75,.6)', dot: 'rgba(21,81,75,.4)' },
+  draft: { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.6)', dot: 'rgba(27,76,94,.4)' },
   paused: { bg: '#FFF1DC', fg: '#B6743A', dot: '#D9A93B' },
 };
 
@@ -29,7 +29,7 @@ function Donut({ data, size = 156 }) {
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
       <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(21,81,75,.07)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(27,76,94,.07)" strokeWidth={stroke} />
         {total > 0 && data.filter(d => d.value > 0).map((d, i) => {
           const len = (d.value / total) * c;
           const el = <circle key={i} cx={size / 2} cy={size / 2} r={r} fill="none" stroke={d.color} strokeWidth={stroke} strokeDasharray={`${len} ${c - len}`} strokeDashoffset={-offset} />;
@@ -38,14 +38,14 @@ function Donut({ data, size = 156 }) {
         })}
       </g>
       <text x="50%" y="48%" textAnchor="middle" fontSize="28" fontWeight="900" fill="var(--brand-primary)">{total}</text>
-      <text x="50%" y="62%" textAnchor="middle" fontSize="10" fontWeight="700" fill="rgba(21,81,75,.5)" letterSpacing="1">LEADS</text>
+      <text x="50%" y="62%" textAnchor="middle" fontSize="10" fontWeight="700" fill="rgba(27,76,94,.5)" letterSpacing="1">LEADS</text>
     </svg>
   );
 }
 
 function FunnelBar({ p, color }) {
   return (
-    <div style={{ height: 7, borderRadius: 999, background: 'rgba(21,81,75,.07)', overflow: 'hidden', marginTop: 8 }}>
+    <div style={{ height: 7, borderRadius: 999, background: 'rgba(27,76,94,.07)', overflow: 'hidden', marginTop: 8 }}>
       <div style={{ width: `${p}%`, height: '100%', borderRadius: 999, background: color, transition: 'width .5s ease' }} />
     </div>
   );
@@ -64,21 +64,21 @@ export default function Home() {
   useEffect(() => { load(); }, []);
 
   if (loading || !stats) {
-    return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(21,81,75,.5)', fontSize: 14 }}>Loading dashboard…</div>;
+    return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', fontSize: 14 }}>Loading dashboard…</div>;
   }
 
   const kpis = [
     { label: 'Total Leads', value: fmt(stats.leadsIn), sub: 'all time', accent: 'var(--brand-primary)' },
     { label: 'This Month', value: fmt(stats.leadsMonth), sub: 'new leads', accent: 'var(--brand-primary)' },
-    { label: 'Conversations', value: fmt(stats.conversations), sub: 'on WhatsApp', accent: '#356E63' },
-    { label: 'Messages Sent', value: fmt(stats.sent), sub: `${fmt(stats.received)} received`, accent: '#73CF6F' },
+    { label: 'Conversations', value: fmt(stats.conversations), sub: 'on WhatsApp', accent: 'var(--brand-muted)' },
+    { label: 'Messages Sent', value: fmt(stats.sent), sub: `${fmt(stats.received)} received`, accent: 'var(--brand-accent-soft)' },
   ];
 
   const funnel = [
-    { label: 'Leads In', count: stats.leadsIn, conv: null, accent: 'rgba(21,81,75,.55)' },
+    { label: 'Leads In', count: stats.leadsIn, conv: null, accent: 'rgba(27,76,94,.55)' },
     { label: 'Conversations', count: stats.conversations, conv: pct(stats.conversations, stats.leadsIn), accent: 'var(--brand-primary)' },
-    { label: 'Qualified', count: stats.qualified, conv: pct(stats.qualified, stats.conversations || stats.leadsIn), accent: '#356E63' },
-    { label: 'Won', count: stats.won, conv: pct(stats.won, stats.qualified || stats.leadsIn), accent: '#73CF6F' },
+    { label: 'Qualified', count: stats.qualified, conv: pct(stats.qualified, stats.conversations || stats.leadsIn), accent: 'var(--brand-muted)' },
+    { label: 'Won', count: stats.won, conv: pct(stats.won, stats.qualified || stats.leadsIn), accent: 'var(--brand-accent-soft)' },
   ];
 
   return (
@@ -91,7 +91,7 @@ export default function Home() {
             Live data
           </div>
         </div>
-        <button onClick={() => { setLoading(true); load(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid rgba(21,81,75,.16)', color: 'var(--brand-primary)', fontSize: 13, fontWeight: 700, padding: '9px 14px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>
+        <button onClick={() => { setLoading(true); load(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid rgba(27,76,94,.16)', color: 'var(--brand-primary)', fontSize: 13, fontWeight: 700, padding: '9px 14px', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}>
           Refresh
         </button>
       </header>
@@ -102,9 +102,9 @@ export default function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: isMobile ? 10 : 14 }}>
           {kpis.map(k => (
             <div key={k.label} style={{ ...CARD, padding: '18px 20px' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(21,81,75,.5)' }}>{k.label.toUpperCase()}</div>
+              <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>{k.label.toUpperCase()}</div>
               <div style={{ fontSize: 30, fontWeight: 900, color: k.accent, letterSpacing: '-.02em', margin: '6px 0 2px' }}>{k.value}</div>
-              <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.45)' }}>{k.sub}</div>
+              <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)' }}>{k.sub}</div>
             </div>
           ))}
         </div>
@@ -113,21 +113,21 @@ export default function Home() {
         <div style={{ ...CARD, padding: '20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)' }}>Lead Funnel</div>
-            <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.45)', fontWeight: 600 }}>Lead → Conversation → Qualified → Won</div>
+            <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', fontWeight: 600 }}>Lead → Conversation → Qualified → Won</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'stretch', flexDirection: isMobile ? 'column' : 'row' }}>
             {funnel.map((stage, i) => (
               <Fragment key={stage.label}>
                 {i > 0 && (
                   <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '6px 0' : '0 10px', flexShrink: 0, gap: 4 }}>
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ transform: isMobile ? 'rotate(90deg)' : 'none' }}><path d="M4 9H14M14 9L10 5M14 9L10 13" stroke="rgba(21,81,75,.25)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: '#73CF6F', whiteSpace: 'nowrap', background: 'rgba(115,207,111,.12)', padding: '2px 7px', borderRadius: 999 }}>{stage.conv}%</span>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ transform: isMobile ? 'rotate(90deg)' : 'none' }}><path d="M4 9H14M14 9L10 5M14 9L10 13" stroke="rgba(27,76,94,.25)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--brand-accent-soft)', whiteSpace: 'nowrap', background: 'rgba(115,207,111,.12)', padding: '2px 7px', borderRadius: 999 }}>{stage.conv}%</span>
                   </div>
                 )}
-                <div style={{ flex: 1, background: '#F6FAF6', border: '1px solid rgba(21,81,75,.08)', borderRadius: 12, padding: '16px 18px' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(21,81,75,.5)' }}>{stage.label.toUpperCase()}</div>
+                <div style={{ flex: 1, background: '#F6FAF6', border: '1px solid rgba(27,76,94,.08)', borderRadius: 12, padding: '16px 18px' }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>{stage.label.toUpperCase()}</div>
                   <div style={{ fontSize: 30, fontWeight: 900, color: stage.accent, letterSpacing: '-.02em', lineHeight: 1.1, marginTop: 4 }}>{fmt(stage.count)}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(21,81,75,.4)', marginTop: 2 }}>{i === 0 ? 'total' : `${pct(stage.count, stats.leadsIn)}% of leads`}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(27,76,94,.4)', marginTop: 2 }}>{i === 0 ? 'total' : `${pct(stage.count, stats.leadsIn)}% of leads`}</div>
                 </div>
               </Fragment>
             ))}
@@ -141,16 +141,16 @@ export default function Home() {
             { label: 'Not Qualified', value: qual.NotQualified, color: '#B6743A' },
             { label: 'Junk', value: qual.Junk, color: '#C7503B' },
             { label: 'Intake', value: qual.Intake, color: 'var(--brand-primary)' },
-            { label: 'Untagged', value: qual.Untagged, color: 'rgba(21,81,75,.16)' },
+            { label: 'Untagged', value: qual.Untagged, color: 'rgba(27,76,94,.16)' },
           ];
           return (
             <div style={{ ...CARD, padding: '20px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)' }}>Lead Quality</div>
-                <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.45)', fontWeight: 600 }}>Tagged in Tracking · sent to Meta</div>
+                <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', fontWeight: 600 }}>Tagged in Tracking · sent to Meta</div>
               </div>
               {qual.tagged === 0 ? (
-                <div style={{ fontSize: 12.5, color: 'rgba(21,81,75,.5)' }}>No leads tagged yet — qualify leads in the Tracking tab to see the split here.</div>
+                <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No leads tagged yet — qualify leads in the Tracking tab to see the split here.</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? 18 : 28 }}>
                   <Donut data={qualData} />
@@ -158,9 +158,9 @@ export default function Home() {
                     {qualData.map(d => (
                       <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{ width: 11, height: 11, borderRadius: 3, background: d.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, color: 'rgba(21,81,75,.75)', fontWeight: 600, flex: 1 }}>{d.label}</span>
+                        <span style={{ fontSize: 13, color: 'rgba(27,76,94,.75)', fontWeight: 600, flex: 1 }}>{d.label}</span>
                         <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--brand-primary)' }}>{fmt(d.value)}</span>
-                        <span style={{ fontSize: 11.5, color: 'rgba(21,81,75,.45)', width: 44, textAlign: 'right' }}>{pct(d.value, qual.total)}%</span>
+                        <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', width: 44, textAlign: 'right' }}>{pct(d.value, qual.total)}%</span>
                       </div>
                     ))}
                   </div>
@@ -175,16 +175,16 @@ export default function Home() {
           {/* Messages */}
           <div style={{ ...CARD, padding: '20px 24px' }}>
             <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', marginBottom: 4 }}>Messages</div>
-            <div style={{ fontSize: 11.5, color: 'rgba(21,81,75,.45)', marginBottom: 18 }}>WhatsApp traffic</div>
+            <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', marginBottom: 18 }}>WhatsApp traffic</div>
             {[
               { label: 'Sent', count: stats.sent, color: 'var(--brand-primary)' },
-              { label: 'Received', count: stats.received, color: '#73CF6F' },
+              { label: 'Received', count: stats.received, color: 'var(--brand-accent-soft)' },
             ].map(m => {
               const total = stats.sent + stats.received;
               return (
                 <div key={m.label} style={{ marginBottom: 14 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(21,81,75,.7)' }}>{m.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(27,76,94,.7)' }}>{m.label}</span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--brand-primary)' }}>{fmt(m.count)}</span>
                   </div>
                   <FunnelBar p={pct(m.count, total)} color={m.color} />
@@ -199,22 +199,22 @@ export default function Home() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
               {[
                 { label: 'Flow Runs', value: fmt(stats.flowRuns), accent: 'var(--brand-primary)' },
-                { label: 'Active Flows', value: fmt(stats.activeFlows), accent: '#73CF6F' },
-                { label: 'Completed', value: fmt(stats.completedRuns), accent: '#356E63' },
+                { label: 'Active Flows', value: fmt(stats.activeFlows), accent: 'var(--brand-accent-soft)' },
+                { label: 'Completed', value: fmt(stats.completedRuns), accent: 'var(--brand-muted)' },
               ].map(a => (
-                <div key={a.label} style={{ background: '#F6FAF6', border: '1px solid rgba(21,81,75,.08)', borderRadius: 12, padding: '14px 14px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.04em', color: 'rgba(21,81,75,.5)' }}>{a.label.toUpperCase()}</div>
+                <div key={a.label} style={{ background: '#F6FAF6', border: '1px solid rgba(27,76,94,.08)', borderRadius: 12, padding: '14px 14px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.04em', color: 'rgba(27,76,94,.5)' }}>{a.label.toUpperCase()}</div>
                   <div style={{ fontSize: 26, fontWeight: 900, color: a.accent, margin: '6px 0 0', letterSpacing: '-.01em' }}>{a.value}</div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(21,81,75,.45)', marginBottom: 8 }}>FLOWS</div>
-            {stats.flows.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(21,81,75,.5)' }}>No flows yet — build one in Automation.</div>}
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.45)', marginBottom: 8 }}>FLOWS</div>
+            {stats.flows.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No flows yet — build one in Automation.</div>}
             {stats.flows.map(f => {
               const st = FLOW_STATUS[f.status] || FLOW_STATUS.draft;
               return (
                 <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-                  <span style={{ fontSize: 12.5, color: 'rgba(21,81,75,.75)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+                  <span style={{ fontSize: 12.5, color: 'rgba(27,76,94,.75)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: st.fg, background: st.bg, padding: '3px 9px', borderRadius: 999, flexShrink: 0, marginLeft: 8 }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: st.dot }} />{f.status}
                   </span>
@@ -227,20 +227,20 @@ export default function Home() {
         {/* Recent leads */}
         <div style={{ ...CARD, padding: '20px 24px' }}>
           <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', marginBottom: 14 }}>Recent Leads</div>
-          {stats.recent.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(21,81,75,.5)' }}>No leads yet.</div>}
+          {stats.recent.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No leads yet.</div>}
           {stats.recent.map(r => {
             const st = STATUS_STYLE[r.status] || STATUS_STYLE.New;
             return (
-              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(21,81,75,.06)' }}>
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
                   <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{(r.name || '?').charAt(0).toUpperCase()}</span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(21,81,75,.45)' }}>{r.source}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>{r.source}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                  <span style={{ fontSize: 11.5, color: 'rgba(21,81,75,.5)' }}>{r.received}</span>
+                  <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)' }}>{r.received}</span>
                   <span style={{ fontSize: 11, fontWeight: 700, color: st.fg, background: st.bg, padding: '3px 10px', borderRadius: 999 }}>{r.status}</span>
                 </div>
               </div>

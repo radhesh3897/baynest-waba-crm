@@ -50,18 +50,18 @@ export default function MetaDashboard() {
   const aboveBench = t && t.cpl != null && data.benchmarkCpl != null && t.cpl > data.benchmarkCpl;
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: '#EEF3F0' }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: 'var(--app-bg)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '18px 14px 32px' : '26px 28px 40px' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 11, background: '#fff', border: '1px solid rgba(21,81,75,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1877F2' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 11, background: '#fff', border: '1px solid rgba(27,76,94,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1877F2' }}>
               <IconFacebook size={22} />
             </div>
             <div>
               <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, letterSpacing: '-.3px', color: FOREST }}>Meta Dashboard</div>
-              <div style={{ fontSize: 13, color: 'rgba(21,81,75,.55)', marginTop: 2 }}>
+              <div style={{ fontSize: 13, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>
                 Live performance · {data?.account?.name || 'Done For You'} · today
               </div>
             </div>
@@ -83,7 +83,7 @@ export default function MetaDashboard() {
 
         {/* Loading */}
         {loading && (
-          <div style={{ padding: '80px 0', textAlign: 'center', color: 'rgba(21,81,75,.5)', fontSize: 14 }}>Loading live Meta data…</div>
+          <div style={{ padding: '80px 0', textAlign: 'center', color: 'rgba(27,76,94,.5)', fontSize: 14 }}>Loading live Meta data…</div>
         )}
 
         {/* Error */}
@@ -91,7 +91,7 @@ export default function MetaDashboard() {
           <div style={{ background: '#FCEFEF', border: '1px solid #F3D6D6', borderRadius: 14, padding: '22px 24px', color: '#C0392B' }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Couldn’t load Meta data</div>
             <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{error}</div>
-            <div style={{ fontSize: 12.5, marginTop: 10, color: 'rgba(21,81,75,.55)' }}>
+            <div style={{ fontSize: 12.5, marginTop: 10, color: 'rgba(27,76,94,.55)' }}>
               If this says “Unauthorized” or a token error, confirm the <b>META_ADS_TOKEN</b> secret is set in Supabase with ads_read on the Done For You account.
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function MetaDashboard() {
                 background: FOREST, color: '#fff', borderRadius: 20, padding: '24px 26px', display: 'flex', flexDirection: 'column',
               }}>
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.8px', color: 'rgba(255,255,255,.75)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#73CF6F' }} /> LEADS SO FAR · TODAY
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-accent-soft)' }} /> LEADS SO FAR · TODAY
                 </div>
                 <div style={{ fontSize: isMobile ? 64 : 88, fontWeight: 800, lineHeight: 1, marginTop: isMobile ? 18 : 'auto' }}>{num(t.leads)}</div>
                 <div style={{ fontSize: 14, color: 'rgba(255,255,255,.8)', marginTop: 14 }}>
@@ -145,7 +145,7 @@ export default function MetaDashboard() {
             <div style={{ margin: '24px 0 10px', fontSize: 13, fontWeight: 800, letterSpacing: '.3px', color: FOREST }}>
               Ads running &amp; performance · today
             </div>
-            <div style={{ background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, overflow: 'hidden' }}>
               <Row head isMobile={isMobile} cells={['Ad', 'Status', 'Spend', 'Leads', 'CPL', 'CPC', 'CTR']} />
               {data.ads && data.ads.length ? data.ads.map((a, i) => (
                 <Row key={i} isMobile={isMobile} cells={[
@@ -158,11 +158,11 @@ export default function MetaDashboard() {
                   pct(a.ctr),
                 ]} />
               )) : (
-                <div style={{ padding: '20px 18px', fontSize: 13, color: 'rgba(21,81,75,.5)' }}>No active ads delivering today.</div>
+                <div style={{ padding: '20px 18px', fontSize: 13, color: 'rgba(27,76,94,.5)' }}>No active ads delivering today.</div>
               )}
             </div>
 
-            <div style={{ marginTop: 16, fontSize: 11.5, color: 'rgba(21,81,75,.4)' }}>
+            <div style={{ marginTop: 16, fontSize: 11.5, color: 'rgba(27,76,94,.4)' }}>
               Meta · {data.account?.name} ({data.account?.id}) · {data.account?.currency} · refreshes on open, on Refresh, and every 30 min · last updated {istTime(data.asOf)} · Performance only — no personal lead data shown
             </div>
           </>
@@ -174,10 +174,10 @@ export default function MetaDashboard() {
 
 function Card({ k, v, corner, big, span }) {
   return (
-    <div style={{ gridColumn: span ? `span ${span}` : 'auto', background: '#fff', border: '1px solid rgba(21,81,75,.10)', borderRadius: 18, padding: 20, position: 'relative' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', color: 'rgba(21,81,75,.5)' }}>{k}</div>
+    <div style={{ gridColumn: span ? `span ${span}` : 'auto', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 18, padding: 20, position: 'relative' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.7px', color: 'rgba(27,76,94,.5)' }}>{k}</div>
       <div style={{ fontSize: big ? 40 : 34, fontWeight: 800, marginTop: 8, letterSpacing: '-.5px', color: FOREST }}>{v}</div>
-      {corner && <div style={{ position: 'absolute', top: 20, right: 20, fontSize: 12, color: 'rgba(21,81,75,.4)' }}>{corner}</div>}
+      {corner && <div style={{ position: 'absolute', top: 20, right: 20, fontSize: 12, color: 'rgba(27,76,94,.4)' }}>{corner}</div>}
     </div>
   );
 }
@@ -190,9 +190,9 @@ function Row({ cells, head, isMobile }) {
     <div style={{
       display: 'grid', gridTemplateColumns: cols, gap: 10, padding: '13px 18px', alignItems: 'center',
       fontSize: head ? 11 : 13.5, fontWeight: head ? 700 : 500,
-      letterSpacing: head ? '.5px' : 0, color: head ? 'rgba(21,81,75,.55)' : FOREST,
+      letterSpacing: head ? '.5px' : 0, color: head ? 'rgba(27,76,94,.55)' : FOREST,
       background: head ? '#F6FAF8' : '#fff',
-      borderTop: head ? 'none' : '1px solid rgba(21,81,75,.07)',
+      borderTop: head ? 'none' : '1px solid rgba(27,76,94,.07)',
     }}>
       {shown.map((c, i) => (
         <div key={i} style={{ fontWeight: !head && i === 0 ? 600 : 'inherit', whiteSpace: i === 0 ? 'normal' : 'nowrap' }}>{c}</div>

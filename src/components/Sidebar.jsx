@@ -32,28 +32,28 @@ function NavBtn({ item, active, onClick }) {
   return (
     <motion.button
       onClick={onClick}
-      animate={{ backgroundColor: active ? 'var(--brand-primary-dark)' : 'rgba(21,81,75,0)' }}
-      whileHover={{ x: 3, backgroundColor: active ? 'var(--brand-primary-dark)' : 'rgba(21,81,75,.06)' }}
+      animate={{ backgroundColor: active ? 'var(--brand-primary-dark)' : 'rgba(27,76,94,0)' }}
+      whileHover={{ x: 3, backgroundColor: active ? 'var(--brand-primary-dark)' : 'rgba(27,76,94,.06)' }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 420, damping: 30 }}
       style={{
         display: 'flex', alignItems: 'center', gap: 11, width: '100%',
         padding: '8px 12px', marginBottom: 2, border: 'none', cursor: 'pointer',
         borderRadius: 9, fontSize: 13.5, fontWeight: active ? 700 : 500,
-        color: active ? '#E7F6E0' : 'rgba(21,81,75,.72)',
+        color: active ? 'var(--brand-tint-soft)' : 'rgba(27,76,94,.72)',
       }}
     >
-      <span style={{ display: 'flex', width: 18, height: 18, flexShrink: 0, color: active ? '#73CF6F' : 'currentColor' }}>
+      <span style={{ display: 'flex', width: 18, height: 18, flexShrink: 0, color: active ? 'var(--brand-accent-soft)' : 'currentColor' }}>
         <item.Icon size={18} />
       </span>
       <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
       {item.badge && (
-        <span style={{ background: '#73CF6F', color: 'var(--brand-primary-dark)', fontSize: 10.5, fontWeight: 800, padding: '1px 7px', borderRadius: 999 }}>
+        <span style={{ background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', fontSize: 10.5, fontWeight: 800, padding: '1px 7px', borderRadius: 999 }}>
           {item.badge}
         </span>
       )}
       {item.soon && (
-        <span style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(21,81,75,.4)', border: '1px solid rgba(21,81,75,.18)', padding: '1px 6px', borderRadius: 999 }}>soon</span>
+        <span style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(27,76,94,.4)', border: '1px solid rgba(27,76,94,.18)', padding: '1px 6px', borderRadius: 999 }}>soon</span>
       )}
     </motion.button>
   );
@@ -71,10 +71,10 @@ export default function Sidebar({ screen, onNav }) {
   }, [screen]);
 
   const waItems = NAV_ITEMS_WHATSAPP.map(it => it.key === 'inbox' ? { ...it, badge: unread > 0 ? String(unread) : null } : it);
-  const sectionLabel = { fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(21,81,75,.42)', padding: '16px 12px 7px' };
+  const sectionLabel = { fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.42)', padding: '16px 12px 7px' };
 
   return (
-    <aside style={{ width: 248, flexShrink: 0, background: '#fff', borderRight: '1px solid rgba(21,81,75,.10)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <aside style={{ width: 248, flexShrink: 0, background: '#fff', borderRight: '1px solid rgba(27,76,94,.10)', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ padding: '28px 20px 22px', display: 'flex', justifyContent: 'center' }}>
         <img src={CLIENT.logo} alt={CLIENT.name} style={{ height: 54, width: 'auto' }} />
       </div>
@@ -98,7 +98,7 @@ export default function Sidebar({ screen, onNav }) {
         ))}
       </nav>
 
-      <div style={{ padding: '10px 12px 16px', borderTop: '1px solid rgba(21,81,75,.08)' }}>
+      <div style={{ padding: '10px 12px 16px', borderTop: '1px solid rgba(27,76,94,.08)' }}>
         {NAV_ITEMS_BOTTOM.map(item => (
           <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
         ))}
