@@ -38,7 +38,7 @@ function NavBtn({ item, active, onClick }) {
       transition={{ type: 'spring', stiffness: 420, damping: 30 }}
       style={{
         display: 'flex', alignItems: 'center', gap: 11, width: '100%',
-        padding: '8px 12px', marginBottom: 2, border: 'none', cursor: 'pointer',
+        padding: '6px 12px', marginBottom: 1, border: 'none', cursor: 'pointer',
         borderRadius: 9, fontSize: 13.5, fontWeight: active ? 700 : 500,
         color: active ? 'var(--brand-tint-soft)' : 'rgba(27,76,94,.72)',
       }}
@@ -71,15 +71,15 @@ export default function Sidebar({ screen, onNav }) {
   }, [screen]);
 
   const waItems = NAV_ITEMS_WHATSAPP.map(it => it.key === 'inbox' ? { ...it, badge: unread > 0 ? String(unread) : null } : it);
-  const sectionLabel = { fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.42)', padding: '16px 12px 7px' };
+  const sectionLabel = { fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.42)', padding: '9px 12px 4px' };
 
   return (
     <aside style={{ width: 248, flexShrink: 0, background: '#fff', borderRight: '1px solid rgba(27,76,94,.10)', display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ padding: '28px 20px 22px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ padding: '14px 20px 10px', display: 'flex', justifyContent: 'center' }}>
         <img src={CLIENT.logo} alt={CLIENT.name} style={{ height: CLIENT.logoHeight.sidebar, width: 'auto' }} />
       </div>
 
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '6px 12px 16px' }}>
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 12px 10px' }}>
         <NavBtn item={NAV_HOME} active={screen === 'home'} onClick={() => onNav('home')} />
 
         <div style={sectionLabel}>WHATSAPP</div>
@@ -98,7 +98,7 @@ export default function Sidebar({ screen, onNav }) {
         ))}
       </nav>
 
-      <div style={{ padding: '10px 12px 16px', borderTop: '1px solid rgba(27,76,94,.08)' }}>
+      <div style={{ padding: '6px 12px 10px', borderTop: '1px solid rgba(27,76,94,.08)' }}>
         {NAV_ITEMS_BOTTOM.map(item => (
           <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
         ))}

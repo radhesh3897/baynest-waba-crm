@@ -13,7 +13,7 @@ export const CLIENT = {
 
   // Rendered logo height in px. Tune per client: a wide horizontal wordmark
   // needs less height than a stacked mark-above-text logo (like Baynest's).
-  logoHeight: { sidebar: 88, login: 96 },
+  logoHeight: { sidebar: 70, login: 96 },
 
   // Brand colours — taken from the logo, deliberately muted.
   // These are injected as CSS variables at startup (see applyBrand), and the
