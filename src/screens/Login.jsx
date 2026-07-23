@@ -46,7 +46,7 @@ export default function Login() {
 
           {/* Centered logo */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
-            <img src={CLIENT.logo} alt={CLIENT.name} style={{ height: 72, width: 'auto', display: 'block' }} />
+            <img src={CLIENT.logo} alt={CLIENT.name} style={{ height: CLIENT.logoHeight.login, width: 'auto', display: 'block' }} />
           </div>
 
           <h1 style={{ margin: '0 0 4px', textAlign: 'center', fontSize: 21, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>Welcome back</h1>

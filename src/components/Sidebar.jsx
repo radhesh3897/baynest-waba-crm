@@ -76,7 +76,7 @@ export default function Sidebar({ screen, onNav }) {
   return (
     <aside style={{ width: 248, flexShrink: 0, background: '#fff', borderRight: '1px solid rgba(27,76,94,.10)', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ padding: '28px 20px 22px', display: 'flex', justifyContent: 'center' }}>
-        <img src={CLIENT.logo} alt={CLIENT.name} style={{ height: 54, width: 'auto' }} />
+        <img src={CLIENT.logo} alt={CLIENT.name} style={{ height: CLIENT.logoHeight.sidebar, width: 'auto' }} />
       </div>
 
       <nav style={{ flex: 1, overflowY: 'auto', padding: '6px 12px 16px' }}>

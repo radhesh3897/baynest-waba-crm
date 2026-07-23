@@ -11,6 +11,10 @@ export const CLIENT = {
   tagline:   "Team access",      // small line under the logo on the login screen
   logo:      "/assets/logo.png", // drop the client logo here (transparent PNG)
 
+  // Rendered logo height in px. Tune per client: a wide horizontal wordmark
+  // needs less height than a stacked mark-above-text logo (like Baynest's).
+  logoHeight: { sidebar: 88, login: 96 },
+
   // Brand colours — taken from the logo, deliberately muted.
   // These are injected as CSS variables at startup (see applyBrand), and the
   // whole UI palette references them, so the app re-themes from this one place.
