@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconChart, IconTarget, IconSend } from '../icons';
-import { supabase } from '../supabaseClient';
+import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
 import { CLIENT } from '../config/client.js';
 
@@ -103,7 +103,7 @@ export default function Sidebar({ screen, onNav }) {
           <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
         ))}
         <motion.button
-          onClick={() => supabase.auth.signOut()}
+          onClick={() => signOut()}
           whileHover={{ x: 3, backgroundColor: 'rgba(199,80,59,.08)' }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 420, damping: 30 }}

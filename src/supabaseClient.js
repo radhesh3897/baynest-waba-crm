@@ -36,3 +36,15 @@ export const supabase = DEMO
   : createClient(url, anonKey, {
       auth: { persistSession: true, autoRefreshToken: true },
     });
+
+// Sign out has to work in demo mode too, where `supabase` is a no-op stub and
+// auth.signOut() would silently do nothing — leaving no way back to the login
+// screen. In demo we just drop the flag and reload.
+export async function signOut() {
+  if (DEMO) {
+    localStorage.removeItem('demo_mode');
+    location.reload();
+    return;
+  }
+  await supabase.auth.signOut();
+}

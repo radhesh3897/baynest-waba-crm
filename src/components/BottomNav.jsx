@@ -4,7 +4,7 @@ import {
   IconHome, IconInbox, IconZap, IconDb, IconPeople, IconWhatsApp,
   IconTemplate, IconSettings, IconLogs, IconHelp, IconChart, IconTarget, IconSend,
 } from '../icons';
-import { supabase } from '../supabaseClient';
+import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
 
 // Primary tabs always visible on the bar.
@@ -98,7 +98,7 @@ export default function BottomNav({ screen, onNav }) {
                   );
                 })}
               </div>
-              <button onClick={() => { supabase.auth.signOut(); setMoreOpen(false); }} style={{
+              <button onClick={() => { signOut(); setMoreOpen(false); }} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', padding: '13px',
                 border: '1px solid rgba(199,80,59,.25)', borderRadius: 12, background: '#FDECEA', color: '#C7503B',
                 fontSize: 14, fontWeight: 700, cursor: 'pointer',
