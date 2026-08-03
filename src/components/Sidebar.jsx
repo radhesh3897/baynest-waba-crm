@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconChart, IconTarget, IconSend } from '../icons';
+import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconChart, IconTarget, IconSend, IconBuilding } from '../icons';
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
 import { CLIENT } from '../config/client.js';
@@ -16,6 +16,7 @@ const NAV_ITEMS_WHATSAPP = [
 const NAV_ITEMS_LEAD_MGMT = [
   { key: 'crm',            label: 'CRM',            Icon: IconDb },
   { key: 'people',         label: 'People',         Icon: IconPeople },
+  { key: 'properties',     label: 'Properties',     Icon: IconBuilding },
   { key: 'leads-overview', label: 'Leads Overview', Icon: IconChart },
 ];
 const NAV_ITEMS_ANALYTICS = [

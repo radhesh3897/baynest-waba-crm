@@ -1033,4 +1033,78 @@ export async function deleteNoteLive(noteId) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+// ─── Property Master + per-lead pitch tracking ──────────────────────────────────
+export const PROPERTY_STATUSES = ['interested', 'pitched', 'visited', 'negotiating', 'booked', 'rejected'];
+export const REJECTION_REASONS = ['budget', 'location', 'configuration', 'possession', 'competitor', 'other'];
+
+export async function getProperties() {
+  if (DEMO) return demo.properties;
+  const { data, error } = await supabase
+    .from('properties').select('*').eq('active', true)
+    .order('sort_order', { ascending: true });
+  if (error) { console.error('getProperties', error); return []; }
+  return data || [];
+}
+
+// Properties tagged to one lead, joined with the property details.
+export async function getLeadProperties(contactId) {
+  if (!contactId) return [];
+  if (DEMO) return (demo.leadProperties[contactId] || []);
+  const { data, error } = await supabase
+    .from('lead_properties')
+    .select('*, properties(*)')
+    .eq('contact_id', contactId)
+    .order('created_at', { ascending: true });
+  if (error) { console.error('getLeadProperties', error); return []; }
+  return (data || []).map(lp => ({
+    id: lp.id, property_id: lp.property_id, status: lp.status,
+    rejection_reason: lp.rejection_reason, note: lp.note,
+    property: lp.properties,
+  }));
+}
+
+// Tag a lead as interested in a property (idempotent on contact+property).
+export async function tagLeadProperty(contactId, propertyId) {
+  if (DEMO) return { ok: true };
+  const { error } = await supabase
+    .from('lead_properties')
+    .upsert({ contact_id: contactId, property_id: propertyId, status: 'interested' },
+            { onConflict: 'contact_id,property_id', ignoreDuplicates: true });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// Move a pitch along the mini-pipeline. For 'rejected', pass a reason to KEEP the
+// history of why it didn't land (better than deleting — see the app's rationale).
+export async function setLeadPropertyStatus(id, status, rejection_reason = null) {
+  if (DEMO) return { ok: true };
+  const { error } = await supabase
+    .from('lead_properties')
+    .update({ status, rejection_reason: status === 'rejected' ? rejection_reason : null })
+    .eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// Hard remove a tag (for mistakes). Prefer setLeadPropertyStatus('rejected') to keep history.
+export async function removeLeadProperty(id) {
+  if (DEMO) return { ok: true };
+  const { error } = await supabase.from('lead_properties').delete().eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+// Suggest properties that fit a lead's budget + area + configuration. Uses the
+// parsed numeric fields; a lead with budget 5 Cr and area Worli surfaces the
+// Worli projects at or under 5 Cr first. Cheap client-side match over the master.
+export function matchProperties(properties, { budgetCr, area, bhk } = {}) {
+  return properties
+    .map(p => {
+      let score = 0;
+      if (area && p.area && p.area.toLowerCase().includes(String(area).toLowerCase())) score += 3;
+      if (budgetCr && p.price_min_cr != null && p.price_min_cr <= Number(budgetCr) * 1.1) score += 2;
+      if (bhk && p.configuration && p.configuration.includes(String(bhk))) score += 1;
+      return { ...p, matchScore: score };
+    })
+    .filter(p => p.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore);
+}
+
 export { msgTime, relativeTime };

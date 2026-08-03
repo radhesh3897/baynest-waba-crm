@@ -108,6 +108,10 @@ export function IconTarget({ size = 18 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>;
 }
 
+export function IconBuilding({ size = 18 }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 8h5a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4"/><line x1="7.5" y1="7" x2="10.5" y2="7"/><line x1="7.5" y1="11" x2="10.5" y2="11"/><line x1="7.5" y1="15" x2="10.5" y2="15"/><line x1="17" y1="12" x2="17" y2="12"/><line x1="17" y1="16" x2="17" y2="16"/></svg>;
+}
+
 export function TickIcon({ status }) {
   if (!status) return null;
   const color = status === 'read' ? '#53BDEB' : 'rgba(255,255,255,.75)';

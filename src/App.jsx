@@ -9,6 +9,7 @@ import Automation from './screens/Automation';
 import Templates from './screens/Templates';
 import CRM from './screens/CRM';
 import People from './screens/People';
+import Properties from './screens/Properties';
 import MetaDashboard from './screens/MetaDashboard';
 import Tracking from './screens/Tracking';
 import Campaigns from './screens/Campaigns';
@@ -78,6 +79,7 @@ export default function App() {
     if (screen === 'templates')  return <Templates />;
     if (screen === 'crm')        return <CRM />;
     if (screen === 'people')     return <People />;
+    if (screen === 'properties') return <Properties />;
     if (screen === 'ads')        return <MetaDashboard />;
     if (screen === 'tracking')   return <Tracking />;
     if (screen === 'campaigns')  return <Campaigns />;

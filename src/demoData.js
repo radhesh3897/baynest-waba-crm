@@ -110,3 +110,36 @@ export const settings = {
 };
 
 export const unreadCount = conversations.reduce((n, c) => n + (c.unread_count || 0), 0);
+
+// Property master (subset of the seeded catalog) for demo mode.
+const P = (id, name, area, status, configuration, carpet_size, starting_price, price_min_cr, view, positioning, possession) =>
+  ({ id, name, area, status, configuration, carpet_size, starting_price, price_min_cr, view, positioning, possession, active: true });
+export const properties = [
+  P('p1','Lodha Park Adrina','Worli','RTMI','2, 2.5, 3 BHK','944-1334','8 Cr+',8,'Sea Link / ESB','Premium family luxury','Ready'),
+  P('p2','Lodha Bellevue T1','Mahalaxmi','UC','2-5 BHK','877-2960','5 Cr+',5,'Greens + ESB','Value luxury','Jun 2026'),
+  P('p3','Lodha Bellevue T3','Mahalaxmi','UC','3-5 BHK','1162-4000','6.9 Cr+',6.9,'Sea + Racecourse','Low-density luxury','Dec 2026'),
+  P('p4','L&T Island Cove','Mahim','UC','2-4 BHK','767-2800','3.7 Cr+',3.7,'Sea View','Coastal luxury','2029'),
+  P('p5','Lodha Aureus','Sewri','UC','3-4 BHK','1148-2343','4.6 Cr+',4.6,'Waterfront','Investment + luxury','TBD'),
+  P('p6','Kalpataru Oceana','Prabhadevi','UC','4 & 5 BHK','2307-3909','22 Cr+',22,'Full Sea','Ultra luxury boutique','Jun 2026'),
+  P('p7','Kalpataru Code One','Worli','UC','4 & 5 BHK','3562-4749','30 Cr+',30,'City + Sea','Private mansion living','TBD'),
+  P('p8','Runwal 7','Mahalaxmi','UC','2-4 BHK','814-2079','5.6 Cr+',5.6,'Skyline','Luxury high-rise','TBD'),
+  P('p9','Runwal Raya','Worli','Launch','3-5 BHK','1700-4500','On Request',null,'Racecourse + Sea','Landmark launch','TBD'),
+  P('p10','Lodha Lumis','Wadala','UC','3-4 BHK','952-1768','3.7 Cr+',3.7,'City','Smart luxury','Dec 2028'),
+  P('p11','Shapoorji Minerva','Mahalaxmi','RTMI','3.5 & 4 BHK','2019-2136','13 Cr+',13,'Racecourse + Sea','Iconic tower','Ready'),
+  P('p12','SP Odyssey','Marine Drive','UC','3 BHK','1533-1797','15 Cr+',15,'Arabian Sea','Boutique elite','TBD'),
+  P('p13','Lodha Divino','Matunga','UC','2-4 BHK','820-1680','4 Cr+',4,'City','Family luxury','TBD'),
+  P('p14','Embassy Citadel','Worli','UC','3-5 BHK','1840-5560','14 Cr+',14,'Sea + Racecourse','Trophy ultra luxury','2032+'),
+];
+const byPid = Object.fromEntries(properties.map(p => [p.id, p]));
+
+// Rohan (ct1) was pitched 5, likes 1, is negotiating 1, rejected 3 — the exact
+// scenario in the brief, showing statuses kept as history.
+export const leadProperties = {
+  ct1: [
+    { id: 'lp1', property_id: 'p1',  status: 'negotiating', rejection_reason: null,        note: '', property: byPid.p1 },
+    { id: 'lp2', property_id: 'p3',  status: 'interested',  rejection_reason: null,        note: '', property: byPid.p3 },
+    { id: 'lp3', property_id: 'p6',  status: 'rejected',    rejection_reason: 'budget',    note: '', property: byPid.p6 },
+    { id: 'lp4', property_id: 'p7',  status: 'rejected',    rejection_reason: 'budget',    note: '', property: byPid.p7 },
+    { id: 'lp5', property_id: 'p12', status: 'rejected',    rejection_reason: 'location',  note: '', property: byPid.p12 },
+  ],
+};

@@ -12,6 +12,7 @@ import {
 } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
+import LeadProperties from '../components/LeadProperties';
 
 function IconPanelClose() {
   return (
@@ -633,6 +634,9 @@ export default function Inbox() {
           </div>
         ))}
         <div style={{ marginTop: 6 }}><LeadAnswers attributes={contact.attributes} /></div>
+        <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(27,76,94,.10)' }}>
+          <LeadProperties contactId={contact.id} lead={contact} />
+        </div>
       </div>
     </>
   ) : (
