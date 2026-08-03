@@ -1107,4 +1107,96 @@ export function matchProperties(properties, { budgetCr, area, bhk } = {}) {
     .sort((a, b) => b.matchScore - a.matchScore);
 }
 
+// Aggregate interest across the whole catalogue + per property. "accepted" =
+// any active (non-rejected) tag; "rejected" = a rejected tag.
+export async function getPropertyStats() {
+  const rowsToStats = (rows) => {
+    const byProp = {}; let accepted = 0, rejected = 0; const leads = new Set();
+    for (const r of rows) {
+      const rej = r.status === 'rejected';
+      if (rej) rejected++; else accepted++;
+      leads.add(r.contact_id);
+      byProp[r.property_id] = byProp[r.property_id] || { interested: 0, rejected: 0 };
+      if (rej) byProp[r.property_id].rejected++; else byProp[r.property_id].interested++;
+    }
+    return { accepted, rejected, leads: leads.size, total: rows.length, byProp };
+  };
+  if (DEMO) {
+    return rowsToStats(Object.entries(demo.leadProperties).flatMap(([cid, arr]) => arr.map(a => ({ ...a, contact_id: cid }))));
+  }
+  const { data, error } = await supabase.from('lead_properties').select('contact_id, property_id, status');
+  if (error) { console.error('getPropertyStats', error); return { accepted: 0, rejected: 0, leads: 0, total: 0, byProp: {} }; }
+  return rowsToStats(data || []);
+}
+
+// The leads tagged to one property (for the property detail view).
+export async function getPropertyLeads(propertyId) {
+  if (DEMO) {
+    return Object.entries(demo.leadProperties).flatMap(([cid, arr]) =>
+      arr.filter(a => a.property_id === propertyId).map(a => ({
+        id: a.id, status: a.status, rejection_reason: a.rejection_reason,
+        contact: (demo.people.find(p => p.id === cid) || { profile_name: cid }),
+      })));
+  }
+  const { data, error } = await supabase
+    .from('lead_properties')
+    .select('id, status, rejection_reason, contacts(id, profile_name, wa_id, lead_status)')
+    .eq('property_id', propertyId);
+  if (error) { console.error('getPropertyLeads', error); return []; }
+  return (data || []).map(r => ({ id: r.id, status: r.status, rejection_reason: r.rejection_reason, contact: r.contacts }));
+}
+
+// Editable master fields. Numeric helpers (price_min_cr, carpet_min/max) power
+// the lead-matching, so they are edited too.
+export const PROPERTY_FIELDS = [
+  { key: 'name', label: 'Project name', required: true },
+  { key: 'developer', label: 'Developer' },
+  { key: 'area', label: 'Area / Micro-market' },
+  { key: 'status', label: 'Status', options: ['RTMI', 'UC', 'Launch'] },
+  { key: 'configuration', label: 'Configuration' },
+  { key: 'carpet_size', label: 'Carpet size (text, e.g. 944-1334)' },
+  { key: 'carpet_min', label: 'Carpet min (sq ft)', type: 'number' },
+  { key: 'carpet_max', label: 'Carpet max (sq ft)', type: 'number' },
+  { key: 'starting_price', label: 'Starting price (text, e.g. 8 Cr+)' },
+  { key: 'price_min_cr', label: 'Starting price (Cr, number)', type: 'number' },
+  { key: 'price_per_sqft', label: 'Price per sq ft' },
+  { key: 'view', label: 'View' },
+  { key: 'positioning', label: 'Positioning' },
+  { key: 'possession', label: 'Possession' },
+  { key: 'rera_number', label: 'RERA number' },
+  { key: 'brochure_url', label: 'Brochure link' },
+  { key: 'amenities', label: 'Amenities', textarea: true },
+  { key: 'description', label: 'Notes / Description', textarea: true },
+];
+
+function cleanPropertyPayload(p) {
+  const out = {};
+  for (const f of PROPERTY_FIELDS) {
+    let v = p[f.key];
+    if (v === '' || v === undefined) v = null;
+    if (f.type === 'number' && v != null) v = Number(v);
+    out[f.key] = v;
+  }
+  return out;
+}
+
+export async function createProperty(p) {
+  if (DEMO) return { ok: true, id: 'demo' };
+  const payload = cleanPropertyPayload(p);
+  const { data, error } = await supabase.from('properties').insert(payload).select('id').single();
+  return error ? { ok: false, error: error.message } : { ok: true, id: data.id };
+}
+
+export async function updateProperty(id, p) {
+  if (DEMO) return { ok: true };
+  const { error } = await supabase.from('properties').update(cleanPropertyPayload(p)).eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function deleteProperty(id) {
+  if (DEMO) return { ok: true };
+  const { error } = await supabase.from('properties').update({ active: false }).eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export { msgTime, relativeTime };

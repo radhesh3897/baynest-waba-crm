@@ -130,6 +130,15 @@ export const properties = [
   P('p13','Lodha Divino','Matunga','UC','2-4 BHK','820-1680','4 Cr+',4,'City','Family luxury','TBD'),
   P('p14','Embassy Citadel','Worli','UC','3-5 BHK','1840-5560','14 Cr+',14,'Sea + Racecourse','Trophy ultra luxury','2032+'),
 ];
+// Backfill developer for demo, matching the seeded catalogue.
+properties.forEach(p => {
+  p.developer = /^Lodha/.test(p.name) ? 'Lodha Group'
+    : /^Kalpataru/.test(p.name) ? 'Kalpataru'
+    : /^Runwal/.test(p.name) ? 'Runwal Group'
+    : /^L&T/.test(p.name) ? 'L&T Realty'
+    : /^(Shapoorji|SP )/.test(p.name) ? 'Shapoorji Pallonji'
+    : /^Embassy/.test(p.name) ? 'Embassy Group' : null;
+});
 const byPid = Object.fromEntries(properties.map(p => [p.id, p]));
 
 // Rohan (ct1) was pitched 5, likes 1, is negotiating 1, rejected 3 — the exact
