@@ -3,6 +3,7 @@ import { getPeopleLive, getFormsLive, syncFormsFromMeta, deletePersonLive, addCo
 import { IconSearch, IconPlus, IconX, IconMail, IconPhone, IconWhatsApp, IconZap, IconEdit, IconChevDown, IconRefresh } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
+import LeadProperties from '../components/LeadProperties';
 
 const LEAD_STATUS_STYLE = {
   New:  { bg: 'rgba(27,76,94,.07)',   fg: 'var(--brand-primary)' },
@@ -221,7 +222,10 @@ export default function People() {
               </div>
             ))}
             <div style={{ marginTop: 14 }}><LeadAnswers attributes={sel.attributes} /></div>
-            <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 4 }}>
+            <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
+              <LeadProperties contactId={sel.id} lead={sel} />
+            </div>
+            <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
               <ContactNotes contactId={sel.id} />
             </div>
           </div>
