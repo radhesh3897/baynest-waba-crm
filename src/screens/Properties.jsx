@@ -15,20 +15,17 @@ function statusChip(status) {
 
 const TH = { textAlign: 'left', fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)', padding: '16px 14px 10px', textTransform: 'uppercase', whiteSpace: 'nowrap' };
 const TD = { fontSize: 13, color: 'var(--brand-primary)', padding: '13px 14px', borderTop: '1px solid rgba(27,76,94,.07)', verticalAlign: 'middle' };
-
-function StatTile({ label, value, tone }) {
-  const fg = tone === 'accept' ? '#3B6B45' : tone === 'reject' ? 'rgba(199,80,59,.9)' : tone === 'gold' ? '#8A5E22' : 'var(--brand-primary)';
-  return (
-    <div style={{ flex: 1, minWidth: 130, background: '#fff', border: '1px solid rgba(27,76,94,.08)', borderRadius: 14, padding: '15px 17px' }}>
-      <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 800, color: fg, marginTop: 5, lineHeight: 1 }}>{value}</div>
-    </div>
-  );
+// Count "pill" for the Interested / Rejected columns.
+function countCell(n, tone) {
+  const fg = tone === 'accept' ? '#3B6B45' : 'rgba(199,80,59,.9)';
+  const bg = tone === 'accept' ? 'rgba(115,167,111,.16)' : 'rgba(199,80,59,.09)';
+  if (!n) return <span style={{ color: 'rgba(27,76,94,.28)' }}>0</span>;
+  return <span style={{ background: bg, color: fg, fontWeight: 800, fontSize: 12.5, padding: '2px 10px', borderRadius: 999, minWidth: 22, display: 'inline-block', textAlign: 'center' }}>{n}</span>;
 }
 
 export default function Properties() {
   const [rows, setRows] = useState([]);
-  const [stats, setStats] = useState({ accepted: 0, rejected: 0, leads: 0, byProp: {} });
+  const [stats, setStats] = useState({ byProp: {} });
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [area, setArea] = useState('All');
@@ -64,15 +61,7 @@ export default function Properties() {
           <IconPlus size={14} /> Add property
         </button>
       </div>
-      <p style={{ margin: '0 0 18px', fontSize: 13, color: 'rgba(27,76,94,.55)' }}>The master catalogue. Click any project to edit it or see who is interested.</p>
-
-      {/* Analytics on top — accepted vs rejected across every lead tag */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-        <StatTile label="Projects" value={rows.length} />
-        <StatTile label="Interested (accepted)" value={stats.accepted} tone="accept" />
-        <StatTile label="Rejected" value={stats.rejected} tone="reject" />
-        <StatTile label="Leads engaged" value={stats.leads} tone="gold" />
-      </div>
+      <p style={{ margin: '0 0 20px', fontSize: 13, color: 'rgba(27,76,94,.55)' }}>The master catalogue. Interested and Rejected show how each project performs across all leads. Click a project to edit it or tag leads.</p>
 
       {/* Controls */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 16 }}>
@@ -90,20 +79,26 @@ export default function Properties() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* Table — per-project analysis: Interested vs Rejected */}
       <div style={{ background: '#fff', borderRadius: 16, border: '1px solid rgba(27,76,94,.08)', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 940 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
             <thead>
               <tr>
-                {['Project', 'Area', 'Status', 'Configuration', 'Carpet (sq ft)', 'Starting Price', 'Interest', 'Possession'].map(h => <th key={h} style={TH}>{h}</th>)}
+                <th style={TH}>Project</th>
+                <th style={TH}>Area</th>
+                <th style={TH}>Status</th>
+                <th style={TH}>Configuration</th>
+                <th style={TH}>Starting Price</th>
+                <th style={{ ...TH, textAlign: 'center' }}>Interested</th>
+                <th style={{ ...TH, textAlign: 'center' }}>Rejected</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td style={{ ...TD, color: 'rgba(27,76,94,.5)' }} colSpan={8}>Loading…</td></tr>
+                <tr><td style={{ ...TD, color: 'rgba(27,76,94,.5)' }} colSpan={7}>Loading…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td style={{ ...TD, color: 'rgba(27,76,94,.5)' }} colSpan={8}>No projects match.</td></tr>
+                <tr><td style={{ ...TD, color: 'rgba(27,76,94,.5)' }} colSpan={7}>No projects match.</td></tr>
               ) : filtered.map(r => {
                 const ip = stats.byProp[r.id] || { interested: 0, rejected: 0 };
                 return (
@@ -115,15 +110,9 @@ export default function Properties() {
                     <td style={TD}>{r.area}</td>
                     <td style={TD}><span style={statusChip(r.status)}>{r.status}</span></td>
                     <td style={{ ...TD, whiteSpace: 'nowrap' }}>{r.configuration}</td>
-                    <td style={{ ...TD, whiteSpace: 'nowrap', color: 'rgba(27,76,94,.75)' }}>{r.carpet_size}</td>
                     <td style={{ ...TD, fontWeight: 700, whiteSpace: 'nowrap' }}>{r.starting_price}</td>
-                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>
-                      {ip.interested > 0 && <span style={{ color: '#3B6B45', fontWeight: 700 }}>{ip.interested} interested</span>}
-                      {ip.interested > 0 && ip.rejected > 0 && <span style={{ color: 'rgba(27,76,94,.3)' }}> · </span>}
-                      {ip.rejected > 0 && <span style={{ color: 'rgba(199,80,59,.8)', fontWeight: 600 }}>{ip.rejected} rej</span>}
-                      {ip.interested === 0 && ip.rejected === 0 && <span style={{ color: 'rgba(27,76,94,.3)' }}>—</span>}
-                    </td>
-                    <td style={{ ...TD, whiteSpace: 'nowrap' }}>{r.possession}</td>
+                    <td style={{ ...TD, textAlign: 'center' }}>{countCell(ip.interested, 'accept')}</td>
+                    <td style={{ ...TD, textAlign: 'center' }}>{countCell(ip.rejected, 'reject')}</td>
                   </tr>
                 );
               })}
@@ -133,7 +122,7 @@ export default function Properties() {
       </div>
 
       {editing !== undefined && (
-        <PropertyDetail property={editing} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); setLoading(true); load(); }} />
+        <PropertyDetail property={editing} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); setLoading(true); load(); }} onTagsChanged={load} />
       )}
     </div>
   );
