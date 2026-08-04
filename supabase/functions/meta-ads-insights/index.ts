@@ -1,7 +1,10 @@
-// meta-ads-insights — read-only Meta Ads dashboard data for the Done For You
-// ad account, using a Meta system-user token (META_ADS_TOKEN, ads_read).
+// meta-ads-insights — read-only Meta Ads dashboard data for the client's ad
+// account, using a Meta system-user token (META_ADS_TOKEN, ads_read).
 // Auth: a logged-in app user (getUser) or service role; anon key is rejected.
 // Deploy with verify_jwt = false (authorize() enforces access).
+//
+// The ad account is NOT hardcoded: set META_AD_ACCOUNT_ID, or leave it unset and
+// the function discovers the first account the token can actually read.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -9,12 +12,33 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-// Prefer a dedicated ads token (ads_read on the DFY account). Falls back to the
-// WhatsApp system-user token if it ever gets ads_read assigned.
+// Prefer a dedicated ads token. Falls back to the WhatsApp system-user token,
+// which works as long as it carries ads_read.
 const TOKEN             = Deno.env.get("META_ADS_TOKEN") || Deno.env.get("WHATSAPP_TOKEN") || "";
 const V                 = Deno.env.get("META_API_VERSION") ?? "v21.0";
-const ACT               = "act_1472920217149382"; // Done For You
-const BENCHMARK_CPL     = 370;
+// Optional. Accepts "act_123..." or bare "123...". Empty => auto-discover.
+const ACT_ENV           = (Deno.env.get("META_AD_ACCOUNT_ID") ?? "").trim();
+// Target cost-per-lead for the benchmark banner. 0/unset hides the comparison.
+const BENCHMARK_CPL     = Number(Deno.env.get("META_BENCHMARK_CPL") ?? "0") || null;
+
+// Resolve the ad account: use the configured one, else ask Meta which accounts
+// this token can read and take the first. Avoids hardcoding a client's account.
+let _actCache = "";
+async function resolveAct(): Promise<string> {
+  if (ACT_ENV) return ACT_ENV.startsWith("act_") ? ACT_ENV : `act_${ACT_ENV}`;
+  if (_actCache) return _actCache;
+  const res = await fetch(
+    `https://graph.facebook.com/${V}/me/adaccounts?fields=id,name,account_status&limit=25&access_token=${TOKEN}`,
+  );
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`adaccounts lookup failed: ${JSON.stringify(j)}`);
+  const list = (j as Record<string, unknown>).data as Record<string, unknown>[] ?? [];
+  if (list.length === 0) throw new Error("This token cannot read any ad account. Assign the ad account to the system user with ads_read, or set META_AD_ACCOUNT_ID.");
+  // Prefer an ACTIVE account (status 1) when the token can see several.
+  const pick = list.find((a) => Number(a.account_status) === 1) ?? list[0];
+  _actCache = String(pick.id);
+  return _actCache;
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -52,10 +76,13 @@ serve(async (req: Request) => {
   if (!TOKEN) return json({ error: "No META_ADS_TOKEN / WHATSAPP_TOKEN configured" }, 500);
 
   try {
+    // Which ad account? Configured, or discovered from the token.
+    const ACT = await resolveAct();
+
     // 1) Account node (name, currency, timezone)
     const acctRes = await fetch(`https://graph.facebook.com/${V}/${ACT}?fields=name,currency,timezone_name,account_status&access_token=${TOKEN}`);
     const account = await acctRes.json();
-    if (!acctRes.ok) return json({ error: "Meta account read failed", status: acctRes.status, detail: account }, 502);
+    if (!acctRes.ok) return json({ error: `Meta account read failed for ${ACT}`, status: acctRes.status, detail: account }, 502);
 
     // 2) Account-level insights for today (account timezone)
     const insFields = "spend,impressions,reach,clicks,inline_link_clicks,ctr,cpc,cpm,actions,cost_per_action_type";
