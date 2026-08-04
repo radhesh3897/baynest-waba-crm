@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getProperties, getPropertyStats } from '../liveData';
 import { IconSearch, IconPlus } from '../icons';
+import { useIsMobile } from '../useIsMobile';
 import PropertyDetail from '../components/PropertyDetail';
 
 const STATUS_STYLE = {
@@ -24,6 +25,7 @@ function countCell(n, tone) {
 }
 
 export default function Properties() {
+  const isMobile = useIsMobile();
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({ byProp: {} });
   const [loading, setLoading] = useState(true);
@@ -51,14 +53,14 @@ export default function Properties() {
   const pill = (active) => ({ padding: '6px 13px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', background: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.06)', color: active ? '#fff' : 'rgba(27,76,94,.7)' });
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '26px 30px 40px' }}>
+    <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: isMobile ? '18px 14px 32px' : '26px 30px 40px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>Properties</h1>
-          <span style={{ fontSize: 14, color: 'rgba(27,76,94,.45)', fontWeight: 600 }}>{filtered.length} projects</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, minWidth: 0 }}>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 21 : 26, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>Properties</h1>
+          <span style={{ fontSize: isMobile ? 12.5 : 14, color: 'rgba(27,76,94,.45)', fontWeight: 600, whiteSpace: 'nowrap' }}>{filtered.length} projects</span>
         </div>
-        <button onClick={() => setEditing(null)} style={{ display: 'flex', alignItems: 'center', gap: 6, border: 'none', background: 'var(--brand-primary)', color: '#fff', borderRadius: 11, fontSize: 13, fontWeight: 700, padding: '10px 16px', cursor: 'pointer' }}>
-          <IconPlus size={14} /> Add property
+        <button onClick={() => setEditing(null)} style={{ display: 'flex', alignItems: 'center', gap: 6, border: 'none', background: 'var(--brand-primary)', color: '#fff', borderRadius: 11, fontSize: 13, fontWeight: 700, padding: isMobile ? '9px 13px' : '10px 16px', cursor: 'pointer', flexShrink: 0 }}>
+          <IconPlus size={14} />{isMobile ? 'Add' : 'Add property'}
         </button>
       </div>
       <p style={{ margin: '0 0 20px', fontSize: 13, color: 'rgba(27,76,94,.55)' }}>The master catalogue. Interested and Rejected show how each project performs across all leads. Click a project to edit it or tag leads.</p>
@@ -79,7 +81,41 @@ export default function Properties() {
         </select>
       </div>
 
-      {/* Table — per-project analysis: Interested vs Rejected */}
+      {/* Mobile: cards. A 7-column table is unusable on a phone. */}
+      {isMobile ? (
+        <div>
+          {loading ? (
+            <div style={{ fontSize: 13, color: 'rgba(27,76,94,.5)' }}>Loading…</div>
+          ) : filtered.length === 0 ? (
+            <div style={{ fontSize: 13, color: 'rgba(27,76,94,.5)' }}>No projects match.</div>
+          ) : filtered.map(r => {
+            const ip = stats.byProp[r.id] || { interested: 0, rejected: 0 };
+            return (
+              <button key={r.id} onClick={() => setEditing(r)}
+                style={{ display: 'block', width: '100%', textAlign: 'left', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '13px 14px', marginBottom: 10, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--brand-primary)' }}>{r.name}</div>
+                    <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', marginTop: 2 }}>
+                      {[r.developer, r.area].filter(Boolean).join(' · ')}
+                    </div>
+                  </div>
+                  <span style={statusChip(r.status)}>{r.status}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-primary)' }}>{r.starting_price}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(27,76,94,.6)' }}>{r.configuration}</span>
+                  <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {countCell(ip.interested, 'accept')}
+                    {countCell(ip.rejected, 'reject')}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+      /* Desktop table — per-project analysis: Interested vs Rejected */
       <div style={{ background: '#fff', borderRadius: 16, border: '1px solid rgba(27,76,94,.08)', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
@@ -120,6 +156,7 @@ export default function Properties() {
           </table>
         </div>
       </div>
+      )}
 
       {editing !== undefined && (
         <PropertyDetail property={editing} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); setLoading(true); load(); }} onTagsChanged={load} />

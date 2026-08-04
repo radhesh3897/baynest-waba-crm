@@ -5,6 +5,7 @@ import {
   getPeopleLive, tagLeadProperty, setLeadPropertyStatus, removeLeadProperty,
 } from '../liveData';
 import { IconX, IconPlus, IconSearch } from '../icons';
+import { useIsMobile } from '../useIsMobile';
 
 const LEAD_ST = {
   interested:  { bg: 'rgba(27,76,94,.09)', fg: 'var(--brand-primary)' },
@@ -17,6 +18,7 @@ const LEAD_ST = {
 
 // property = existing row (edit) OR null (create). onTagsChanged refreshes the parent counts.
 export default function PropertyDetail({ property, onClose, onSaved, onTagsChanged }) {
+  const isMobile = useIsMobile();
   const isNew = !property?.id;
   const [form, setForm] = useState(() => {
     const base = {};
@@ -107,7 +109,7 @@ export default function PropertyDetail({ property, onClose, onSaved, onTagsChang
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(18,54,66,.45)', zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 'min(560px, 96vw)', height: '100%', background: 'var(--app-bg)', boxShadow: '-16px 0 48px rgba(18,54,66,.28)', display: 'flex', flexDirection: 'column' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: isMobile ? '100%' : 'min(560px, 96vw)', height: '100%', background: 'var(--app-bg)', boxShadow: '-16px 0 48px rgba(18,54,66,.28)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(27,76,94,.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
           <div>
             <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.45)' }}>{isNew ? 'ADD PROPERTY' : 'EDIT PROPERTY'}</div>
@@ -116,8 +118,8 @@ export default function PropertyDetail({ property, onClose, onSaved, onTagsChang
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(27,76,94,.06)', cursor: 'pointer', color: 'rgba(27,76,94,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={15} /></button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px' : '20px 22px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 13 }}>
             {PROPERTY_FIELDS.map(f => (
               <div key={f.key} style={{ gridColumn: f.textarea ? '1 / -1' : 'auto' }}>
                 <label style={label}>{f.label}{f.required && <span style={{ color: 'rgba(199,80,59,.8)' }}> *</span>}</label>
@@ -180,7 +182,7 @@ export default function PropertyDetail({ property, onClose, onSaved, onTagsChang
           )}
         </div>
 
-        <div style={{ padding: '14px 22px', borderTop: '1px solid rgba(27,76,94,.1)', display: 'flex', alignItems: 'center', gap: 10, background: '#fff' }}>
+        <div style={{ padding: '12px 14px', borderTop: '1px solid rgba(27,76,94,.1)', display: 'flex', alignItems: 'center', gap: 10, background: '#fff' }}>
           {!isNew && <button onClick={remove} disabled={saving} style={{ border: '1px solid rgba(199,80,59,.3)', background: 'transparent', color: 'rgba(199,80,59,.9)', borderRadius: 10, fontSize: 13, fontWeight: 700, padding: '10px 14px', cursor: 'pointer' }}>Archive</button>}
           <div style={{ flex: 1 }} />
           <button onClick={onClose} disabled={saving} style={{ border: '1px solid rgba(27,76,94,.18)', background: 'transparent', color: 'var(--brand-primary)', borderRadius: 10, fontSize: 13, fontWeight: 700, padding: '10px 16px', cursor: 'pointer' }}>Cancel</button>

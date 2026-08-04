@@ -741,39 +741,25 @@ export async function addContactLive({ name, phone, email, company, source }) {
 }
 
 // Real dashboard metrics aggregated from the live DB.
+// ONE round-trip: the home_stats() SQL function assembles every counter, the
+// recent leads and the flow list in a single pass. This used to be 13 separate
+// REST calls, which is what made the dashboard feel slow to load.
+const EMPTY_STATS = {
+  leadsIn: 0, leadsMonth: 0, conversations: 0, qualified: 0, won: 0,
+  sent: 0, received: 0, flowRuns: 0, activeFlows: 0, completedRuns: 0,
+  recent: [], flows: [],
+};
 export async function getHomeStatsLive() {
-  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-  const iso = monthStart.toISOString();
-  const cnt = async (table, build) => {
-    let q = supabase.from(table).select('*', { count: 'exact', head: true });
-    if (build) q = build(q);
-    const { count } = await q;
-    return count || 0;
-  };
-  const [leadsIn, leadsMonth, conversations, qualified, won, sent, received, flowRuns, activeFlows, completedRuns] = await Promise.all([
-    cnt('contacts'),
-    cnt('contacts', q => q.gte('created_at', iso)),
-    cnt('conversations'),
-    cnt('contacts', q => q.in('lead_status', ['Warm', 'Hot', 'Won'])),
-    cnt('contacts', q => q.eq('lead_status', 'Won')),
-    cnt('messages', q => q.eq('direction', 'out')),
-    cnt('messages', q => q.eq('direction', 'in')),
-    cnt('flow_runs'),
-    cnt('flows', q => q.eq('status', 'active')),
-    cnt('flow_runs', q => q.eq('status', 'completed')),
-  ]);
-  const { data: recent } = await supabase.from('contacts')
-    .select('id, profile_name, wa_id, source, lead_status, created_at')
-    .order('created_at', { ascending: false }).limit(6);
-  const { data: flows } = await supabase.from('flows')
-    .select('id, name, status').order('updated_at', { ascending: false }).limit(6);
+  const { data, error } = await supabase.rpc('home_stats');
+  if (error || !data) { console.error('getHomeStatsLive', error); return EMPTY_STATS; }
   return {
-    leadsIn, leadsMonth, conversations, qualified, won, sent, received, flowRuns, activeFlows, completedRuns,
-    recent: (recent || []).map(c => ({
-      id: c.id, name: c.profile_name || c.wa_id, source: c.source || '—',
-      status: c.lead_status || 'New', received: exactTime(c.created_at),
+    ...EMPTY_STATS,
+    ...data,
+    recent: (data.recent || []).map(c => ({
+      id: c.id, name: c.name, source: c.source, status: c.status,
+      received: exactTime(c.created_at),
     })),
-    flows: flows || [],
+    flows: data.flows || [],
   };
 }
 
