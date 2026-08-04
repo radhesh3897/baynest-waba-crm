@@ -88,17 +88,6 @@ export default function Login() {
             {busy ? 'Signing in…' : 'Sign in'}{!busy && <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>}
           </button>
 
-          {/* Local demo mode — opens the tool with sample data, no backend needed.
-              Dev-only (import.meta.env.DEV) so it never shows on a client's live deploy. */}
-          {import.meta.env.DEV && (
-            <button
-              type="button"
-              onClick={() => { localStorage.setItem('demo_mode', '1'); location.reload(); }}
-              style={{ width: '100%', marginTop: 12, background: 'transparent', color: 'var(--brand-primary)', border: '1.5px solid rgba(27,76,94,.25)', fontSize: 13.5, fontWeight: 700, padding: '11px', borderRadius: 12, cursor: 'pointer' }}
-            >
-              View demo
-            </button>
-          )}
         </form>
 
         <div style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: 'rgba(255,255,255,.55)', fontWeight: 600, letterSpacing: '.02em' }}>

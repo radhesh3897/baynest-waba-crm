@@ -1,7 +1,6 @@
 // Supabase-backed data layer for the live Inbox.
 // Maps raw DB rows into the shape the UI components already expect.
-import { supabase, DEMO } from './supabaseClient';
-import * as demo from './demoData';
+import { supabase } from './supabaseClient';
 
 const AVATAR_COLORS = ['#356E63', '#2E7BA8', '#7A5BB9', '#B6743A', '#C7503B', '#2E9E4F', '#15514B', '#4A6EA8'];
 
@@ -72,7 +71,6 @@ function mapContact(c) {
 
 // ─── Conversations ────────────────────────────────────────────────────────────
 export async function getConversationsLive() {
-  if (DEMO) return demo.conversations;
   const { data, error } = await supabase
     .from('conversations')
     .select('id, contact_id, last_message_at, window_expires_at, unread_count, status, contacts(*)')
@@ -152,7 +150,6 @@ export async function getFlowRepliedContactIds() {
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 export async function getMessagesLive(convId) {
-  if (DEMO) return demo.messages[convId] || [];
   const { data, error } = await supabase
     .from('messages')
     .select('*')
@@ -723,7 +720,6 @@ export async function addLeadLive(d) {
 
 // Count of conversations with unread inbound messages (for the Inbox nav badge).
 export async function getUnreadCount() {
-  if (DEMO) return demo.unreadCount;
   const { count } = await supabase.from('conversations').select('*', { count: 'exact', head: true }).gt('unread_count', 0);
   return count || 0;
 }
@@ -746,7 +742,6 @@ export async function addContactLive({ name, phone, email, company, source }) {
 
 // Real dashboard metrics aggregated from the live DB.
 export async function getHomeStatsLive() {
-  if (DEMO) return demo.homeStats;
   const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
   const iso = monthStart.toISOString();
   const cnt = async (table, build) => {
@@ -783,7 +778,6 @@ export async function getHomeStatsLive() {
 }
 
 export async function getSettings() {
-  if (DEMO) return demo.settings;
   const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).maybeSingle();
   if (error) { console.error('getSettings', error); return null; }
   return data;
@@ -835,7 +829,6 @@ export async function getFormsLive() {
 }
 
 export async function getPeopleLive() {
-  if (DEMO) return demo.people;
   const { data, error } = await supabase
     .from('contacts')
     .select('*, fb_forms(id, name)')
@@ -1038,7 +1031,6 @@ export const PROPERTY_STATUSES = ['interested', 'pitched', 'visited', 'negotiati
 export const REJECTION_REASONS = ['budget', 'location', 'configuration', 'possession', 'competitor', 'other'];
 
 export async function getProperties() {
-  if (DEMO) return demo.properties;
   const { data, error } = await supabase
     .from('properties').select('*').eq('active', true)
     .order('sort_order', { ascending: true });
@@ -1049,7 +1041,6 @@ export async function getProperties() {
 // Properties tagged to one lead, joined with the property details.
 export async function getLeadProperties(contactId) {
   if (!contactId) return [];
-  if (DEMO) return (demo.leadProperties[contactId] || []);
   const { data, error } = await supabase
     .from('lead_properties')
     .select('*, properties(*)')
@@ -1065,7 +1056,6 @@ export async function getLeadProperties(contactId) {
 
 // Tag a lead as interested in a property (idempotent on contact+property).
 export async function tagLeadProperty(contactId, propertyId) {
-  if (DEMO) return { ok: true };
   const { error } = await supabase
     .from('lead_properties')
     .upsert({ contact_id: contactId, property_id: propertyId, status: 'interested' },
@@ -1076,7 +1066,6 @@ export async function tagLeadProperty(contactId, propertyId) {
 // Move a pitch along the mini-pipeline. For 'rejected', pass a reason to KEEP the
 // history of why it didn't land (better than deleting — see the app's rationale).
 export async function setLeadPropertyStatus(id, status, rejection_reason = null) {
-  if (DEMO) return { ok: true };
   const { error } = await supabase
     .from('lead_properties')
     .update({ status, rejection_reason: status === 'rejected' ? rejection_reason : null })
@@ -1086,7 +1075,6 @@ export async function setLeadPropertyStatus(id, status, rejection_reason = null)
 
 // Hard remove a tag (for mistakes). Prefer setLeadPropertyStatus('rejected') to keep history.
 export async function removeLeadProperty(id) {
-  if (DEMO) return { ok: true };
   const { error } = await supabase.from('lead_properties').delete().eq('id', id);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
@@ -1121,9 +1109,6 @@ export async function getPropertyStats() {
     }
     return { accepted, rejected, leads: leads.size, total: rows.length, byProp };
   };
-  if (DEMO) {
-    return rowsToStats(Object.entries(demo.leadProperties).flatMap(([cid, arr]) => arr.map(a => ({ ...a, contact_id: cid }))));
-  }
   const { data, error } = await supabase.from('lead_properties').select('contact_id, property_id, status');
   if (error) { console.error('getPropertyStats', error); return { accepted: 0, rejected: 0, leads: 0, total: 0, byProp: {} }; }
   return rowsToStats(data || []);
@@ -1131,13 +1116,6 @@ export async function getPropertyStats() {
 
 // The leads tagged to one property (for the property detail view).
 export async function getPropertyLeads(propertyId) {
-  if (DEMO) {
-    return Object.entries(demo.leadProperties).flatMap(([cid, arr]) =>
-      arr.filter(a => a.property_id === propertyId).map(a => ({
-        id: a.id, status: a.status, rejection_reason: a.rejection_reason,
-        contact: (demo.people.find(p => p.id === cid) || { profile_name: cid }),
-      })));
-  }
   const { data, error } = await supabase
     .from('lead_properties')
     .select('id, status, rejection_reason, contacts(id, profile_name, wa_id, lead_status)')
@@ -1181,20 +1159,17 @@ function cleanPropertyPayload(p) {
 }
 
 export async function createProperty(p) {
-  if (DEMO) return { ok: true, id: 'demo' };
   const payload = cleanPropertyPayload(p);
   const { data, error } = await supabase.from('properties').insert(payload).select('id').single();
   return error ? { ok: false, error: error.message } : { ok: true, id: data.id };
 }
 
 export async function updateProperty(id, p) {
-  if (DEMO) return { ok: true };
   const { error } = await supabase.from('properties').update(cleanPropertyPayload(p)).eq('id', id);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 export async function deleteProperty(id) {
-  if (DEMO) return { ok: true };
   const { error } = await supabase.from('properties').update({ active: false }).eq('id', id);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
