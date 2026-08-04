@@ -2,7 +2,7 @@
 // Maps raw DB rows into the shape the UI components already expect.
 import { supabase } from './supabaseClient';
 
-const AVATAR_COLORS = ['#356E63', '#2E7BA8', '#7A5BB9', '#B6743A', '#C7503B', '#2E9E4F', '#15514B', '#4A6EA8'];
+const AVATAR_COLORS = ['#356E63', '#2E7BA8', '#7A5BB9', '#B6743A', '#C7503B', '#3B6B45', '#15514B', '#4A6EA8'];
 
 // Deterministic avatar colour from a stable key (wa_id), so a contact keeps the same colour.
 function colorFor(key = '') {
@@ -340,7 +340,7 @@ export async function syncTemplatesFromMeta() {
   return { ok: true, synced: data?.synced ?? 0 };
 }
 
-// ─── Meta Ads dashboard (Done For You) ──────────────────────────────────────────
+// ─── Meta Ads dashboard ──────────────────────────────────────────────────────────────────────────────────────────────────
 // Live, on-demand pull from the read-only meta-ads-insights edge function.
 export async function getMetaAdsInsights() {
   const { data, error } = await supabase.functions.invoke('meta-ads-insights', { body: {} });

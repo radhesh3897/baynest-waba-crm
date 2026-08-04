@@ -1,7 +1,7 @@
 const STUBS = {
   account:   { title: 'Account Settings',  sub: 'Workspace, team seats and channel connections.' },
   logs:      { title: 'Logs',              sub: 'Delivery, automation and webhook event logs.' },
-  help:      { title: 'Help & Support',    sub: 'Docs, guides and a way to reach the DFY team.' },
+  help:      { title: 'Help & Support',    sub: 'Docs, guides and a way to reach the team.' },
   whatsapp:  { title: 'WhatsApp Channel', sub: 'Connected number, quality rating and broadcasts.' },
 };
 

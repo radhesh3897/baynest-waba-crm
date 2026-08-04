@@ -46,7 +46,7 @@ const edgeBase = {
 };
 
 const statusStyle = (s) => ({
-  active: { bg: '#EAF6E4', fg: '#2E9E4F', label: 'Live' },
+  active: { bg: '#EAF6E4', fg: '#3B6B45', label: 'Live' },
   paused: { bg: '#FFF1DC', fg: '#B6743A', label: 'Paused' },
   draft:  { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.6)', label: 'Draft' },
 }[s] || { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.6)', label: 'Draft' });
@@ -241,7 +241,7 @@ function Builder() {
                   </div>
                   <div style={{ display: 'flex', gap: 7 }}>
                     <button onClick={() => openFlow(f.id)} style={{ background: 'var(--brand-primary)', border: 'none', color: '#EAF6E4', fontSize: 12.5, fontWeight: 700, padding: '8px 14px', borderRadius: 9, cursor: 'pointer' }}>Open</button>
-                    <button onClick={() => toggleStatusInList(f)} style={{ background: f.status === 'active' ? '#FFF1DC' : '#EAF6E4', border: 'none', color: f.status === 'active' ? '#B6743A' : '#2E9E4F', fontSize: 12.5, fontWeight: 700, padding: '8px 12px', borderRadius: 9, cursor: 'pointer' }}>{actionLabel}</button>
+                    <button onClick={() => toggleStatusInList(f)} style={{ background: f.status === 'active' ? '#FFF1DC' : '#EAF6E4', border: 'none', color: f.status === 'active' ? '#B6743A' : '#3B6B45', fontSize: 12.5, fontWeight: 700, padding: '8px 12px', borderRadius: 9, cursor: 'pointer' }}>{actionLabel}</button>
                     <button onClick={() => deleteFromList(f)} title="Delete" style={{ background: '#fff', border: '1px solid rgba(27,76,94,.16)', color: '#C7503B', fontSize: 12.5, fontWeight: 700, padding: '8px 11px', borderRadius: 9, cursor: 'pointer' }}>Delete</button>
                   </div>
                 </div>
@@ -313,7 +313,7 @@ function Builder() {
                       </button>
                     );
                   })}
-                  <button onClick={handleNewFlow} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '11px 13px', background: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, color: '#2E9E4F', fontWeight: 800 }}>
+                  <button onClick={handleNewFlow} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '11px 13px', background: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, color: '#3B6B45', fontWeight: 800 }}>
                     <IconPlus size={14} /> New flow
                   </button>
                 </div>
@@ -338,7 +338,7 @@ function Builder() {
                     <input value={testPhone} onChange={e => setTestPhone(e.target.value)} placeholder="+91 98765 43210" style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 9, padding: '9px 11px', fontSize: 13, color: FOREST, outline: 'none', fontFamily: 'inherit', marginBottom: 10 }} />
                     <button onClick={handleTest} disabled={testing} style={{ width: '100%', background: LIME, border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px', borderRadius: 9, cursor: testing ? 'default' : 'pointer', opacity: testing ? 0.6 : 1 }}>{testing ? 'Sending…' : 'Send test message'}</button>
                     {testResult && (
-                      <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, color: testResult.ok ? '#2E7D45' : '#C7503B', background: testResult.ok ? '#EAF6E4' : '#FDECEA', borderRadius: 8, padding: '9px 10px', lineHeight: 1.5 }}>
+                      <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, color: testResult.ok ? '#3B6B45' : '#C7503B', background: testResult.ok ? '#EAF6E4' : '#FDECEA', borderRadius: 8, padding: '9px 10px', lineHeight: 1.5 }}>
                         {testResult.ok ? '✓ ' : ''}{testResult.msg}
                         {testResult.preview && <div style={{ marginTop: 6, color: 'rgba(27,76,94,.7)', fontWeight: 500, fontStyle: 'italic' }}>“{testResult.preview}”</div>}
                       </div>

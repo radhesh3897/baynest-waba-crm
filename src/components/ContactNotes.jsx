@@ -75,7 +75,7 @@ export default function ContactNotes({ contactId }) {
         style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 9, padding: '9px 11px', fontSize: 13, color: 'var(--brand-primary)', fontFamily: 'inherit', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
       />
       <button onClick={add} disabled={!canAdd}
-        style={{ marginTop: 8, width: '100%', background: canAdd ? 'var(--brand-accent-soft)' : 'rgba(115,207,111,.5)', color: 'var(--brand-primary-dark)', border: 'none', borderRadius: 9, padding: '9px', fontSize: 12.5, fontWeight: 800, cursor: canAdd ? 'pointer' : 'default' }}>
+        style={{ marginTop: 8, width: '100%', background: canAdd ? 'var(--brand-accent-soft)' : 'rgba(27,76,94,.30)', color: 'var(--brand-primary-dark)', border: 'none', borderRadius: 9, padding: '9px', fontSize: 12.5, fontWeight: 800, cursor: canAdd ? 'pointer' : 'default' }}>
         {saving ? 'Saving…' : 'Add note'}
       </button>
 

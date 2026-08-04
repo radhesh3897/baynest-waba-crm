@@ -10,7 +10,7 @@ const LEAD_STATUS_STYLE = {
   Cool: { bg: 'rgba(27,76,94,.11)',   fg: 'var(--brand-primary)' },
   Warm: { bg: 'rgba(27,76,94,.16)',   fg: 'var(--brand-primary)' },
   Hot:  { bg: 'var(--brand-primary)',              fg: 'var(--app-bg)' },
-  Won:  { bg: 'rgba(115,207,111,.3)', fg: 'var(--brand-primary-dark)' },
+  Won:  { bg: 'rgba(115,167,111,.22)', fg: 'var(--brand-primary-dark)' },
   Lost: { bg: 'rgba(27,76,94,.05)',   fg: 'rgba(27,76,94,.45)' },
   Cold: { bg: 'rgba(27,76,94,.09)',   fg: 'var(--brand-primary)' },
 };

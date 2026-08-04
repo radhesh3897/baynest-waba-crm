@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { IconRefresh, IconFacebook } from '../icons';
+import { CLIENT } from '../config/client.js';
 import { useIsMobile } from '../useIsMobile';
 import { getMetaAdsInsights } from '../liveData';
 
@@ -62,7 +63,7 @@ export default function MetaDashboard() {
             <div>
               <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, letterSpacing: '-.3px', color: FOREST }}>Meta Dashboard</div>
               <div style={{ fontSize: 13, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>
-                Live performance · {data?.account?.name || 'Done For You'} · today
+                Live performance · {data?.account?.name || CLIENT.name} · today
               </div>
             </div>
           </div>
@@ -92,7 +93,7 @@ export default function MetaDashboard() {
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Couldn’t load Meta data</div>
             <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{error}</div>
             <div style={{ fontSize: 12.5, marginTop: 10, color: 'rgba(27,76,94,.55)' }}>
-              If this says “Unauthorized” or a token error, confirm the <b>META_ADS_TOKEN</b> secret is set in Supabase with ads_read on the Done For You account.
+              If this says “Unauthorized” or a token error, confirm the <b>META_ADS_TOKEN</b> secret is set in Supabase with ads_read on the ad account.
             </div>
           </div>
         )}

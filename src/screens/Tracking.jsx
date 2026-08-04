@@ -11,7 +11,7 @@ const humanVal = (v) => String(v).replace(/_/g, ' ');
 
 const Q_STYLE = {
   Intake:       { bg: 'var(--app-bg)', fg: 'var(--brand-primary)', on: 'var(--brand-primary)' },
-  Qualified:    { bg: '#EAF7EC', fg: '#2E7D44', on: '#2E9E4F' },
+  Qualified:    { bg: '#EAF7EC', fg: '#2E7D44', on: '#3B6B45' },
   NotQualified: { bg: '#FFF1DC', fg: '#8A6420', on: '#B6743A' },
   Junk:         { bg: '#FDECEA', fg: '#C0392B', on: '#C7503B' },
 };
@@ -125,10 +125,10 @@ export default function Tracking() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 11, background: '#EAF6E4', color: '#2E9E4F', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 9 }}><IconChart size={20} /></div>
+            <div style={{ width: 40, height: 40, borderRadius: 11, background: '#EAF6E4', color: '#3B6B45', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 9 }}><IconChart size={20} /></div>
             <div>
               <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, color: FOREST }}>Tracking</div>
-              <div style={{ fontSize: 13, color: 'rgba(27,76,94,.55)' }}>Qualify leads → sends the event to Meta (DFY - New Pixel / CRM)</div>
+              <div style={{ fontSize: 13, color: 'rgba(27,76,94,.55)' }}>Qualify leads → sends the event to Meta (CRM pixel)</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>

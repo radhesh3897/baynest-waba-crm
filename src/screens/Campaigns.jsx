@@ -129,7 +129,7 @@ export default function Campaigns() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <motion.button whileTap={{ scale: 0.96 }} onClick={load} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid rgba(27,76,94,.18)', color: FOREST, fontSize: 13, fontWeight: 700, padding: '9px 14px', borderRadius: 10, cursor: 'pointer' }}><IconRefresh size={14} /> Refresh</motion.button>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={() => setBuilding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 13, fontWeight: 800, padding: '9px 16px', borderRadius: 10, cursor: 'pointer' }}><IconPlus size={14} /> New campaign</motion.button>
+            <motion.button whileTap={{ scale: 0.96 }} onClick={() => setBuilding(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 800, padding: '9px 16px', borderRadius: 10, cursor: 'pointer' }}><IconPlus size={14} /> New campaign</motion.button>
           </div>
         </div>
 
@@ -327,7 +327,7 @@ function Builder({ onClose, onDone, isMobile }) {
 
       {err && <div style={{ fontSize: 12.5, color: '#C0392B', marginBottom: 12 }}>{err}</div>}
 
-      <button onClick={submit} disabled={busy} style={{ width: '100%', background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 11, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
+      <button onClick={submit} disabled={busy} style={{ width: '100%', background: 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 11, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
         {busy ? 'Starting…' : 'Create & send'}
       </button>
       <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>Sends an approved template to everyone matching the filters. Delivery is throttled; failed/rate-capped messages retry over 24h.</div>
@@ -412,7 +412,7 @@ function Detail({ id, onClose, isMobile }) {
                     {[1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
-                <button onClick={retryFailed} disabled={retrying} style={{ background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 12.5, fontWeight: 800, padding: '9px 16px', borderRadius: 9, cursor: retrying ? 'default' : 'pointer', opacity: retrying ? 0.7 : 1 }}>
+                <button onClick={retryFailed} disabled={retrying} style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 12.5, fontWeight: 800, padding: '9px 16px', borderRadius: 9, cursor: retrying ? 'default' : 'pointer', opacity: retrying ? 0.7 : 1 }}>
                   {retrying ? 'Re-queuing…' : `Retry ${c.failed} failed`}
                 </button>
               </div>

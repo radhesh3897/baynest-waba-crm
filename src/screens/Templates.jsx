@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { getTemplatesLive, syncTemplatesFromMeta, createTemplateLive, getSettings, getMediaHandle, deleteTemplateLive } from '../liveData';
 import { IconSearch, IconPlus, IconDots, IconChevDown, IconX } from '../icons';
+import { CLIENT } from '../config/client.js';
 
 const CAT_STYLE = {
   Marketing: { bg: '#EAF1FB', fg: '#3F6FA8' },
-  Utility: { bg: '#EAF6E4', fg: '#2E9E4F' },
+  Utility: { bg: '#EAF6E4', fg: '#3B6B45' },
   Authentication: { bg: '#F3ECFB', fg: '#7A5BB9' },
 };
 function catChip(cat) {
@@ -13,7 +14,7 @@ function catChip(cat) {
 }
 function statusChip(status) {
   const ok = status === 'Approved';
-  return { display: 'inline-flex', alignItems: 'center', gap: 6, background: ok ? '#EAF6E4' : '#FFF1DC', color: ok ? '#2E9E4F' : '#B6743A', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999 };
+  return { display: 'inline-flex', alignItems: 'center', gap: 6, background: ok ? '#EAF6E4' : '#FFF1DC', color: ok ? '#3B6B45' : '#B6743A', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999 };
 }
 
 const LANGUAGES = [
@@ -461,7 +462,7 @@ export default function Templates() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {number && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'var(--brand-primary)', fontWeight: 600, background: '#fff' }}>
-              <span style={{ width: 7, height: 7, borderRadius: 2, background: '#2E9E4F' }} />{number}
+              <span style={{ width: 7, height: 7, borderRadius: 2, background: '#3B6B45' }} />{number}
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'rgba(27,76,94,.45)', background: '#fff' }}>
@@ -475,7 +476,7 @@ export default function Templates() {
         </div>
       </header>
 
-      {syncMsg && <div style={{ margin: '0 30px 8px', fontSize: 12.5, fontWeight: 600, color: (syncMsg.includes('Synced') || syncMsg.includes('submitted')) ? '#2E9E4F' : '#C7503B' }}>{syncMsg}</div>}
+      {syncMsg && <div style={{ margin: '0 30px 8px', fontSize: 12.5, fontWeight: 600, color: (syncMsg.includes('Synced') || syncMsg.includes('submitted')) ? '#3B6B45' : '#C7503B' }}>{syncMsg}</div>}
       {!syncMsg && templates.length === 0 && <div style={{ margin: '0 30px 8px', fontSize: 12.5, color: 'rgba(27,76,94,.55)' }}>No templates yet — click “Add Template” to create one.</div>}
 
       <div style={{ padding: '6px 30px 36px' }}>
@@ -486,7 +487,7 @@ export default function Templates() {
                 <div style={{ background: '#fff', borderRadius: '4px 12px 12px 12px', padding: '10px 12px 9px', boxShadow: '0 1px 2px rgba(14,58,53,.12)', maxWidth: '96%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--brand-primary)', color: 'var(--brand-accent-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800 }}>d.</div>
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--brand-primary)' }}>Done For You</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{CLIENT.name}</span>
                     <span style={{ marginLeft: 'auto', fontSize: 9.5, color: 'rgba(27,76,94,.4)' }}>11:24</span>
                   </div>
                   <div style={{ fontSize: 11.5, lineHeight: 1.5, color: '#1B3A36' }}>{t.body}</div>
@@ -511,7 +512,7 @@ export default function Templates() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
                   <span style={catChip(t.category)}>{t.category}</span>
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(27,76,94,.55)', border: '1px solid rgba(27,76,94,.16)', padding: '3px 9px', borderRadius: 999 }}>{t.language}</span>
-                  <span style={statusChip(t.status)}><span style={{ width: 6, height: 6, borderRadius: '50%', background: t.status === 'Approved' ? '#2E9E4F' : '#D9A93B' }} />{t.status}</span>
+                  <span style={statusChip(t.status)}><span style={{ width: 6, height: 6, borderRadius: '50%', background: t.status === 'Approved' ? '#3B6B45' : '#D9A93B' }} />{t.status}</span>
                 </div>
               </div>
             </div>

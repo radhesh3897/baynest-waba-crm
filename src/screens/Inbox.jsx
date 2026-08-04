@@ -120,7 +120,7 @@ function FilterBtn({ label, icon: Icon, active, onClick }) {
   return (
     <motion.button onClick={onClick} whileHover={{ x: 2 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 420, damping: 30 }}
       style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '8px 9px', marginBottom: 1, border: 'none', cursor: 'pointer', borderRadius: 8, fontSize: 13, fontWeight: active ? 700 : 500, background: active ? '#EAF6E4' : 'transparent', color: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.7)' }}>
-      <span style={{ width: 15, height: 15, display: 'flex', flexShrink: 0, color: active ? '#2E9E4F' : 'rgba(27,76,94,.5)' }}><Icon size={15} /></span>
+      <span style={{ width: 15, height: 15, display: 'flex', flexShrink: 0, color: active ? '#3B6B45' : 'rgba(27,76,94,.5)' }}><Icon size={15} /></span>
       <span>{label}</span>
     </motion.button>
   );
@@ -393,7 +393,7 @@ export default function Inbox() {
             <label style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(27,76,94,.5)' }}>To
               <input type="date" value={durTo} onChange={e => setDurTo(e.target.value)} style={{ width: '100%', marginTop: 3, boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.16)', borderRadius: 8, padding: '7px 9px', fontSize: 12, color: 'var(--brand-primary)', fontFamily: 'inherit', outline: 'none' }} />
             </label>
-            {(durFrom || durTo) && <button onClick={() => { setDurFrom(''); setDurTo(''); }} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#2E9E4F', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', padding: '2px 0' }}>Clear dates</button>}
+            {(durFrom || durTo) && <button onClick={() => { setDurFrom(''); setDurTo(''); }} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#3B6B45', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', padding: '2px 0' }}>Clear dates</button>}
           </div>
         )}
       </div>
@@ -405,7 +405,7 @@ export default function Inbox() {
     const active = conv.id === selConvId && !isMobile;
     return (
       <motion.div key={conv.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
-        whileHover={{ backgroundColor: active ? '#F2F8F2' : 'rgba(115,207,111,.06)' }}
+        whileHover={{ backgroundColor: active ? '#F2F8F2' : 'rgba(27,76,94,.05)' }}
         onClick={() => selectConv(conv.id)}
         style={{ display: 'flex', gap: 11, padding: isMobile ? '13px 16px' : '12px 14px', cursor: 'pointer', borderLeft: active ? '3px solid var(--brand-accent-soft)' : '3px solid transparent', background: active ? '#F2F8F2' : 'transparent', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
         <div style={{ width: isMobile ? 46 : 38, height: isMobile ? 46 : 38, borderRadius: '50%', background: conv.contact?.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? 18 : 15, fontWeight: 700, flexShrink: 0 }}>
@@ -418,7 +418,7 @@ export default function Inbox() {
           </div>
           <div style={{ fontSize: isMobile ? 13 : 12, color: 'rgba(27,76,94,.6)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.preview}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: conv.status === 'closed' ? 'rgba(27,76,94,.08)' : '#EAF6E4', color: conv.status === 'closed' ? 'rgba(27,76,94,.55)' : '#2E9E4F' }}>{conv.status === 'closed' ? 'Closed' : 'Open'}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: conv.status === 'closed' ? 'rgba(27,76,94,.08)' : '#EAF6E4', color: conv.status === 'closed' ? 'rgba(27,76,94,.55)' : '#3B6B45' }}>{conv.status === 'closed' ? 'Closed' : 'Open'}</span>
             {conv.unread_count > 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-accent-soft)' }} />}
           </div>
         </div>
@@ -445,10 +445,10 @@ export default function Inbox() {
   const composer = windowOpen ? (
     <div style={{ background: '#fff', borderTop: '1px solid rgba(27,76,94,.10)', padding: isMobile ? '10px 12px 12px' : '12px 20px 14px', position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
-        <button onClick={() => { setSendError(''); setShowTemplatePicker(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#2E9E4F' }}>
+        <button onClick={() => { setSendError(''); setShowTemplatePicker(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#3B6B45' }}>
           <span style={{ width: 14, height: 14, display: 'flex' }}><IconTemplate size={14} /></span>Templates
         </button>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EAF6E4', color: '#2E9E4F', fontSize: 12, fontWeight: 800, padding: '4px 11px', borderRadius: 999, fontVariantNumeric: 'tabular-nums' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EAF6E4', color: '#3B6B45', fontSize: 12, fontWeight: 800, padding: '4px 11px', borderRadius: 999, fontVariantNumeric: 'tabular-nums' }}>
           <span style={{ width: 13, height: 13, display: 'flex' }}><IconClock size={13} /></span>{fmtTimer(windowSecs)} window left
         </div>
       </div>
@@ -473,7 +473,7 @@ export default function Inbox() {
       </AnimatePresence>
 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, border: '1px solid rgba(27,76,94,.16)', borderRadius: 14, padding: '9px 12px', background: '#fff' }}>
-        <button onClick={() => setShowEmoji(v => !v)} title="Emoji" style={{ width: 22, height: 22, color: showEmoji ? '#2E9E4F' : 'rgba(27,76,94,.5)', display: 'flex', flexShrink: 0, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}><IconSmile size={20} /></button>
+        <button onClick={() => setShowEmoji(v => !v)} title="Emoji" style={{ width: 22, height: 22, color: showEmoji ? '#3B6B45' : 'rgba(27,76,94,.5)', display: 'flex', flexShrink: 0, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}><IconSmile size={20} /></button>
         <button onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Attach image, video or PDF" style={{ width: 22, height: 22, color: uploading ? 'rgba(27,76,94,.3)' : 'rgba(27,76,94,.5)', display: 'flex', flexShrink: 0, border: 'none', background: 'none', cursor: uploading ? 'default' : 'pointer', padding: 0 }}><IconClip size={20} /></button>
         <input ref={fileInputRef} type="file" accept="image/*,video/*,application/pdf" onChange={handleSendFile} style={{ display: 'none' }} />
         <textarea ref={composerRef} value={composerText} onChange={e => setComposerText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !isMobile) { e.preventDefault(); handleSend(); } }} placeholder="Type a message…" rows={1}
@@ -496,7 +496,7 @@ export default function Inbox() {
             <span style={{ flex: 1, fontSize: 13.5, color: 'rgba(27,76,94,.4)' }}>Free-text disabled outside the window</span>
           </div>
         )}
-        <button onClick={() => { setSendError(''); setShowTemplatePicker(true); }} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 13.5, fontWeight: 800, padding: '13px 20px', borderRadius: 12, cursor: 'pointer', flex: isMobile ? 1 : 'none', flexShrink: 0 }}>
+        <button onClick={() => { setSendError(''); setShowTemplatePicker(true); }} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 13.5, fontWeight: 800, padding: '13px 20px', borderRadius: 12, cursor: 'pointer', flex: isMobile ? 1 : 'none', flexShrink: 0 }}>
           <span style={{ width: 16, height: 16, display: 'flex' }}><IconTemplate size={16} /></span>Send Template
         </button>
       </div>
@@ -529,7 +529,7 @@ export default function Inbox() {
                     {out ? 'You' : contact?.profile_name} · {m.timeStr}
                   </div>
                   <div style={{ maxWidth: isMobile ? '85%' : '74%', borderRadius: 14, fontSize: 13.5, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: out ? 'var(--brand-primary)' : '#fff', color: out ? '#EAF6E4' : '#1B3A36', border: out ? 'none' : '1px solid rgba(27,76,94,.10)', borderBottomRightRadius: out ? 4 : 14, borderBottomLeftRadius: out ? 14 : 4, boxShadow: '0 1px 2px rgba(14,58,53,.04)', padding: '10px 13px' }}>
-                    {m.type === 'template' && <div style={{ display: 'inline-block', fontSize: 9.5, fontWeight: 800, letterSpacing: '.08em', color: out ? 'var(--brand-accent-pale)' : '#2E9E4F', background: out ? 'rgba(115,207,111,.16)' : 'rgba(115,207,111,.14)', padding: '2px 7px', borderRadius: 5, marginBottom: 6 }}>TEMPLATE</div>}
+                    {m.type === 'template' && <div style={{ display: 'inline-block', fontSize: 9.5, fontWeight: 800, letterSpacing: '.08em', color: out ? 'var(--brand-accent-pale)' : '#3B6B45', background: out ? 'rgba(255,255,255,.18)' : 'rgba(115,167,111,.14)', padding: '2px 7px', borderRadius: 5, marginBottom: 6 }}>TEMPLATE</div>}
                     {m.type === 'template' && <br />}
                     {m.type === 'template' && (() => {
                       const sent = renderSentTemplate(m, templatesByName);
@@ -582,7 +582,7 @@ export default function Inbox() {
           </div>
 
           {sendError && <div style={{ background: '#FDE7E0', color: '#C7503B', fontSize: 12.5, fontWeight: 600, padding: '9px 20px' }}>{sendError}</div>}
-          {uploading && <div style={{ background: '#EAF6E4', color: '#2E7D45', fontSize: 12.5, fontWeight: 600, padding: '9px 20px' }}>Uploading attachment…</div>}
+          {uploading && <div style={{ background: '#EAF6E4', color: '#3B6B45', fontSize: 12.5, fontWeight: 600, padding: '9px 20px' }}>Uploading attachment…</div>}
 
           {composer}
         </>
@@ -604,7 +604,7 @@ export default function Inbox() {
         <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</div>
         <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '—' ? contact.jobTitle + ' · ' : ''}{contact.company !== '—' ? contact.company : ''}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
-          {[{ Icon: IconMail, color: 'var(--brand-primary)' }, { Icon: IconPhone, color: 'var(--brand-primary)' }, { Icon: IconWhatsApp, color: '#2E9E4F' }, { Icon: IconZap, color: '#B6743A' }].map(({ Icon, color }, i) => (
+          {[{ Icon: IconMail, color: 'var(--brand-primary)' }, { Icon: IconPhone, color: 'var(--brand-primary)' }, { Icon: IconWhatsApp, color: '#3B6B45' }, { Icon: IconZap, color: '#B6743A' }].map(({ Icon, color }, i) => (
             <span key={i} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid rgba(27,76,94,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><span style={{ width: 16, height: 16, color, display: 'flex' }}><Icon size={16} /></span></span>
           ))}
         </div>
@@ -670,7 +670,7 @@ export default function Inbox() {
             {/* Step 2 — fill the template's variables, then send */}
             {tplToFill ? (
               <>
-                <button onClick={() => { setTplToFill(null); setTplVars([]); }} style={{ background: 'none', border: 'none', color: '#2E9E4F', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', padding: 0, marginBottom: 12 }}>← Back to templates</button>
+                <button onClick={() => { setTplToFill(null); setTplVars([]); }} style={{ background: 'none', border: 'none', color: '#3B6B45', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', padding: 0, marginBottom: 12 }}>← Back to templates</button>
                 <div style={{ background: '#F6FAF6', border: '1px solid rgba(27,76,94,.10)', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--brand-primary)', marginBottom: 4 }}>{tplToFill.name}</div>
                   <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.65)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
@@ -697,7 +697,7 @@ export default function Inbox() {
                 ))}
                 {(() => { const needsImage = (tplToFill.header_type || '').toUpperCase() === 'IMAGE'; const disabled = sendingTpl || tplVars.some(v => !v.trim()) || (needsImage && !tplImage.trim()); return (
                 <button onClick={() => handleSendTemplate(tplToFill, tplVars, tplImage)} disabled={disabled}
-                  style={{ width: '100%', marginTop: 4, background: disabled ? 'rgba(115,207,111,.5)' : 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', fontSize: 14, fontWeight: 800, padding: '12px', borderRadius: 11, cursor: disabled ? 'default' : 'pointer' }}>
+                  style={{ width: '100%', marginTop: 4, background: disabled ? 'rgba(27,76,94,.30)' : 'var(--brand-primary)', color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, padding: '12px', borderRadius: 11, cursor: disabled ? 'default' : 'pointer' }}>
                   {sendingTpl ? 'Sending…' : 'Send template'}
                 </button> ); })()}
               </>
@@ -712,7 +712,7 @@ export default function Inbox() {
                       style={{ border: '1px solid rgba(27,76,94,.14)', borderRadius: 12, padding: '12px 14px', marginBottom: 10, cursor: approved ? 'pointer' : 'not-allowed', opacity: approved ? 1 : 0.55 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
                         <span style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{t.name}{vars > 0 && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: '#B6743A', background: '#FFF1DC', padding: '2px 7px', borderRadius: 999 }}>{vars} field{vars > 1 ? 's' : ''}</span>}</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: approved ? '#EAF6E4' : '#FFF1DC', color: approved ? '#2E9E4F' : '#B6743A' }}>{t.status}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: approved ? '#EAF6E4' : '#FFF1DC', color: approved ? '#3B6B45' : '#B6743A' }}>{t.status}</span>
                       </div>
                       <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.65)', lineHeight: 1.5 }}>{t.body}</div>
                     </div>
@@ -793,7 +793,7 @@ export default function Inbox() {
                 <div style={{ width: 40, height: 4, borderRadius: 999, background: 'rgba(27,76,94,.18)', margin: '6px auto 14px' }} />
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>Filters</span>
-                  <button onClick={() => setMobileFiltersOpen(false)} style={{ background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', border: 'none', borderRadius: 9, padding: '8px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Done</button>
+                  <button onClick={() => setMobileFiltersOpen(false)} style={{ background: 'var(--brand-primary)', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Done</button>
                 </div>
                 {filtersInner}
               </motion.div>

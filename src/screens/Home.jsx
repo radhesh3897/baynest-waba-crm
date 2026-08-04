@@ -10,11 +10,11 @@ const STATUS_STYLE = {
   New: { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' },
   Warm: { bg: 'rgba(27,76,94,.16)', fg: 'var(--brand-primary)' },
   Hot: { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
-  Won: { bg: 'rgba(115,207,111,.3)', fg: 'var(--brand-primary-dark)' },
+  Won: { bg: 'rgba(115,167,111,.22)', fg: 'var(--brand-primary-dark)' },
   Lost: { bg: 'rgba(27,76,94,.05)', fg: 'rgba(27,76,94,.45)' },
 };
 const FLOW_STATUS = {
-  active: { bg: 'rgba(115,207,111,.22)', fg: '#2E7D45', dot: '#2E9E4F' },
+  active: { bg: 'rgba(115,167,111,.18)', fg: '#3B6B45', dot: '#3B6B45' },
   draft: { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.6)', dot: 'rgba(27,76,94,.4)' },
   paused: { bg: '#FFF1DC', fg: '#B6743A', dot: '#D9A93B' },
 };
@@ -86,8 +86,8 @@ export default function Home() {
       <header style={{ padding: isMobile ? '18px 16px 0' : '22px 30px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 23, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>Home</h1>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 8, background: 'rgba(115,207,111,.14)', border: '1px solid rgba(115,207,111,.4)', color: '#2E7D45', fontSize: 12, fontWeight: 700, padding: '5px 11px', borderRadius: 999 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2E9E4F' }} />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 8, background: 'rgba(115,167,111,.14)', border: '1px solid rgba(115,167,111,.32)', color: '#3B6B45', fontSize: 12, fontWeight: 700, padding: '5px 11px', borderRadius: 999 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B6B45' }} />
             Live data
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function Home() {
                 {i > 0 && (
                   <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '6px 0' : '0 10px', flexShrink: 0, gap: 4 }}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ transform: isMobile ? 'rotate(90deg)' : 'none' }}><path d="M4 9H14M14 9L10 5M14 9L10 13" stroke="rgba(27,76,94,.25)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--brand-accent-soft)', whiteSpace: 'nowrap', background: 'rgba(115,207,111,.12)', padding: '2px 7px', borderRadius: 999 }}>{stage.conv}%</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--brand-accent-soft)', whiteSpace: 'nowrap', background: 'rgba(192,138,69,.12)', padding: '2px 7px', borderRadius: 999 }}>{stage.conv}%</span>
                   </div>
                 )}
                 <div style={{ flex: 1, background: '#F6FAF6', border: '1px solid rgba(27,76,94,.08)', borderRadius: 12, padding: '16px 18px' }}>
@@ -137,7 +137,7 @@ export default function Home() {
         {/* Lead Quality (from Tracking → Meta) */}
         {qual && (() => {
           const qualData = [
-            { label: 'Qualified', value: qual.Qualified, color: '#2E9E4F' },
+            { label: 'Qualified', value: qual.Qualified, color: '#3B6B45' },
             { label: 'Not Qualified', value: qual.NotQualified, color: '#B6743A' },
             { label: 'Junk', value: qual.Junk, color: '#C7503B' },
             { label: 'Intake', value: qual.Intake, color: 'var(--brand-primary)' },

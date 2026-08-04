@@ -21,7 +21,7 @@ const STAGE_STYLE = {
   Cool: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.42)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
   Warm: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.62)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' },
   Hot:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-primary)',            fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.13)' },
-  Won:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)',            fg: 'var(--brand-primary)', count: 'rgba(115,207,111,.25)' },
+  Won:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)',            fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
   Lost: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
 };
 
@@ -30,7 +30,7 @@ const LEAD_STATUS_STYLE = {
   Cool: { bg: 'rgba(27,76,94,.11)',      fg: 'var(--brand-primary)' },
   Warm: { bg: 'rgba(27,76,94,.16)',      fg: 'var(--brand-primary)' },
   Hot:  { bg: 'var(--brand-primary)',                 fg: 'var(--app-bg)' },
-  Won:  { bg: 'rgba(115,207,111,.3)',    fg: 'var(--brand-primary-dark)' },
+  Won:  { bg: 'rgba(115,167,111,.22)',    fg: 'var(--brand-primary-dark)' },
   Lost: { bg: 'rgba(27,76,94,.05)',      fg: 'rgba(27,76,94,.45)' },
 };
 
@@ -67,7 +67,7 @@ function ContactPanel({ contact, formDef, onClose }) {
           <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '—' ? `${contact.jobTitle} · ` : ''}{contact.company !== '—' ? contact.company : ''}</div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 13 }}>
             <a href={`https://wa.me/${String(contact.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" title="Open WhatsApp chat"
-              style={{ width: 42, height: 42, borderRadius: 12, border: '1px solid rgba(46,158,79,.3)', background: '#EAF6E4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2E9E4F', textDecoration: 'none' }}>
+              style={{ width: 42, height: 42, borderRadius: 12, border: '1px solid rgba(46,158,79,.3)', background: '#EAF6E4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B6B45', textDecoration: 'none' }}>
               <IconWhatsApp size={20} />
             </a>
           </div>
@@ -285,7 +285,7 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
             <button type="button" onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1px solid rgba(27,76,94,.18)', background: '#fff', color: 'var(--brand-primary)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
               Cancel
             </button>
-            <button type="submit" disabled={saving} style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+            <button type="submit" disabled={saving} style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: 'var(--brand-primary)', color: '#fff', fontSize: 13, fontWeight: 800, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Adding…' : 'Add Lead'}
             </button>
           </div>

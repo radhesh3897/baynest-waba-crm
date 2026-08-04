@@ -44,10 +44,10 @@ function Tab({ label, Icon, active, badge, onClick }) {
       gap: 3, border: 'none', background: 'transparent', cursor: 'pointer', padding: '7px 0 4px',
       color: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.5)', position: 'relative', minWidth: 0,
     }}>
-      <span style={{ position: 'relative', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#2E9E4F' : 'currentColor' }}>
+      <span style={{ position: 'relative', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: active ? '#3B6B45' : 'currentColor' }}>
         <Icon size={22} />
         {badge > 0 && (
-          <span style={{ position: 'absolute', top: -5, right: -8, background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', fontSize: 9.5, fontWeight: 800, minWidth: 16, height: 16, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', border: '2px solid #fff' }}>{badge}</span>
+          <span style={{ position: 'absolute', top: -5, right: -8, background: 'var(--brand-primary)', color: '#fff', fontSize: 9.5, fontWeight: 800, minWidth: 16, height: 16, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px', border: '2px solid #fff' }}>{badge}</span>
         )}
       </span>
       <span style={{ fontSize: 10.5, fontWeight: active ? 800 : 600, letterSpacing: '.01em' }}>{label}</span>
@@ -92,7 +92,7 @@ export default function BottomNav({ screen, onNav }) {
                       border: active ? '1.5px solid var(--brand-accent-soft)' : '1px solid rgba(27,76,94,.12)', borderRadius: 14,
                       background: active ? '#EAF6E4' : '#fff', cursor: 'pointer', color: 'var(--brand-primary)',
                     }}>
-                      <span style={{ width: 24, height: 24, display: 'flex', color: active ? '#2E9E4F' : 'rgba(27,76,94,.7)' }}><m.Icon size={22} /></span>
+                      <span style={{ width: 24, height: 24, display: 'flex', color: active ? '#3B6B45' : 'rgba(27,76,94,.7)' }}><m.Icon size={22} /></span>
                       <span style={{ fontSize: 11.5, fontWeight: active ? 800 : 600, textAlign: 'center', lineHeight: 1.2 }}>{m.label}</span>
                     </button>
                   );

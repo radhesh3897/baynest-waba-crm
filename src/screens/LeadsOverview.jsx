@@ -3,7 +3,7 @@ import { getLeadsOverview } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
 import { IconSearch, IconRefresh } from '../icons';
 
-// DFY palette (matches the rest of the app — forest var(--brand-primary), bg var(--app-bg)).
+// Brand palette (matches the rest of the app).
 const FOREST = 'var(--brand-primary)';
 
 // SOURCE badge: instant_form = blue, ctwa = purple, unknown = muted.

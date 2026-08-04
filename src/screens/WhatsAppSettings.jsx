@@ -57,7 +57,7 @@ export default function WhatsAppSettings() {
           <h1 style={{ margin: '5px 0 0', fontSize: 23, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>WhatsApp Settings</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {msg && <span style={{ fontSize: 12.5, fontWeight: 600, color: msg.includes('fail') ? '#C7503B' : '#2E9E4F' }}>{msg}</span>}
+          {msg && <span style={{ fontSize: 12.5, fontWeight: 600, color: msg.includes('fail') ? '#C7503B' : '#3B6B45' }}>{msg}</span>}
           <button onClick={handleSave} disabled={saving} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save changes'}</button>
         </div>
       </header>
@@ -67,7 +67,7 @@ export default function WhatsAppSettings() {
         {/* Business identity */}
         <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22, marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 18 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EAF6E4', color: '#2E9E4F', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8 }}><IconWhatsApp size={20} /></div>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EAF6E4', color: '#3B6B45', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8 }}><IconWhatsApp size={20} /></div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>Business profile</div>
               <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)' }}>How your WhatsApp number is identified.</div>
@@ -93,7 +93,7 @@ export default function WhatsAppSettings() {
                 Greets a first-time chat (a Click-to-WhatsApp ad tap), asks the 5 qualifying questions one at a time, then hands the chat to you and fires your Meta conversion event. It steps aside the moment you reply in a chat.
               </div>
             </div>
-            <div onClick={() => setS({ ...s, ai_qualify_enabled: !s.ai_qualify_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.ai_qualify_enabled ? '#2E9E4F' : 'rgba(27,76,94,.22)' }}>
+            <div onClick={() => setS({ ...s, ai_qualify_enabled: !s.ai_qualify_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.ai_qualify_enabled ? '#3B6B45' : 'rgba(27,76,94,.22)' }}>
               <span style={{ position: 'absolute', top: 2, left: s.ai_qualify_enabled ? 19 : 2, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 2px rgba(0,0,0,.2)' }} />
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function WhatsAppSettings() {
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>Auto-reply to new leads</div>
               <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>Send a template automatically when a new lead comes in.</div>
             </div>
-            <div onClick={() => setS({ ...s, auto_reply_enabled: !s.auto_reply_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.auto_reply_enabled ? '#2E9E4F' : 'rgba(27,76,94,.22)' }}>
+            <div onClick={() => setS({ ...s, auto_reply_enabled: !s.auto_reply_enabled })} style={{ width: 40, height: 23, borderRadius: 999, flexShrink: 0, position: 'relative', cursor: 'pointer', background: s.auto_reply_enabled ? '#3B6B45' : 'rgba(27,76,94,.22)' }}>
               <span style={{ position: 'absolute', top: 2, left: s.auto_reply_enabled ? 19 : 2, width: 19, height: 19, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 2px rgba(0,0,0,.2)' }} />
             </div>
           </div>
@@ -132,8 +132,8 @@ export default function WhatsAppSettings() {
           </Field>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
             {['Schema deployed', 'Webhook live', 'Send-message live', 'Lead intake (n8n) live', 'Drip engine live', 'AI qualifier live'].map(t => (
-              <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#2E9E4F', background: '#EAF6E4', padding: '5px 11px', borderRadius: 999 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2E9E4F' }} />{t}
+              <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: '#3B6B45', background: '#EAF6E4', padding: '5px 11px', borderRadius: 999 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B6B45' }} />{t}
               </span>
             ))}
           </div>

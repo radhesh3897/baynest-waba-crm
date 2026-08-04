@@ -13,7 +13,7 @@ function Shell({ icon: Icon, title, tint, headerDark, children, width = 232 }) {
   return (
     <div style={{ width, background: '#fff', borderRadius: 13, border: '1px solid rgba(27,76,94,.16)', boxShadow: '0 4px 14px rgba(14,58,53,.10)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: headerDark ? `linear-gradient(90deg, ${FOREST}, var(--brand-muted))` : '#F4F9F3', borderBottom: headerDark ? 'none' : '1px solid rgba(27,76,94,.08)' }}>
-        <span style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, background: headerDark ? 'rgba(255,255,255,.16)' : (tint || '#EAF6E4'), color: headerDark ? 'var(--brand-accent-pale)' : '#2E9E4F' }}>
+        <span style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 5, background: headerDark ? 'rgba(255,255,255,.16)' : (tint || '#EAF6E4'), color: headerDark ? 'var(--brand-accent-pale)' : '#3B6B45' }}>
           <Icon size={16} />
         </span>
         <span style={{ fontSize: 12.5, fontWeight: 800, color: headerDark ? '#EAF6E4' : FOREST }}>{title}</span>
@@ -134,7 +134,7 @@ export function IfElseNode({ id, data }) {
       <input className="nodrag" value={data.value || ''} onChange={e => updateNodeData(id, { value: e.target.value })} placeholder="equals value…" style={selectStyle} />
       <div style={{ position: 'relative', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#2E9E4F' }}>TRUE</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#3B6B45' }}>TRUE</span>
           <Handle type="source" position={Position.Right} id="true" style={{ ...handleStyle, right: -7, top: '50%' }} />
         </div>
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
@@ -173,7 +173,7 @@ export function WaitReplyNode() {
       <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.6)', lineHeight: 1.4, marginBottom: 10 }}>Pause until the customer responds, then branch:</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#2E9E4F' }}>Button tap</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#3B6B45' }}>Button tap</span>
           <Handle type="source" position={Position.Right} id="button" style={{ ...handleStyle, right: -7, top: '50%' }} />
         </div>
         <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>

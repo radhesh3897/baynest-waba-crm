@@ -14,7 +14,7 @@ const labelStyle = { fontSize: 11.5, fontWeight: 700, color: 'rgba(27,76,94,.6)'
 function SectionHead({ Icon, title, sub }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 18 }}>
-      <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EAF6E4', color: '#2E9E4F', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8, flexShrink: 0 }}><Icon size={20} /></div>
+      <div style={{ width: 38, height: 38, borderRadius: 10, background: '#EAF6E4', color: '#3B6B45', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8, flexShrink: 0 }}><Icon size={20} /></div>
       <div>
         <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>{title}</div>
         <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)' }}>{sub}</div>
@@ -31,8 +31,8 @@ function ConnRow({ Icon, label, value, ok }) {
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)' }}>{label}</div>
         <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
       </div>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: ok ? '#2E9E4F' : '#B6743A', background: ok ? '#EAF6E4' : '#FFF1DC', padding: '4px 11px', borderRadius: 999, flexShrink: 0 }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: ok ? '#2E9E4F' : '#D9A93B' }} />{ok ? 'Connected' : 'Setup needed'}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: ok ? '#3B6B45' : '#B6743A', background: ok ? '#EAF6E4' : '#FFF1DC', padding: '4px 11px', borderRadius: 999, flexShrink: 0 }}>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: ok ? '#3B6B45' : '#D9A93B' }} />{ok ? 'Connected' : 'Setup needed'}
       </span>
     </div>
   );
@@ -133,7 +133,7 @@ export default function AccountSettings() {
           <button onClick={addStage} style={{ marginTop: 10, border: '1px dashed rgba(27,76,94,.3)', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconPlus size={14} /> Add stage</button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
             <button onClick={saveStages} disabled={savingStages} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: savingStages ? 'default' : 'pointer', opacity: savingStages ? 0.6 : 1 }}>{savingStages ? 'Saving…' : 'Save pipeline'}</button>
-            {stageMsg && <span style={{ fontSize: 12.5, fontWeight: 600, color: stageMsg.includes('saved') ? '#2E9E4F' : '#C7503B' }}>{stageMsg}</span>}
+            {stageMsg && <span style={{ fontSize: 12.5, fontWeight: 600, color: stageMsg.includes('saved') ? '#3B6B45' : '#C7503B' }}>{stageMsg}</span>}
           </div>
           <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>Renaming a stage won't move leads already in the old one — keep existing names if you have active leads, or re-drag them after.</div>
         </div>
@@ -200,7 +200,7 @@ export default function AccountSettings() {
               }}>
                 {pushBusy ? 'Working…' : push === 'enabled' ? 'Turn off notifications' : 'Enable notifications'}
               </button>
-              <span style={{ fontSize: 12, fontWeight: 700, color: push === 'enabled' ? '#2E9E4F' : 'rgba(27,76,94,.5)' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: push === 'enabled' ? '#3B6B45' : 'rgba(27,76,94,.5)' }}>
                 {push === 'enabled' ? '● On for this device' : '○ Off'}
               </span>
             </div>

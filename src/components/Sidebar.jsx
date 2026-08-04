@@ -49,7 +49,7 @@ function NavBtn({ item, active, onClick }) {
       </span>
       <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
       {item.badge && (
-        <span style={{ background: 'var(--brand-accent-soft)', color: 'var(--brand-primary-dark)', fontSize: 10.5, fontWeight: 800, padding: '1px 7px', borderRadius: 999 }}>
+        <span style={{ background: 'var(--brand-primary)', color: '#fff', fontSize: 10.5, fontWeight: 800, padding: '1px 7px', borderRadius: 999 }}>
           {item.badge}
         </span>
       )}
