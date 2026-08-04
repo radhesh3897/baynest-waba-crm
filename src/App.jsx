@@ -40,12 +40,22 @@ export default function App() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthReady(true);
-    });
+    let done = false;
+    const ready = () => { if (!done) { done = true; setAuthReady(true); } };
+
+    // Always resolve the gate. Without a catch, a rejected getSession() left the
+    // app stuck on "Loading…" forever with no way to reach the login screen.
+    supabase.auth.getSession()
+      .then(({ data }) => { setSession(data?.session ?? null); })
+      .catch((e) => { console.error('getSession failed', e); })
+      .finally(ready);
+
+    // Belt and braces: if the auth call hangs (offline, blocked request), fall
+    // through to the login screen rather than spinning indefinitely.
+    const t = setTimeout(ready, 8000);
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
-    return () => sub.subscription.unsubscribe();
+    return () => { clearTimeout(t); sub.subscription.unsubscribe(); };
   }, []);
 
   if (!authReady) {
