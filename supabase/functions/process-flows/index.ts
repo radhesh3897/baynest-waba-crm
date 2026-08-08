@@ -41,7 +41,7 @@ serve(async (req: Request) => {
 
   const { data: runs, error } = await db
     .from("flow_runs")
-    .select("id, flow_id, contact_id, current_node_key, contacts(wa_id, profile_name, email, company, job_title, lead_status, lead_score, source, attributes)")
+    .select("id, flow_id, contact_id, current_node_key, created_at, contacts(wa_id, profile_name, email, company, job_title, lead_status, lead_score, source, attributes)")
     .eq("status", "active")
     .lte("next_run_at", nowISO())
     .limit(100);
@@ -105,7 +105,22 @@ serve(async (req: Request) => {
       if (t === "sendTemplate") {
         if (waId && node.data.templateName) {
           const tplName = String(node.data.templateName);
-          const { data: tpl } = await db.from("templates").select("language, body").eq("name", tplName).maybeSingle();
+          const { data: tpl } = await db.from("templates").select("language, body, status").eq("name", tplName).maybeSingle();
+
+          // A template still in review cannot be sent: Meta rejects the call and
+          // the lead silently gets nothing, because the run advances regardless.
+          // Hold the run and look again in 10 minutes instead of burning it.
+          // Capped at 24h so a permanently rejected template can't loop forever.
+          const pending = String(tpl?.status ?? "").toLowerCase() === "pending";
+          const ageMs = Date.now() - Date.parse(String(run.created_at ?? nowISO()));
+          if (pending && ageMs < 24 * 60 * 60 * 1000) {
+            await db.from("flow_runs")
+              .update({ next_run_at: new Date(Date.now() + 10 * 60000).toISOString(), updated_at: nowISO() })
+              .eq("id", run.id);
+            console.log(`[flows] holding run ${run.id}: template "${tplName}" still in review`);
+            done = true; break;
+          }
+
           const lang = (tpl?.language as string) || "en";
           const tplBody = String(tpl?.body || "");
           const varIdx = [...new Set((tplBody.match(/\{\{(\d+)\}\}/g) || []).map(m => parseInt(m.replace(/[^\d]/g, ""), 10)))].sort((a, b) => a - b);

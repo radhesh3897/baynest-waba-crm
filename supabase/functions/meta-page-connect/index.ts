@@ -56,6 +56,10 @@ serve(async (req: Request) => {
   const body = await req.json().catch(() => ({} as Record<string, unknown>));
   const wantPageId = String(body.page_id ?? "").trim();
   const dryRun = body.dry_run === true;
+  // probe_only: read one existing lead to prove leads_retrieval works and to
+  // discover what the forms actually call their fields. Returns field NAMES
+  // only — never the answers, which are a real person's contact details.
+  const probeOnly = body.probe_only === true;
 
   const db = createClient(SUPABASE_URL, SERVICE_ROLE);
   const steps: Record<string, unknown> = {};
@@ -82,6 +86,27 @@ serve(async (req: Request) => {
     steps.note = `More than one Page is visible; defaulted to "${page.name}". Re-run with {"page_id":"..."} to pick another.`;
   }
   if (dryRun) return json({ ok: true, dry_run: true, steps });
+
+  if (probeOnly) {
+    const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(1){id,created_time,field_data}&limit=25&access_token=${page.token}`));
+    const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;
+    if (!lr.ok) return json({ ok: false, error: "Could not read leads", detail: lj }, 502);
+
+    const seen = new Set<string>();
+    let sampled = 0;
+    for (const f of ((lj.data as Record<string, unknown>[]) ?? [])) {
+      for (const l of ((((f.leads as Record<string, unknown>)?.data) as Record<string, unknown>[]) ?? [])) {
+        sampled++;
+        for (const fd of ((l.field_data as Record<string, unknown>[]) ?? [])) seen.add(String(fd.name));
+      }
+    }
+    return json({
+      ok: true, probe: true,
+      leads_readable: sampled > 0,
+      leads_sampled: sampled,
+      field_names: [...seen].sort(),
+    });
+  }
 
   // ── 2. Record it so sync-forms / the webhook can use it ───────────────────
   const { error: setErr } = await db.from("app_settings")
