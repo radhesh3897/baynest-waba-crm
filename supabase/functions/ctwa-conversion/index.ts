@@ -25,7 +25,7 @@ const SERVICE_ROLE      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Prefer a dedicated token if provided, else fall back to the app WhatsApp token.
 const WA_TOKEN          = Deno.env.get("META_CTWA_TOKEN") || Deno.env.get("WHATSAPP_TOKEN") || "";
 const DATASET_ID        = Deno.env.get("META_MESSAGING_DATASET_ID") ?? "873957555788541";
-const WABA_ID           = Deno.env.get("WHATSAPP_WABA_ID") ?? "1251350103603682";
+const WABA_ID           = Deno.env.get("WHATSAPP_WABA_ID") ?? "";
 const V                 = Deno.env.get("META_API_VERSION") ?? "v21.0";
 
 const CORS = {

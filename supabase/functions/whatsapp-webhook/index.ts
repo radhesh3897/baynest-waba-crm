@@ -94,12 +94,26 @@ serve(async (req: Request) => {
 async function processWebhook(body: Record<string, unknown>) {
   const db = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+  // The same app — and therefore the same callback URL — receives two different
+  // objects: WhatsApp messages (object: "whatsapp_business_account") and Meta
+  // Lead Ads (object: "page"). Both are signed with the same app secret, so the
+  // check above already covers them; only the payload shape differs.
+  const isPage = body?.object === "page";
+
   // Log raw event first (idempotent: duplicate POSTs are fine, just extra rows)
   await db.from("webhook_events").insert({
-    event_type: "whatsapp",
+    event_type: isPage ? "leadgen" : "whatsapp",
     raw: body,
     received_at: new Date().toISOString(),
   });
+
+  if (isPage) {
+    await processLeadgenEvents(db, body);
+    await db.from("webhook_events")
+      .update({ processed: true })
+      .eq("raw->>'entry'", JSON.stringify(body.entry));
+    return;
+  }
 
   const entries = (body?.entry as unknown[]) ?? [];
   for (const entry of entries) {
@@ -125,6 +139,122 @@ async function processWebhook(body: Record<string, unknown>) {
   await db.from("webhook_events")
     .update({ processed: true })
     .eq("raw->>'entry'", JSON.stringify(body.entry));
+}
+
+// ── Meta Lead Ads ────────────────────────────────────────────────────────────
+// Meta only tells us a lead EXISTS (leadgen_id); the answers have to be pulled
+// off the Graph API with a Page token. We then hand the parsed lead to
+// ingest-lead so the webhook path and the n8n path stay one code path.
+
+const INGEST_SECRET = Deno.env.get("INGEST_SECRET") ?? "";
+
+// Meta names form fields loosely ("phone_number", "phone", "what_is_your_phone").
+// Match on substring so a renamed question doesn't silently drop the phone.
+function pickField(fields: Record<string, string>, needles: string[]): string {
+  for (const n of needles) if (fields[n]) return fields[n];
+  for (const [k, v] of Object.entries(fields)) {
+    if (v && needles.some(n => k.includes(n))) return v;
+  }
+  return "";
+}
+
+async function pageAccessToken(pageId: string): Promise<string> {
+  const res = await fetch(
+    `https://graph.facebook.com/${META_API_VERSION}/${pageId}?fields=access_token&access_token=${WHATSAPP_TOKEN}`);
+  const j = await res.json().catch(() => ({}));
+  return ((j as Record<string, unknown>).access_token as string) ?? "";
+}
+
+async function processLeadgenEvents(db: ReturnType<typeof createClient>, body: Record<string, unknown>) {
+  for (const entry of ((body.entry as unknown[]) ?? [])) {
+    for (const change of (((entry as Record<string, unknown>).changes as unknown[]) ?? [])) {
+      const c = change as Record<string, unknown>;
+      if (c.field !== "leadgen") continue;
+      const v = (c.value as Record<string, unknown>) ?? {};
+      const leadgenId = String(v.leadgen_id ?? "");
+      if (!leadgenId) continue;
+
+      // Claim the lead. A duplicate delivery loses the insert and returns here,
+      // so the welcome template can only ever go out once per form fill.
+      const { error: claimErr } = await db.from("meta_leadgen_events").insert({
+        leadgen_id: leadgenId,
+        page_id: String(v.page_id ?? ""),
+        form_id: String(v.form_id ?? ""),
+        ad_id: String(v.ad_id ?? ""),
+        raw: v,
+      });
+      if (claimErr) {
+        console.log("[leadgen] already processed", leadgenId);
+        continue;
+      }
+
+      try {
+        await fetchAndIngestLead(db, leadgenId, String(v.page_id ?? ""));
+      } catch (e) {
+        console.error("[leadgen] failed", leadgenId, e);
+        await db.from("meta_leadgen_events")
+          .update({ status: "error", error: String((e as Error).message ?? e) })
+          .eq("leadgen_id", leadgenId);
+      }
+    }
+  }
+}
+
+async function fetchAndIngestLead(db: ReturnType<typeof createClient>, leadgenId: string, pageId: string) {
+  // A Page token reads the lead; the system-user token alone cannot.
+  const token = pageId ? await pageAccessToken(pageId) : "";
+  if (!token) throw new Error(`no page token for page ${pageId}`);
+
+  const fieldList = "id,created_time,field_data,form_id,ad_id,ad_name,adset_name,campaign_name,platform,is_organic";
+  const res = await fetch(
+    `https://graph.facebook.com/${META_API_VERSION}/${leadgenId}?fields=${fieldList}&access_token=${token}`);
+  const lead = await res.json().catch(() => ({})) as Record<string, unknown>;
+  if (!res.ok) throw new Error(`graph read failed: ${JSON.stringify(lead)}`);
+
+  // field_data is [{ name, values: [..] }] — flatten to a plain map.
+  const fields: Record<string, string> = {};
+  for (const f of ((lead.field_data as Record<string, unknown>[]) ?? [])) {
+    const key = String(f.name ?? "").toLowerCase();
+    const val = ((f.values as unknown[]) ?? [])[0];
+    if (key && val != null && val !== "") fields[key] = String(val);
+  }
+
+  const phone = pickField(fields, ["phone_number", "phone", "mobile", "whatsapp", "contact_number"]);
+  if (!phone) throw new Error(`lead ${leadgenId} has no phone field (got: ${Object.keys(fields).join(",")})`);
+
+  const payload: Record<string, unknown> = {
+    phone,
+    name: pickField(fields, ["full_name", "name"]),
+    first_name: fields.first_name ?? "",
+    last_name: fields.last_name ?? "",
+    email: pickField(fields, ["email"]),
+    city: pickField(fields, ["city", "location", "area"]),
+    source: "Meta Lead Ads",
+    form_id: String(lead.form_id ?? ""),
+    // Everything below lands in contacts.attributes — meta_lead_id is what
+    // capi-lead-event needs later to report the qualified lead back to Meta.
+    meta_lead_id: leadgenId,
+    ad_name: lead.ad_name ?? null,
+    adset_name: lead.adset_name ?? null,
+    campaign_name: lead.campaign_name ?? null,
+    platform: lead.platform ?? null,
+    lead_created_time: lead.created_time ?? null,
+    form_answers: fields,
+  };
+
+  const ing = await fetch(`${SUPABASE_URL}/functions/v1/ingest-lead`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-ingest-secret": INGEST_SECRET },
+    body: JSON.stringify(payload),
+  });
+  const out = await ing.json().catch(() => ({})) as Record<string, unknown>;
+  if (!ing.ok) throw new Error(`ingest-lead ${ing.status}: ${JSON.stringify(out)}`);
+
+  await db.from("meta_leadgen_events")
+    .update({ status: "ingested", contact_id: (out.contact_id as string) ?? null })
+    .eq("leadgen_id", leadgenId);
+
+  console.log("[leadgen] ingested", leadgenId, "→", out.contact_id, "enrolled:", out.enrolled);
 }
 
 async function processInboundMessage(

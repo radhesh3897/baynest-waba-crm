@@ -12,7 +12,7 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const WHATSAPP_TOKEN    = Deno.env.get("WHATSAPP_TOKEN")!;
 const META_API_VERSION  = Deno.env.get("META_API_VERSION") ?? "v21.0";
-const META_APP_ID       = Deno.env.get("META_APP_ID") ?? "2186491725248120";
+const META_APP_ID       = Deno.env.get("META_APP_ID") ?? "";
 
 const MAX_BYTES = 30 * 1024 * 1024; // 30 MB cap on the sample upload
 
