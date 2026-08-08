@@ -73,11 +73,15 @@ function mapContact(c) {
 }
 
 // ─── Conversations ────────────────────────────────────────────────────────────
-export async function getConversationsLive() {
-  const { data, error } = await supabase
+// `channel` scopes the list to one inbox ('whatsapp' | 'instagram'); omit it to
+// get every thread.
+export async function getConversationsLive(channel) {
+  let query = supabase
     .from('conversations')
     .select('id, contact_id, channel, last_message_at, window_expires_at, unread_count, status, contacts(*)')
     .order('last_message_at', { ascending: false, nullsFirst: false });
+  if (channel) query = query.eq('channel', channel);
+  const { data, error } = await query;
 
   if (error) {
     console.error('getConversationsLive', error);
@@ -741,8 +745,10 @@ export async function addLeadLive(d) {
 }
 
 // Count of conversations with unread inbound messages (for the Inbox nav badge).
-export async function getUnreadCount() {
-  const { count } = await supabase.from('conversations').select('*', { count: 'exact', head: true }).gt('unread_count', 0);
+export async function getUnreadCount(channel) {
+  let q = supabase.from('conversations').select('*', { count: 'exact', head: true }).gt('unread_count', 0);
+  if (channel) q = q.eq('channel', channel);
+  const { count } = await q;
   return count || 0;
 }
 

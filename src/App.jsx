@@ -24,7 +24,7 @@ import { IconBack } from './icons';
 const STUBS = ['logs', 'help'];
 // Bottom-tab roots reset the nav stack; everything else is a pushed sub-screen
 // (so mobile gets a Back button to return).
-const ROOT_SCREENS = ['home', 'inbox', 'automation', 'crm'];
+const ROOT_SCREENS = ['home', 'inbox', 'automation', 'crm', 'ig-inbox'];
 
 export default function App() {
   const [navStack, setNavStack] = useState(['home']);
@@ -70,7 +70,8 @@ export default function App() {
 
   function renderMain() {
     if (screen === 'home')       return <Home />;
-    if (screen === 'inbox')      return <Inbox />;
+    if (screen === 'inbox')      return <Inbox channel="whatsapp" />;
+    if (screen === 'ig-inbox')   return <Inbox key="ig" channel="instagram" />;
     if (screen === 'automation') return <Automation />;
     if (screen === 'templates')  return <Templates />;
     if (screen === 'crm')        return <CRM />;

@@ -133,13 +133,16 @@ const INBOX_FILTERS = [
 
 const EMOJIS = ['😀', '😁', '😂', '🤣', '🙂', '😊', '😍', '😎', '🤝', '👍', '👎', '🙏', '👏', '💪', '🔥', '✅', '❌', '🎉', '🎯', '🚀', '💡', '📈', '💰', '🙌', '💬', '📞', '📅', '⏰', '📍', '✉️', '❤️', '⭐', '✨', '🤔', '👋', '😅', '🥳', '🆗', '➡️', '🙋'];
 
-export default function Inbox() {
+// One component, two inboxes. `channel` scopes it to WhatsApp or Instagram;
+// the differences between them (templates, media, what happens when the 24h
+// window closes) are handled inline rather than by forking the screen.
+export default function Inbox({ channel = 'whatsapp' }) {
+  const isIg = channel === 'instagram';
   const isMobile = useIsMobile();
   const [convos, setConvos] = useState([]);
   const [selConvId, setSelConvId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inboxFilter, setInboxFilter] = useState('all');
-  const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'whatsapp' | 'instagram'
   const [convStatus, setConvStatus] = useState('open'); // 'open' | 'closed' (always one)
   const [readStatus, setReadStatus] = useState('');     // '' = All, 'seen', 'unseen'
   const [durFrom, setDurFrom] = useState('');
@@ -184,7 +187,7 @@ export default function Inbox() {
   }
 
   async function reloadConvos() {
-    const data = await getConversationsLive();
+    const data = await getConversationsLive(channel);
     setConvos(data);
     setLoading(false);
     // On mobile we keep the list visible until the user taps a conversation;
@@ -245,7 +248,6 @@ export default function Inbox() {
   }
 
   const visibleConvos = convos.filter(c => {
-    if (channelFilter !== 'all' && (c.channel || 'whatsapp') !== channelFilter) return false;
     if (inboxFilter === 'flows' && !flowIds.includes(c.contact_id)) return false;
     if (convStatus === 'open' && c.status === 'closed') return false;
     if (convStatus === 'closed' && c.status !== 'closed') return false;
@@ -261,7 +263,6 @@ export default function Inbox() {
   });
 
   async function handleSend() {
-    const isIg = (selConv?.channel || 'whatsapp') === 'instagram';
     if (!selConvId || !composerText.trim()) return;
     if (isIg ? !contact?.ig_id : !contact?.wa_id) return;
     setSendError('');
@@ -362,18 +363,8 @@ export default function Inbox() {
   );
 
   // ── Reusable filter controls (left pane on desktop, sheet on mobile) ──
-  const igCount = convos.filter(c => c.channel === 'instagram').length;
   const filtersInner = (
     <>
-      {/* Channel switch. Hidden until an Instagram thread actually exists, so
-          a WhatsApp-only workspace never sees a filter that does nothing. */}
-      {igCount > 0 && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 12, padding: '0 4px' }}>
-          {pill('All', channelFilter === 'all', () => setChannelFilter('all'))}
-          {pill('WhatsApp', channelFilter === 'whatsapp', () => setChannelFilter('whatsapp'))}
-          {pill(`Instagram (${igCount})`, channelFilter === 'instagram', () => setChannelFilter('instagram'))}
-        </div>
-      )}
       {INBOX_FILTERS.map(f => (
         <FilterBtn key={f.key} label={f.label} icon={f.Icon} active={inboxFilter === f.key} onClick={() => setInboxFilter(f.key)} />
       ))}
@@ -461,15 +452,27 @@ export default function Inbox() {
   );
 
   // ── Reusable composer / locked-window footer ──
-  const composer = windowOpen ? (
+  // WhatsApp hard-locks once the 24h window closes: only an approved template
+  // re-opens it. Instagram has no templates, but Meta's human-agent tag lets a
+  // PERSON reply for up to 7 days, and this composer is only ever driven by a
+  // person, so Instagram keeps typing enabled with a warning instead.
+  const composer = (windowOpen || isIg) ? (
     <div style={{ background: '#fff', borderTop: '1px solid rgba(27,76,94,.10)', padding: isMobile ? '10px 12px 12px' : '12px 20px 14px', position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
-        <button onClick={() => { setSendError(''); setShowTemplatePicker(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#3B6B45' }}>
-          <span style={{ width: 14, height: 14, display: 'flex' }}><IconTemplate size={14} /></span>Templates
-        </button>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EAF6E4', color: '#3B6B45', fontSize: 12, fontWeight: 800, padding: '4px 11px', borderRadius: 999, fontVariantNumeric: 'tabular-nums' }}>
-          <span style={{ width: 13, height: 13, display: 'flex' }}><IconClock size={13} /></span>{fmtTimer(windowSecs)} window left
-        </div>
+        {isIg ? <span /> : (
+          <button onClick={() => { setSendError(''); setShowTemplatePicker(true); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#3B6B45' }}>
+            <span style={{ width: 14, height: 14, display: 'flex' }}><IconTemplate size={14} /></span>Templates
+          </button>
+        )}
+        {windowOpen ? (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#EAF6E4', color: '#3B6B45', fontSize: 12, fontWeight: 800, padding: '4px 11px', borderRadius: 999, fontVariantNumeric: 'tabular-nums' }}>
+            <span style={{ width: 13, height: 13, display: 'flex' }}><IconClock size={13} /></span>{fmtTimer(windowSecs)} window left
+          </div>
+        ) : (
+          <div title="Meta allows a human-typed reply for up to 7 days after their last message" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FFF1DC', color: '#8A6420', fontSize: 12, fontWeight: 700, padding: '4px 11px', borderRadius: 999 }}>
+            <span style={{ width: 13, height: 13, display: 'flex' }}><IconClock size={13} /></span>Window closed, replying as a human agent
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -493,8 +496,12 @@ export default function Inbox() {
 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, border: '1px solid rgba(27,76,94,.16)', borderRadius: 14, padding: '9px 12px', background: '#fff' }}>
         <button onClick={() => setShowEmoji(v => !v)} title="Emoji" style={{ width: 22, height: 22, color: showEmoji ? '#3B6B45' : 'rgba(27,76,94,.5)', display: 'flex', flexShrink: 0, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}><IconSmile size={20} /></button>
-        <button onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Attach image, video or PDF" style={{ width: 22, height: 22, color: uploading ? 'rgba(27,76,94,.3)' : 'rgba(27,76,94,.5)', display: 'flex', flexShrink: 0, border: 'none', background: 'none', cursor: uploading ? 'default' : 'pointer', padding: 0 }}><IconClip size={20} /></button>
-        <input ref={fileInputRef} type="file" accept="image/*,video/*,application/pdf" onChange={handleSendFile} style={{ display: 'none' }} />
+        {/* Attachments go through send-media, which is WhatsApp-only. Hidden on
+            Instagram rather than left there to fail. */}
+        {!isIg && <>
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploading} title="Attach image, video or PDF" style={{ width: 22, height: 22, color: uploading ? 'rgba(27,76,94,.3)' : 'rgba(27,76,94,.5)', display: 'flex', flexShrink: 0, border: 'none', background: 'none', cursor: uploading ? 'default' : 'pointer', padding: 0 }}><IconClip size={20} /></button>
+          <input ref={fileInputRef} type="file" accept="image/*,video/*,application/pdf" onChange={handleSendFile} style={{ display: 'none' }} />
+        </>}
         <textarea ref={composerRef} value={composerText} onChange={e => setComposerText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !isMobile) { e.preventDefault(); handleSend(); } }} placeholder="Type a message…" rows={1}
           style={{ flex: 1, fontSize: isMobile ? 16 : 13.5, color: 'var(--brand-primary)', border: 'none', outline: 'none', resize: 'none', background: 'transparent', fontFamily: 'inherit', lineHeight: 1.5, padding: '2px 0', maxHeight: 120, overflowY: 'auto' }} />
         <motion.button whileTap={{ scale: 0.9 }} onClick={handleSend} style={{ width: 38, height: 38, borderRadius: 10, border: 'none', background: 'var(--brand-accent-soft)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -753,7 +760,7 @@ export default function Inbox() {
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' }}>
             <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(27,76,94,.08)', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-primary)' }}>Inbox <span style={{ fontSize: 14, color: 'rgba(27,76,94,.45)', fontWeight: 700 }}>({visibleConvos.length})</span></span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-primary)' }}>{isIg ? 'Instagram Inbox' : 'Inbox'} <span style={{ fontSize: 14, color: 'rgba(27,76,94,.45)', fontWeight: 700 }}>({visibleConvos.length})</span></span>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setMobileFiltersOpen(true)} style={{ height: 36, padding: '0 13px', borderRadius: 9, border: '1px solid rgba(27,76,94,.14)', background: (inboxFilter !== 'all' || convStatus !== 'open' || readStatus !== '' || durFrom || durTo) ? '#EAF6E4' : '#fff', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--brand-primary)', fontSize: 12.5, fontWeight: 700 }}>
                     <IconFilter size={15} /> Filter
@@ -849,7 +856,7 @@ export default function Inbox() {
         {/* ── Left filter pane ── */}
         <div style={{ width: 216, flexShrink: 0, background: '#fff', borderRight: '1px solid rgba(27,76,94,.10)', overflowY: 'auto', padding: '16px 12px' }}>
           <div style={{ padding: '0 4px 12px' }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>Inbox</span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{isIg ? 'Instagram' : 'Inbox'}</span>
           </div>
           {filtersInner}
         </div>

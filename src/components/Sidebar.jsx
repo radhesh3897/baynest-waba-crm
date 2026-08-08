@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconChart, IconTarget, IconSend, IconBuilding } from '../icons';
+import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconChart, IconTarget, IconSend, IconBuilding, IconInstagram } from '../icons';
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
 import { CLIENT } from '../config/client.js';
@@ -12,6 +12,9 @@ const NAV_ITEMS_WHATSAPP = [
   { key: 'campaigns',  label: 'Campaigns',        Icon: IconSend },
   { key: 'automation', label: 'Automation',       Icon: IconZap },
   { key: 'whatsapp',   label: 'WhatsApp Settings', Icon: IconWhatsApp },
+];
+const NAV_ITEMS_INSTAGRAM = [
+  { key: 'ig-inbox', label: 'Instagram Inbox', Icon: IconInstagram },
 ];
 const NAV_ITEMS_LEAD_MGMT = [
   { key: 'crm',            label: 'CRM',            Icon: IconDb },
@@ -86,17 +89,23 @@ function NavBtn({ item, active, onClick }) {
 }
 
 export default function Sidebar({ screen, onNav }) {
+  // Counted per channel so each inbox carries its own badge.
   const [unread, setUnread] = useState(0);
+  const [igUnread, setIgUnread] = useState(0);
 
   useEffect(() => {
     let alive = true;
-    const refresh = () => getUnreadCount().then(n => { if (alive) setUnread(n); });
+    const refresh = () => {
+      getUnreadCount('whatsapp').then(n => { if (alive) setUnread(n); });
+      getUnreadCount('instagram').then(n => { if (alive) setIgUnread(n); });
+    };
     refresh();
     const t = setInterval(refresh, 20000);
     return () => { alive = false; clearInterval(t); };
   }, [screen]);
 
   const waItems = NAV_ITEMS_WHATSAPP.map(it => it.key === 'inbox' ? { ...it, badge: unread > 0 ? String(unread) : null } : it);
+  const igItems = NAV_ITEMS_INSTAGRAM.map(it => it.key === 'ig-inbox' ? { ...it, badge: igUnread > 0 ? String(igUnread) : null } : it);
   const sectionLabel = { fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.42)', padding: '9px 12px 4px' };
 
   return (
@@ -110,6 +119,11 @@ export default function Sidebar({ screen, onNav }) {
 
         <div style={sectionLabel}>WHATSAPP</div>
         {waItems.map(item => (
+          <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
+        ))}
+
+        <div style={sectionLabel}>INSTAGRAM</div>
+        {igItems.map(item => (
           <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
         ))}
 
