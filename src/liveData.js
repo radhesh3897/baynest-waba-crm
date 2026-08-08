@@ -1160,4 +1160,16 @@ export async function deleteProperty(id) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+// ─── Reports: month-by-month ad performance + lead quality ─────────────────────
+// Spend/leads/CPL/CTR come from Meta; qualified-vs-not comes from our CRM.
+export async function getAdsReport(months = 6) {
+  const { data, error } = await supabase.functions.invoke('meta-ads-report', { body: { months } });
+  if (error) {
+    let detail = error.message;
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  return data;
+}
+
 export { msgTime, relativeTime };

@@ -11,7 +11,7 @@ import CRM from './screens/CRM';
 import People from './screens/People';
 import Properties from './screens/Properties';
 import MetaDashboard from './screens/MetaDashboard';
-import Tracking from './screens/Tracking';
+import Reports from './screens/Reports';
 import Campaigns from './screens/Campaigns';
 import LeadsOverview from './screens/LeadsOverview';
 import Stub from './screens/Stub';
@@ -77,7 +77,9 @@ export default function App() {
     if (screen === 'people')     return <People />;
     if (screen === 'properties') return <Properties />;
     if (screen === 'ads')        return <MetaDashboard />;
-    if (screen === 'tracking')   return <Tracking />;
+    // 'tracking' is intentionally locked — the nav greys it out and the route is
+    // removed, so it cannot be reached even by restoring a stale nav state.
+    if (screen === 'reports')    return <Reports />;
     if (screen === 'campaigns')  return <Campaigns />;
     if (screen === 'leads-overview') return <LeadsOverview />;
     if (screen === 'whatsapp')   return <WhatsAppSettings />;

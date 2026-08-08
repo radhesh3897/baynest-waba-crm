@@ -18,7 +18,8 @@ const MAIN = [
 const MORE = [
   { key: 'leads-overview', label: 'Leads Overview', Icon: IconChart },
   { key: 'ads',       label: 'Ads Dashboard',    Icon: IconChart },
-  { key: 'tracking',  label: 'Tracking',         Icon: IconTarget },
+  { key: 'reports',   label: 'Reports',          Icon: IconChart },
+  { key: 'tracking',  label: 'Tracking',         Icon: IconTarget, locked: true },
   { key: 'campaigns', label: 'Campaigns',        Icon: IconSend },
   { key: 'people',    label: 'People',           Icon: IconPeople },
   { key: 'whatsapp',  label: 'WhatsApp Settings', Icon: IconWhatsApp },
@@ -87,12 +88,14 @@ export default function BottomNav({ screen, onNav }) {
                 {MORE.map(m => {
                   const active = m.key === screen;
                   return (
-                    <button key={m.key} onClick={() => go(m.key)} style={{
+                    <button key={m.key} onClick={() => { if (!m.locked) go(m.key); }} disabled={m.locked} style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '16px 6px',
                       border: active ? '1.5px solid var(--brand-accent-soft)' : '1px solid rgba(27,76,94,.12)', borderRadius: 14,
-                      background: active ? '#EAF6E4' : '#fff', cursor: 'pointer', color: 'var(--brand-primary)',
+                      background: m.locked ? 'rgba(27,76,94,.04)' : (active ? '#EAF6E4' : '#fff'),
+                      cursor: m.locked ? 'not-allowed' : 'pointer',
+                      color: m.locked ? 'rgba(27,76,94,.32)' : 'var(--brand-primary)',
                     }}>
-                      <span style={{ width: 24, height: 24, display: 'flex', color: active ? '#3B6B45' : 'rgba(27,76,94,.7)' }}><m.Icon size={22} /></span>
+                      <span style={{ width: 24, height: 24, display: 'flex', opacity: m.locked ? .5 : 1, color: m.locked ? 'currentColor' : (active ? '#3B6B45' : 'rgba(27,76,94,.7)') }}><m.Icon size={22} /></span>
                       <span style={{ fontSize: 11.5, fontWeight: active ? 800 : 600, textAlign: 'center', lineHeight: 1.2 }}>{m.label}</span>
                     </button>
                   );

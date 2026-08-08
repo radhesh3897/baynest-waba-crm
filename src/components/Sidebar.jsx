@@ -21,7 +21,9 @@ const NAV_ITEMS_LEAD_MGMT = [
 ];
 const NAV_ITEMS_ANALYTICS = [
   { key: 'ads', label: 'Ads Dashboard', Icon: IconChart },
-  { key: 'tracking', label: 'Tracking', Icon: IconTarget },
+  { key: 'reports', label: 'Reports', Icon: IconChart },
+  // Locked: CAPI lead-qualification tooling is not part of this rollout.
+  { key: 'tracking', label: 'Tracking', Icon: IconTarget, locked: true },
 ];
 const NAV_ITEMS_BOTTOM = [
   { key: 'account', label: 'Account settings', Icon: IconSettings },
@@ -30,6 +32,29 @@ const NAV_ITEMS_BOTTOM = [
 ];
 
 function NavBtn({ item, active, onClick }) {
+  // Locked items render greyed out and ignore clicks entirely.
+  if (item.locked) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Locked"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 11, width: '100%',
+          padding: '6px 12px', marginBottom: 1, borderRadius: 9,
+          fontSize: 13.5, fontWeight: 500, color: 'rgba(27,76,94,.30)',
+          cursor: 'not-allowed', userSelect: 'none',
+        }}
+      >
+        <span style={{ display: 'flex', width: 18, height: 18, flexShrink: 0, opacity: .55 }}>
+          <item.Icon size={18} />
+        </span>
+        <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
+      </div>
+    );
+  }
   return (
     <motion.button
       onClick={onClick}
