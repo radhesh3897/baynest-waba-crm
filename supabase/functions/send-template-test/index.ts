@@ -76,9 +76,9 @@ serve(async (req: Request) => {
   }
 
   // Persist so the test shows in the inbox thread too.
-  const { data: conv } = await db.from("conversations").select("id").eq("contact_id", contact.id).maybeSingle();
+  const { data: conv } = await db.from("conversations").select("id").eq("contact_id", contact.id).eq("channel", "whatsapp").maybeSingle();
   let convId = conv?.id as string | undefined;
-  if (!convId) { const { data: c } = await db.from("conversations").insert({ contact_id: contact.id, status: "open" }).select("id").single(); convId = c?.id; }
+  if (!convId) { const { data: c } = await db.from("conversations").insert({ contact_id: contact.id, channel: "whatsapp", status: "open" }).select("id").single(); convId = c?.id; }
   if (convId) {
     const waMessageId = ((meta?.messages as unknown[])?.[0] as Record<string, unknown>)?.id as string ?? null;
     await db.from("messages").insert({ conversation_id: convId, contact_id: contact.id, wa_message_id: waMessageId, direction: "out", type: "template", template_name: templateName, payload, status: "sent" });

@@ -49,11 +49,14 @@ function msgTime(isoString) {
 
 function mapContact(c) {
   if (!c) return null;
-  const name = c.profile_name || c.wa_id || 'Unknown';
+  // An Instagram-only contact has no phone number, so fall back to the handle.
+  const name = c.profile_name || c.wa_id || (c.ig_username ? `@${c.ig_username}` : '') || 'Unknown';
   const parts = name.trim().split(' ');
   return {
     id: c.id,
     wa_id: c.wa_id,
+    ig_id: c.ig_id || null,
+    ig_username: c.ig_username || null,
     profile_name: name,
     firstName: c.first_name || parts[0] || '',
     lastName: c.last_name || parts.slice(1).join(' ') || '',
@@ -65,7 +68,7 @@ function mapContact(c) {
     lead_status: c.lead_status || 'New',
     source: c.source || '-',
     attributes: c.attributes || {},
-    color: colorFor(c.wa_id || c.id),
+    color: colorFor(c.wa_id || c.ig_id || c.id),
   };
 }
 
@@ -73,7 +76,7 @@ function mapContact(c) {
 export async function getConversationsLive() {
   const { data, error } = await supabase
     .from('conversations')
-    .select('id, contact_id, last_message_at, window_expires_at, unread_count, status, contacts(*)')
+    .select('id, contact_id, channel, last_message_at, window_expires_at, unread_count, status, contacts(*)')
     .order('last_message_at', { ascending: false, nullsFirst: false });
 
   if (error) {
@@ -106,6 +109,7 @@ export async function getConversationsLive() {
   return data.map(conv => ({
     id: conv.id,
     contact_id: conv.contact_id,
+    channel: conv.channel || 'whatsapp',
     contact: mapContact(conv.contacts),
     last_message_at: conv.last_message_at,
     windowExpiresAt: conv.window_expires_at,
@@ -199,6 +203,24 @@ export async function sendMessageLive(wa_id, payload) {
     return { ok: false, error: detail };
   }
   return { ok: true, message: data?.message };
+}
+
+// Send an Instagram DM. Instagram has no templates, so once the 24h window
+// closes the only route left is the human-agent tag (7 days, human-typed only).
+export async function sendInstagramMessageLive(contactId, text, { humanAgent = false } = {}) {
+  const { data, error } = await supabase.functions.invoke('instagram-send', {
+    body: { contact_id: contactId, text, human_agent: humanAgent },
+  });
+  if (error) {
+    let detail = error.message;
+    try {
+      const ctx = await error.context?.json?.();
+      if (ctx?.error) detail = ctx.error;
+    } catch { /* ignore */ }
+    return { ok: false, error: detail };
+  }
+  if (data && data.ok === false) return { ok: false, error: data.error };
+  return { ok: true, message_id: data?.message_id };
 }
 
 // Upload a file to public storage, then send it to the contact via Meta (by link).

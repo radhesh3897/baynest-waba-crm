@@ -23,6 +23,13 @@ function describeEdge(sourceNode, sourceHandle) {
     const btn = getTemplateButtons(sourceNode.data.templateName)[idx];
     return { label: btn || `Button ${idx + 1}`, sourceButton: btn || null };
   }
+  // Instagram quick replies live on the node itself rather than on an approved
+  // template, so the label comes straight from what was typed in.
+  if (sourceNode.type === 'igButtons' && sourceHandle.startsWith('btn-')) {
+    const idx = parseInt(sourceHandle.slice(4), 10);
+    const btn = (sourceNode.data.buttons || [])[idx];
+    return { label: btn || `Reply ${idx + 1}`, sourceButton: btn || null };
+  }
   if (sourceNode.type === 'ifElse') {
     if (sourceHandle === 'true') return { label: 'True', sourceButton: 'true' };
     if (sourceHandle === 'false') return { label: 'False', sourceButton: 'false' };

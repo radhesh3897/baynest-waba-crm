@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Handle, Position, useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
 import { getCachedTemplates as getFlowTemplates, getCachedTemplateButtons as getTemplateButtons } from '../liveData';
-import { IconWhatsApp, IconClock, IconBranch, IconPeople, IconFlow, IconInbox, IconFacebook, IconTemplate, IconDb } from '../icons';
+import { IconWhatsApp, IconClock, IconBranch, IconPeople, IconFlow, IconInbox, IconFacebook, IconTemplate, IconDb, IconInstagram } from '../icons';
 
 const FOREST = 'var(--brand-primary)';
 const LIME = 'var(--brand-accent-soft)';
@@ -26,16 +26,34 @@ function Shell({ icon: Icon, title, tint, headerDark, children, width = 232 }) {
 const selectStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 8, padding: '7px 9px', fontSize: 12, fontWeight: 600, color: FOREST, fontFamily: 'inherit', background: '#fff' };
 const labelStyle = { fontSize: 10, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.5)', marginBottom: 5, display: 'block' };
 
-const TRIGGER_LABELS = { new_lead: 'New Lead (FB form)', inbound: 'Inbound Message', keyword: 'Keyword', manual: 'Manual' };
-const TRIGGER_ICONS  = { new_lead: IconFacebook, inbound: IconInbox, keyword: IconBranch, manual: IconFlow };
+const TRIGGER_LABELS = {
+  new_lead: 'New Lead (FB form)', inbound: 'Inbound Message', keyword: 'Keyword', manual: 'Manual',
+  ig_message: 'Instagram DM', ig_keyword: 'Instagram Keyword', ig_comment: 'Instagram Comment',
+  ig_story_reply: 'Instagram Story Reply', ig_story_mention: 'Instagram Story Mention',
+  ig_ad_referral: 'Instagram Ad → DM',
+};
+const TRIGGER_ICONS  = {
+  new_lead: IconFacebook, inbound: IconInbox, keyword: IconBranch, manual: IconFlow,
+  ig_message: IconInstagram, ig_keyword: IconInstagram, ig_comment: IconInstagram,
+  ig_story_reply: IconInstagram, ig_story_mention: IconInstagram, ig_ad_referral: IconInstagram,
+};
 
-export function TriggerNode({ data }) {
+const KEYWORD_TRIGGERS = new Set(['keyword', 'ig_keyword', 'ig_comment_keyword']);
+
+export function TriggerNode({ id, data }) {
+  const { updateNodeData } = useReactFlow();
   const Icon = TRIGGER_ICONS[data.trigger] || IconFlow;
   return (
     <Shell icon={Icon} title="Trigger" headerDark>
       <div style={{ fontSize: 13, fontWeight: 800, color: FOREST }}>{TRIGGER_LABELS[data.trigger] || data.trigger}</div>
       <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>Flow starts here</div>
-      {data.trigger === 'keyword' && <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(27,76,94,.6)' }}>Keyword: <strong>{data.keyword || '-'}</strong></div>}
+      {KEYWORD_TRIGGERS.has(data.trigger) && (
+        <div style={{ marginTop: 9 }}>
+          <span style={labelStyle}>KEYWORD (MATCHED ANYWHERE IN THE TEXT)</span>
+          <input className="nodrag" value={data.keyword || ''} placeholder="e.g. price"
+            onChange={e => updateNodeData(id, { keyword: e.target.value })} style={selectStyle} />
+        </div>
+      )}
       <Handle type="source" position={Position.Right} id="out" style={handleStyle} />
     </Shell>
   );
@@ -114,6 +132,69 @@ export function SendTextNode({ id, data }) {
       <span style={labelStyle}>MESSAGE (24h window)</span>
       <textarea className="nodrag" rows={3} value={data.text || ''} onChange={e => updateNodeData(id, { text: e.target.value })} placeholder="Type a message…"
         style={{ ...selectStyle, resize: 'none', lineHeight: 1.4 }} />
+      <Handle type="source" position={Position.Right} id="out" style={handleStyle} />
+    </Shell>
+  );
+}
+
+// Instagram's answer to WhatsApp's template buttons: a message plus tappable
+// quick replies. Each reply gets its own outgoing handle so the flow can branch
+// on what they tapped, exactly like the Send Template node does.
+export function IgButtonsNode({ id, data }) {
+  const { updateNodeData } = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
+  const buttons = Array.isArray(data.buttons) ? data.buttons : [];
+
+  // React Flow caches handle positions; adding a reply without this leaves the
+  // new handle unclickable until the node is moved.
+  useEffect(() => { updateNodeInternals(id); }, [buttons.length, id, updateNodeInternals]);
+
+  const setBtn = (i, v) => updateNodeData(id, { buttons: buttons.map((b, j) => (j === i ? v : b)) });
+  const addBtn = () => updateNodeData(id, { buttons: [...buttons, ''] });
+  const delBtn = (i) => updateNodeData(id, { buttons: buttons.filter((_, j) => j !== i) });
+
+  return (
+    <Shell icon={IconInstagram} title="Instagram Message" tint="#FCE7F3">
+      <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
+      <span style={labelStyle}>MESSAGE (MAX 1000 CHARS)</span>
+      <textarea className="nodrag" rows={3} value={data.text || ''} maxLength={1000}
+        onChange={e => updateNodeData(id, { text: e.target.value })} placeholder="Type a message…"
+        style={{ ...selectStyle, resize: 'none', lineHeight: 1.4 }} />
+
+      <span style={{ ...labelStyle, marginTop: 10 }}>QUICK REPLIES (OPTIONAL)</span>
+      {buttons.map((b, i) => (
+        <div key={i} style={{ position: 'relative', display: 'flex', gap: 5, alignItems: 'center', marginBottom: 6 }}>
+          <input className="nodrag" value={b} maxLength={20} placeholder={`Reply ${i + 1}`}
+            onChange={e => setBtn(i, e.target.value)} style={{ ...selectStyle, flex: 1 }} />
+          <button className="nodrag" onClick={() => delBtn(i)} title="Remove"
+            style={{ border: 'none', background: 'transparent', color: 'rgba(27,76,94,.45)', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: '0 2px' }}>×</button>
+          <Handle type="source" position={Position.Right} id={`btn-${i}`}
+            style={{ ...handleStyle, right: -18, top: '50%' }} />
+        </div>
+      ))}
+      {buttons.length < 13 && (
+        <button className="nodrag" onClick={addBtn}
+          style={{ border: '1px dashed rgba(27,76,94,.28)', background: 'transparent', color: 'rgba(27,76,94,.6)', borderRadius: 8, fontSize: 11.5, fontWeight: 700, padding: '6px 9px', cursor: 'pointer', width: '100%' }}>+ Add quick reply</button>
+      )}
+      {buttons.length === 0 && <Handle type="source" position={Position.Right} id="out" style={handleStyle} />}
+    </Shell>
+  );
+}
+
+// The one way to open a NEW Instagram thread: reply privately to someone who
+// commented. Meta allows it for 7 days after the comment, once per comment.
+export function IgPrivateReplyNode({ id, data }) {
+  const { updateNodeData } = useReactFlow();
+  return (
+    <Shell icon={IconInstagram} title="DM the Commenter" tint="#FCE7F3">
+      <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
+      <span style={labelStyle}>PRIVATE REPLY TO THEIR COMMENT</span>
+      <textarea className="nodrag" rows={3} value={data.text || ''} maxLength={1000}
+        onChange={e => updateNodeData(id, { text: e.target.value })} placeholder="Thanks for commenting! Here are the details…"
+        style={{ ...selectStyle, resize: 'none', lineHeight: 1.4 }} />
+      <div style={{ fontSize: 10, color: 'rgba(27,76,94,.5)', marginTop: 7, lineHeight: 1.45 }}>
+        Works for 7 days after the comment, once per comment. Pair with an Instagram Comment trigger.
+      </div>
       <Handle type="source" position={Position.Right} id="out" style={handleStyle} />
     </Shell>
   );
@@ -211,6 +292,8 @@ export const nodeTypes = {
   trigger: TriggerNode,
   sendTemplate: SendTemplateNode,
   sendText: SendTextNode,
+  igButtons: IgButtonsNode,
+  igPrivateReply: IgPrivateReplyNode,
   ifElse: IfElseNode,
   delay: DelayNode,
   waitReply: WaitReplyNode,
@@ -225,9 +308,19 @@ export const PALETTE = [
     { type: 'trigger', label: 'Keyword', Icon: IconBranch, data: { trigger: 'keyword', keyword: '' } },
     { type: 'trigger', label: 'Manual', Icon: IconFlow, data: { trigger: 'manual' } },
   ]},
+  { group: 'INSTAGRAM TRIGGERS', items: [
+    { type: 'trigger', label: 'Instagram DM', Icon: IconInstagram, data: { trigger: 'ig_message' } },
+    { type: 'trigger', label: 'IG Keyword', Icon: IconInstagram, data: { trigger: 'ig_keyword', keyword: '' } },
+    { type: 'trigger', label: 'IG Comment', Icon: IconInstagram, data: { trigger: 'ig_comment' } },
+    { type: 'trigger', label: 'IG Comment Keyword', Icon: IconInstagram, data: { trigger: 'ig_comment_keyword', keyword: '' } },
+    { type: 'trigger', label: 'IG Story Reply', Icon: IconInstagram, data: { trigger: 'ig_story_reply' } },
+    { type: 'trigger', label: 'IG Ad → DM', Icon: IconInstagram, data: { trigger: 'ig_ad_referral' } },
+  ]},
   { group: 'MESSAGE', items: [
     { type: 'sendTemplate', label: 'Send Template', Icon: IconWhatsApp, data: { templateName: '' } },
     { type: 'sendText', label: 'Send Text', Icon: IconTemplate, data: { text: '' } },
+    { type: 'igButtons', label: 'Instagram Message', Icon: IconInstagram, data: { text: '', buttons: [] } },
+    { type: 'igPrivateReply', label: 'DM the Commenter', Icon: IconInstagram, data: { text: '' } },
   ]},
   { group: 'LOGIC', items: [
     { type: 'ifElse', label: 'If / else', Icon: IconBranch, data: { field: 'lead_status', value: '' } },

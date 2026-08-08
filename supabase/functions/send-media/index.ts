@@ -59,7 +59,7 @@ serve(async (req: Request) => {
   const { data: contact } = await db.from("contacts").select("id").eq("wa_id", normalised).maybeSingle();
   if (!contact) return json({ error: "Contact not found for " + normalised }, 404);
 
-  const { data: conversation } = await db.from("conversations").select("id, window_expires_at").eq("contact_id", contact.id).maybeSingle();
+  const { data: conversation } = await db.from("conversations").select("id, window_expires_at").eq("contact_id", contact.id).eq("channel", "whatsapp").maybeSingle();
   if (!conversation) return json({ error: "No conversation found for this contact" }, 404);
 
   const expires = conversation.window_expires_at ? new Date(conversation.window_expires_at) : new Date(0);

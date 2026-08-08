@@ -41,7 +41,7 @@ serve(async (req: Request) => {
 
   const { data: runs, error } = await db
     .from("flow_runs")
-    .select("id, flow_id, contact_id, current_node_key, created_at, contacts(wa_id, profile_name, email, company, job_title, lead_status, lead_score, source, attributes)")
+    .select("id, flow_id, contact_id, current_node_key, created_at, contacts(wa_id, ig_id, ig_username, profile_name, email, company, job_title, lead_status, lead_score, source, attributes)")
     .eq("status", "active")
     .lte("next_run_at", nowISO())
     .limit(100);
@@ -66,8 +66,17 @@ serve(async (req: Request) => {
   for (const run of runs) {
     const contact = run.contacts as Record<string, unknown>;
     const waId = contact?.wa_id as string;
+    const igId = contact?.ig_id as string;
     const { nodes, edges } = await graph(run.flow_id);
     const nodeByKey = (k: string | null) => nodes.find(n => n.node_key === k) || null;
+
+    // Which channel does this run speak on? The flow's own trigger decides it,
+    // so an Instagram flow stays on Instagram even for someone we also have a
+    // phone number for. Only fall back to the contact when there's no trigger.
+    const trig = String(nodes.find(n => n.type === "trigger")?.data?.trigger ?? "");
+    const channel: "whatsapp" | "instagram" =
+      trig.startsWith("ig_") ? "instagram" : (waId ? "whatsapp" : (igId ? "instagram" : "whatsapp"));
+    const reachable = channel === "instagram" ? !!igId : !!waId;
 
     let node = nodeByKey(run.current_node_key);
     let guard = 0;
@@ -94,8 +103,53 @@ serve(async (req: Request) => {
         done = true; break;
       }
 
+      // Instagram-only node: a message plus tappable quick replies. Branch on
+      // the tapped reply exactly like WhatsApp buttons (btn-N handles).
+      if (t === "igButtons") {
+        const replies = (node.data.buttons as string[]) ?? [];
+        if (reachable && channel === "instagram" && node.data.text) {
+          await igSend(db, run.contact_id, run.flow_id, {
+            text: String(node.data.text),
+            quick_replies: replies,
+          });
+          sent++;
+        }
+        const hasBtnEdges = outgoing(edges, node.node_key).some(e => (e.source_handle ?? "").startsWith("btn-"));
+        if (hasBtnEdges) { await db.from("flow_runs").update({ status: "waiting", updated_at: nowISO() }).eq("id", run.id); waiting++; done = true; break; }
+        const tgt = targetFor(edges, node.node_key, "out");
+        if (!tgt) { await complete(db, run.id); completed++; }
+        else await db.from("flow_runs").update({ current_node_key: tgt, next_run_at: nowISO(), updated_at: nowISO() }).eq("id", run.id);
+        done = true; break;
+      }
+
+      // Instagram-only node: DM someone who commented. This is the ONLY way to
+      // open a brand-new Instagram thread, and Meta allows it for 7 days after
+      // the comment, once per comment.
+      if (t === "igPrivateReply") {
+        const attrs = (contact?.attributes as Record<string, unknown>) ?? {};
+        const commentId = String(attrs.last_comment_id ?? "");
+        if (commentId && node.data.text) {
+          await igSend(db, run.contact_id, run.flow_id, {
+            text: String(node.data.text),
+            quick_replies: (node.data.buttons as string[]) ?? [],
+            private_reply_to: commentId,
+          });
+          sent++;
+        } else {
+          console.log(`[flows] igPrivateReply skipped for ${run.contact_id}: no comment id on record`);
+        }
+        const tgt = targetFor(edges, node.node_key, "out");
+        if (!tgt) { await complete(db, run.id); completed++; }
+        else await db.from("flow_runs").update({ current_node_key: tgt, next_run_at: nowISO(), updated_at: nowISO() }).eq("id", run.id);
+        done = true; break;
+      }
+
       if (t === "sendText") {
-        if (waId && node.data.text) { await send(db, waId, run.contact_id, run.flow_id, { type: "text", text: String(node.data.text) }); sent++; }
+        if (reachable && node.data.text) {
+          if (channel === "instagram") await igSend(db, run.contact_id, run.flow_id, { text: String(node.data.text) });
+          else await send(db, waId, run.contact_id, run.flow_id, { type: "text", text: String(node.data.text) });
+          sent++;
+        }
         const tgt = targetFor(edges, node.node_key, "out");
         if (!tgt) { await complete(db, run.id); completed++; }
         else await db.from("flow_runs").update({ current_node_key: tgt, next_run_at: nowISO(), updated_at: nowISO() }).eq("id", run.id);
@@ -103,6 +157,15 @@ serve(async (req: Request) => {
       }
 
       if (t === "sendTemplate") {
+        // Templates are a WhatsApp concept. Instagram has no equivalent, so on
+        // an Instagram run this node is a no-op rather than a silent failure.
+        if (channel === "instagram") {
+          console.log(`[flows] sendTemplate skipped on Instagram run ${run.id}; use igButtons or sendText`);
+          const tgt = targetFor(edges, node.node_key, "out");
+          if (!tgt) { await complete(db, run.id); completed++; }
+          else await db.from("flow_runs").update({ current_node_key: tgt, next_run_at: nowISO(), updated_at: nowISO() }).eq("id", run.id);
+          done = true; break;
+        }
         if (waId && node.data.templateName) {
           const tplName = String(node.data.templateName);
           const { data: tpl } = await db.from("templates").select("language, body, status").eq("name", tplName).maybeSingle();
@@ -189,9 +252,13 @@ async function applyAction(db: ReturnType<typeof createClient>, data: Record<str
 }
 
 async function ensureConversation(db: ReturnType<typeof createClient>, contactId: string): Promise<string | null> {
-  const { data: existing } = await db.from("conversations").select("id").eq("contact_id", contactId).maybeSingle();
+  // Must be channel-scoped: a contact can now have both a WhatsApp and an
+  // Instagram thread, and an unfiltered maybeSingle() throws on two rows.
+  const { data: existing } = await db.from("conversations")
+    .select("id").eq("contact_id", contactId).eq("channel", "whatsapp").maybeSingle();
   if (existing) return existing.id;
-  const { data: created } = await db.from("conversations").insert({ contact_id: contactId, status: "open" }).select("id").single();
+  const { data: created } = await db.from("conversations")
+    .insert({ contact_id: contactId, channel: "whatsapp", status: "open" }).select("id").single();
   return created?.id ?? null;
 }
 
@@ -205,6 +272,26 @@ function resolveField(contact: Record<string, unknown>, key?: string): string {
   if (key === "job_title") return String(contact.job_title ?? "");
   const attrs = (contact.attributes as Record<string, unknown>) ?? {};
   return String(attrs[key] ?? "");
+}
+
+// Instagram sends go through instagram-send rather than being duplicated here,
+// so message recording, the 1000-char cap and error shapes stay in one place.
+async function igSend(
+  _db: ReturnType<typeof createClient>,
+  contactId: string,
+  flowId: string | null,
+  msg: { text: string; quick_replies?: string[]; private_reply_to?: string },
+) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/instagram-send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SERVICE_ROLE}` },
+      body: JSON.stringify({ contact_id: contactId, flow_id: flowId, ...msg }),
+    });
+    if (!res.ok) console.error("[flows] instagram-send failed", res.status, await res.text().catch(() => ""));
+  } catch (e) {
+    console.error("[flows] instagram-send threw", e);
+  }
 }
 
 async function send(db: ReturnType<typeof createClient>, waId: string, contactId: string, flowId: string | null, msg: { type: "text" | "template"; text?: string; template?: string; language?: string; bodyParams?: { type: string; text: string }[] }) {

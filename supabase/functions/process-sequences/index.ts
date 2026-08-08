@@ -90,10 +90,10 @@ async function complete(db: ReturnType<typeof createClient>, enrollmentId: strin
 
 async function ensureConversation(db: ReturnType<typeof createClient>, contactId: string): Promise<string | null> {
   const { data: existing } = await db
-    .from("conversations").select("id").eq("contact_id", contactId).maybeSingle();
+    .from("conversations").select("id").eq("contact_id", contactId).eq("channel", "whatsapp").maybeSingle();
   if (existing) return existing.id;
   const { data: created } = await db
-    .from("conversations").insert({ contact_id: contactId, status: "open" }).select("id").single();
+    .from("conversations").insert({ contact_id: contactId, channel: "whatsapp", status: "open" }).select("id").single();
   return created?.id ?? null;
 }
 

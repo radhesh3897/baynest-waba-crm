@@ -72,10 +72,10 @@ serve(async (req: Request) => {
     try {
       // Ensure a conversation exists (leads who never messaged won't have one).
       let convId: string;
-      const { data: conv } = await db.from("conversations").select("id").eq("contact_id", r.contact_id).maybeSingle();
+      const { data: conv } = await db.from("conversations").select("id").eq("contact_id", r.contact_id).eq("channel", "whatsapp").maybeSingle();
       if (conv) convId = conv.id;
       else {
-        const { data: nc, error: ce } = await db.from("conversations").insert({ contact_id: r.contact_id, status: "open" }).select("id").single();
+        const { data: nc, error: ce } = await db.from("conversations").insert({ contact_id: r.contact_id, channel: "whatsapp", status: "open" }).select("id").single();
         if (ce || !nc) throw new Error("conversation create failed");
         convId = nc.id;
       }

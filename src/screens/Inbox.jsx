@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  getConversationsLive, getMessagesLive, sendMessageLive, sendMediaLive, subscribeMessages,
+  getConversationsLive, getMessagesLive, sendMessageLive, sendInstagramMessageLive, sendMediaLive, subscribeMessages,
   getTemplatesLive, markConversationRead, markConversationStatus, getFlowRepliedContactIds, uploadHeaderImage,
   relativeTime,
 } from '../liveData';
@@ -139,6 +139,7 @@ export default function Inbox() {
   const [selConvId, setSelConvId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inboxFilter, setInboxFilter] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all'); // 'all' | 'whatsapp' | 'instagram'
   const [convStatus, setConvStatus] = useState('open'); // 'open' | 'closed' (always one)
   const [readStatus, setReadStatus] = useState('');     // '' = All, 'seen', 'unseen'
   const [durFrom, setDurFrom] = useState('');
@@ -244,6 +245,7 @@ export default function Inbox() {
   }
 
   const visibleConvos = convos.filter(c => {
+    if (channelFilter !== 'all' && (c.channel || 'whatsapp') !== channelFilter) return false;
     if (inboxFilter === 'flows' && !flowIds.includes(c.contact_id)) return false;
     if (convStatus === 'open' && c.status === 'closed') return false;
     if (convStatus === 'closed' && c.status !== 'closed') return false;
@@ -259,7 +261,9 @@ export default function Inbox() {
   });
 
   async function handleSend() {
-    if (!selConvId || !composerText.trim() || !contact?.wa_id) return;
+    const isIg = (selConv?.channel || 'whatsapp') === 'instagram';
+    if (!selConvId || !composerText.trim()) return;
+    if (isIg ? !contact?.ig_id : !contact?.wa_id) return;
     setSendError('');
     const text = composerText.trim();
     setComposerText('');
@@ -269,7 +273,12 @@ export default function Inbox() {
     const tempId = 'temp_' + Date.now();
     const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
     setMessages(prev => [...prev, { id: tempId, direction: 'out', type: 'text', body: text, timeStr, status: 'sending' }]);
-    const result = await sendMessageLive(contact.wa_id, { type: 'text', body: text });
+    // Outside the 24h window Instagram still allows a HUMAN-typed reply for up
+    // to 7 days under the human-agent tag. This composer is only ever driven by
+    // a person, so the tag is honest here.
+    const result = isIg
+      ? await sendInstagramMessageLive(contact.id, text, { humanAgent: !selConv?.windowOpen })
+      : await sendMessageLive(contact.wa_id, { type: 'text', body: text });
     if (result.ok) {
       getMessagesLive(selConvId).then(setMessages);
     } else {
@@ -353,8 +362,18 @@ export default function Inbox() {
   );
 
   // ── Reusable filter controls (left pane on desktop, sheet on mobile) ──
+  const igCount = convos.filter(c => c.channel === 'instagram').length;
   const filtersInner = (
     <>
+      {/* Channel switch. Hidden until an Instagram thread actually exists, so
+          a WhatsApp-only workspace never sees a filter that does nothing. */}
+      {igCount > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12, padding: '0 4px' }}>
+          {pill('All', channelFilter === 'all', () => setChannelFilter('all'))}
+          {pill('WhatsApp', channelFilter === 'whatsapp', () => setChannelFilter('whatsapp'))}
+          {pill(`Instagram (${igCount})`, channelFilter === 'instagram', () => setChannelFilter('instagram'))}
+        </div>
+      )}
       {INBOX_FILTERS.map(f => (
         <FilterBtn key={f.key} label={f.label} icon={f.Icon} active={inboxFilter === f.key} onClick={() => setInboxFilter(f.key)} />
       ))}

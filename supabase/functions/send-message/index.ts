@@ -103,6 +103,7 @@ serve(async (req: Request) => {
     .from("conversations")
     .select("id, window_expires_at")
     .eq("contact_id", contact.id)
+    .eq("channel", "whatsapp")
     .maybeSingle();
 
   if (convErr)       return json({ error: "DB error", detail: convErr }, 500);

@@ -115,6 +115,55 @@ serve(async (req: Request) => {
     return json({ ok: true, probe: "instagram", page: { id: page.id, name: page.name }, ...out });
   }
 
+  // connect_instagram: point the `instagram` webhook object at instagram-webhook
+  // and record which IG account this workspace owns.
+  if (body.connect_instagram === true) {
+    const steps2: Record<string, unknown> = {};
+
+    const igRes = await fetch(g(`${page.id}?fields=instagram_business_account{id,username}&access_token=${page.token}`));
+    const igj = await igRes.json().catch(() => ({})) as Record<string, unknown>;
+    const ig = (igj.instagram_business_account as Record<string, unknown>) ?? {};
+    const igId = String(ig.id ?? "");
+    const igUser = String(ig.username ?? "");
+    if (!igId) return json({ ok: false, error: "No Instagram professional account is linked to this Page.", detail: igj }, 400);
+    steps2.instagram_account = { id: igId, username: igUser };
+
+    const { error: upErr } = await db.from("app_settings")
+      .update({ ig_user_id: igId, ig_username: igUser }).eq("id", 1);
+    steps2.app_settings = upErr ? { ok: false, error: upErr.message } : { ok: true };
+
+    if (!APP_ID || !APP_SECRET) {
+      steps2.app_subscription = { ok: false, skipped: "META_APP_ID / META_APP_SECRET not set" };
+      return json({ ok: false, steps: steps2 }, 400);
+    }
+    const appToken = `${APP_ID}|${APP_SECRET}`;
+    const callback = `${SUPABASE_URL}/functions/v1/instagram-webhook`;
+    // messaging_seen and message_reactions are subscribed too so read receipts
+    // and reactions can be shown later without another Meta round-trip.
+    const fields = "messages,messaging_postbacks,messaging_seen,message_reactions,messaging_referral,comments";
+    const subRes = await fetch(g(`${APP_ID}/subscriptions`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        object: "instagram", callback_url: callback, fields,
+        verify_token: VERIFY_TOKEN, access_token: appToken,
+      }),
+    });
+    steps2.subscribe = { ok: subRes.ok, response: await subRes.json().catch(() => ({})) };
+
+    // Read back: a 200 on the POST is not proof the fields stuck.
+    const listRes = await fetch(g(`${APP_ID}/subscriptions?access_token=${appToken}`));
+    const list = await listRes.json().catch(() => ({})) as Record<string, unknown>;
+    const rows = ((list.data as Record<string, unknown>[]) ?? []);
+    const igSub = rows.find(r => r.object === "instagram");
+    steps2.instagram_subscription = igSub
+      ? { callback: igSub.callback_url, fields: ((igSub.fields as Record<string, unknown>[]) ?? []).map(f => f.name) }
+      : null;
+    steps2.all_objects = rows.map(r => r.object);
+
+    return json({ ok: !!igSub, page: { id: page.id, name: page.name }, steps: steps2 });
+  }
+
   if (probeOnly) {
     const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(1){id,created_time,field_data}&limit=25&access_token=${page.token}`));
     const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;

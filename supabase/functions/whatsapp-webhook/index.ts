@@ -316,6 +316,7 @@ async function processInboundMessage(
     .from("conversations")
     .select("id")
     .eq("contact_id", contact.id)
+    .eq("channel", "whatsapp")
     .maybeSingle();
 
   // A brand-new conversation = this contact is messaging us for the first time.
@@ -326,7 +327,7 @@ async function processInboundMessage(
   if (!conversation) {
     const { data: newConv, error: convErr } = await db
       .from("conversations")
-      .insert({ contact_id: contact.id, status: "open" })
+      .insert({ contact_id: contact.id, channel: "whatsapp", status: "open" })
       .select("id")
       .single();
     if (convErr || !newConv) {
