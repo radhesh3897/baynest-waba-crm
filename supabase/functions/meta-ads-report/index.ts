@@ -72,15 +72,28 @@ serve(async (req: Request) => {
   try {
     const ACT = await resolveAct();
 
-    // Window: start of the month N-1 months back → today.
+    // Window: an explicit since/until (Ads-Manager style range) wins; otherwise
+    // fall back to "start of the month N-1 months back → today".
     const now = new Date();
-    const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1), 1));
-    const timeRange = encodeURIComponent(JSON.stringify({ since: ymd(since), until: ymd(now) }));
+    const isDate = (s: unknown) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+    const sinceStr = isDate(body.since) ? String(body.since)
+      : ymd(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1), 1)));
+    const untilStr = isDate(body.until) ? String(body.until) : ymd(now);
+
+    // Granularity: caller may force it, else day-by-day for short windows and
+    // month-by-month for long ones (Meta caps a request at ~90 daily rows).
+    const spanDays = Math.max(1, Math.round(
+      (Date.parse(untilStr) - Date.parse(sinceStr)) / 86400000) + 1);
+    const increment = ["1", "monthly", "all_days"].includes(String(body.increment))
+      ? String(body.increment)
+      : (spanDays <= 62 ? "1" : "monthly");
+
+    const timeRange = encodeURIComponent(JSON.stringify({ since: sinceStr, until: untilStr }));
 
     const fields = "spend,impressions,reach,clicks,inline_link_clicks,ctr,cpc,actions,cost_per_action_type";
     const url = `https://graph.facebook.com/${V}/${ACT}/insights`
-      + `?level=account&time_increment=monthly&time_range=${timeRange}`
-      + `&fields=${fields}&limit=50&access_token=${TOKEN}`;
+      + `?level=account&time_increment=${increment}&time_range=${timeRange}`
+      + `&fields=${fields}&limit=200&access_token=${TOKEN}`;
 
     const res = await fetch(url);
     const j = await res.json();
@@ -91,6 +104,8 @@ serve(async (req: Request) => {
       const leads  = leadsOf(r.actions);
       const clicks = Number(r.inline_link_clicks || r.clicks || 0);
       return {
+        // Bucket key: the day for daily rows, YYYY-MM for monthly ones.
+        key: increment === "1" ? String(r.date_start ?? "") : String(r.date_start ?? "").slice(0, 7),
         month: String(r.date_start ?? "").slice(0, 7),      // YYYY-MM
         date_start: r.date_start, date_stop: r.date_stop,
         spend,
@@ -111,7 +126,8 @@ serve(async (req: Request) => {
     return json({
       ok: true,
       account: ACT,
-      months: rows.sort((a, b) => a.month.localeCompare(b.month)),
+      range: { since: sinceStr, until: untilStr, increment, days: spanDays },
+      months: rows.sort((a, b) => String(a.key).localeCompare(String(b.key))),
       quality: quality ?? [],
       asOf: new Date().toISOString(),
     });
