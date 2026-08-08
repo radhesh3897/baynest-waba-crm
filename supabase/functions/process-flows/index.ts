@@ -70,12 +70,17 @@ serve(async (req: Request) => {
     const { nodes, edges } = await graph(run.flow_id);
     const nodeByKey = (k: string | null) => nodes.find(n => n.node_key === k) || null;
 
-    // Which channel does this run speak on? The flow's own trigger decides it,
-    // so an Instagram flow stays on Instagram even for someone we also have a
-    // phone number for. Only fall back to the contact when there's no trigger.
-    const trig = String(nodes.find(n => n.type === "trigger")?.data?.trigger ?? "");
+    // Which channel does this run speak on? The contact's own identity decides
+    // it, because that is unambiguous: an Instagram contact has no phone and a
+    // lead-form contact has no IGSID. Only when someone is reachable on BOTH do
+    // we consult the flow's triggers — and a canvas can hold several triggers of
+    // different channels, so picking the first node would be arbitrary.
+    const triggers = nodes.filter(n => n.type === "trigger").map(n => String(n.data?.trigger ?? ""));
+    const igOnlyFlow = triggers.length > 0 && triggers.every(t => t.startsWith("ig_"));
     const channel: "whatsapp" | "instagram" =
-      trig.startsWith("ig_") ? "instagram" : (waId ? "whatsapp" : (igId ? "instagram" : "whatsapp"));
+      (igId && !waId) ? "instagram"
+        : (waId && !igId) ? "whatsapp"
+          : (igOnlyFlow ? "instagram" : "whatsapp");
     const reachable = channel === "instagram" ? !!igId : !!waId;
 
     let node = nodeByKey(run.current_node_key);

@@ -9,7 +9,33 @@ const LIME = 'var(--brand-accent-soft)';
 const handleStyle = { width: 11, height: 11, background: '#fff', border: `2px solid ${LIME}` };
 const targetStyle = { ...handleStyle, border: '2px solid #9CB7B0' };
 
-function Shell({ icon: Icon, title, tint, headerDark, children, width = 232 }) {
+// Every block gets a remove button in its header. Selecting a block and hitting
+// Delete also works, but that is not discoverable — and inside a block's text
+// field Backspace edits the text instead, so the keyboard alone was not enough.
+function RemoveBtn({ nodeId, dark }) {
+  const { deleteElements } = useReactFlow();
+  if (!nodeId) return null;
+  return (
+    <button
+      className="nodrag"
+      title="Remove this block"
+      aria-label="Remove this block"
+      onClick={e => { e.stopPropagation(); deleteElements({ nodes: [{ id: nodeId }] }); }}
+      style={{
+        marginLeft: 'auto', width: 20, height: 20, flexShrink: 0, borderRadius: 6,
+        border: 'none', background: dark ? 'rgba(255,255,255,.16)' : 'rgba(27,76,94,.07)',
+        color: dark ? 'var(--brand-accent-pale)' : 'rgba(27,76,94,.55)',
+        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+      }}
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+        <line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" />
+      </svg>
+    </button>
+  );
+}
+
+function Shell({ icon: Icon, title, tint, headerDark, children, width = 232, nodeId }) {
   return (
     <div style={{ width, background: '#fff', borderRadius: 13, border: '1px solid rgba(27,76,94,.16)', boxShadow: '0 4px 14px rgba(14,58,53,.10)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', background: headerDark ? `linear-gradient(90deg, ${FOREST}, var(--brand-muted))` : '#F4F9F3', borderBottom: headerDark ? 'none' : '1px solid rgba(27,76,94,.08)' }}>
@@ -17,6 +43,7 @@ function Shell({ icon: Icon, title, tint, headerDark, children, width = 232 }) {
           <Icon size={16} />
         </span>
         <span style={{ fontSize: 12.5, fontWeight: 800, color: headerDark ? '#EAF6E4' : FOREST }}>{title}</span>
+        <RemoveBtn nodeId={nodeId} dark={headerDark} />
       </div>
       <div style={{ padding: '11px 12px 13px' }}>{children}</div>
     </div>
@@ -44,7 +71,7 @@ export function TriggerNode({ id, data }) {
   const { updateNodeData } = useReactFlow();
   const Icon = TRIGGER_ICONS[data.trigger] || IconFlow;
   return (
-    <Shell icon={Icon} title="Trigger" headerDark>
+    <Shell nodeId={id} icon={Icon} title="Trigger" headerDark>
       <div style={{ fontSize: 13, fontWeight: 800, color: FOREST }}>{TRIGGER_LABELS[data.trigger] || data.trigger}</div>
       <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>Flow starts here</div>
       {KEYWORD_TRIGGERS.has(data.trigger) && (
@@ -83,7 +110,7 @@ export function SendTemplateNode({ id, data }) {
   const setVar = (n, field) => updateNodeData(id, { variables: { ...vars, [n]: field } });
 
   return (
-    <Shell icon={IconWhatsApp} title="Send Template">
+    <Shell nodeId={id} icon={IconWhatsApp} title="Send Template">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <span style={labelStyle}>TEMPLATE</span>
       <select className="nodrag" value={data.templateName || ''} onChange={e => updateNodeData(id, { templateName: e.target.value })} style={selectStyle}>
@@ -127,7 +154,7 @@ export function SendTemplateNode({ id, data }) {
 export function SendTextNode({ id, data }) {
   const { updateNodeData } = useReactFlow();
   return (
-    <Shell icon={IconTemplate} title="Send Text">
+    <Shell nodeId={id} icon={IconTemplate} title="Send Text">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <span style={labelStyle}>MESSAGE (24h window)</span>
       <textarea className="nodrag" rows={3} value={data.text || ''} onChange={e => updateNodeData(id, { text: e.target.value })} placeholder="Type a message…"
@@ -154,7 +181,7 @@ export function IgButtonsNode({ id, data }) {
   const delBtn = (i) => updateNodeData(id, { buttons: buttons.filter((_, j) => j !== i) });
 
   return (
-    <Shell icon={IconInstagram} title="Instagram Message" tint="#FCE7F3">
+    <Shell nodeId={id} icon={IconInstagram} title="Instagram Message" tint="#FCE7F3">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <span style={labelStyle}>MESSAGE (MAX 1000 CHARS)</span>
       <textarea className="nodrag" rows={3} value={data.text || ''} maxLength={1000}
@@ -186,7 +213,7 @@ export function IgButtonsNode({ id, data }) {
 export function IgPrivateReplyNode({ id, data }) {
   const { updateNodeData } = useReactFlow();
   return (
-    <Shell icon={IconInstagram} title="DM the Commenter" tint="#FCE7F3">
+    <Shell nodeId={id} icon={IconInstagram} title="DM the Commenter" tint="#FCE7F3">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <span style={labelStyle}>PRIVATE REPLY TO THEIR COMMENT</span>
       <textarea className="nodrag" rows={3} value={data.text || ''} maxLength={1000}
@@ -203,7 +230,7 @@ export function IgPrivateReplyNode({ id, data }) {
 export function IfElseNode({ id, data }) {
   const { updateNodeData } = useReactFlow();
   return (
-    <Shell icon={IconBranch} title="If / else">
+    <Shell nodeId={id} icon={IconBranch} title="If / else">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <span style={labelStyle}>IF FIELD</span>
       <select className="nodrag" value={data.field || 'lead_status'} onChange={e => updateNodeData(id, { field: e.target.value })} style={{ ...selectStyle, marginBottom: 7 }}>
@@ -230,7 +257,7 @@ export function IfElseNode({ id, data }) {
 export function DelayNode({ id, data }) {
   const { updateNodeData } = useReactFlow();
   return (
-    <Shell icon={IconClock} title="Delay" tint="#FFF1DC">
+    <Shell nodeId={id} icon={IconClock} title="Delay" tint="#FFF1DC">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <span style={{ fontSize: 12, color: 'rgba(27,76,94,.65)', fontWeight: 600 }}>Wait</span>
@@ -247,9 +274,9 @@ export function DelayNode({ id, data }) {
   );
 }
 
-export function WaitReplyNode() {
+export function WaitReplyNode({ id }) {
   return (
-    <Shell icon={IconInbox} title="Wait for Reply">
+    <Shell nodeId={id} icon={IconInbox} title="Wait for Reply">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.6)', lineHeight: 1.4, marginBottom: 10 }}>Pause until the customer responds, then branch:</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -270,7 +297,7 @@ const ACTION_LABELS = { status: 'Update Lead Status', score: 'Update Lead Score'
 export function ActionNode({ id, data }) {
   const { updateNodeData } = useReactFlow();
   return (
-    <Shell icon={IconDb} title={ACTION_LABELS[data.action] || 'Action'} tint="#F3ECFB">
+    <Shell nodeId={id} icon={IconDb} title={ACTION_LABELS[data.action] || 'Action'} tint="#F3ECFB">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       {data.action === 'status' && (
         <select className="nodrag" value={data.value || 'Hot'} onChange={e => updateNodeData(id, { value: e.target.value })} style={selectStyle}>
