@@ -150,7 +150,7 @@ export default function Home() {
                 <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', fontWeight: 600 }}>Tagged in Tracking · sent to Meta</div>
               </div>
               {qual.tagged === 0 ? (
-                <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No leads tagged yet — qualify leads in the Tracking tab to see the split here.</div>
+                <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No leads tagged yet. Qualify leads in the Tracking tab to see the split here.</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? 18 : 28 }}>
                   <Donut data={qualData} />
@@ -209,7 +209,7 @@ export default function Home() {
               ))}
             </div>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.45)', marginBottom: 8 }}>FLOWS</div>
-            {stats.flows.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No flows yet — build one in Automation.</div>}
+            {stats.flows.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No flows yet. Build one in Automation.</div>}
             {stats.flows.map(f => {
               const st = FLOW_STATUS[f.status] || FLOW_STATUS.draft;
               return (

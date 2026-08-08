@@ -125,7 +125,7 @@ export default function PropertyDetail({ property, onClose, onSaved, onTagsChang
                 <label style={label}>{f.label}{f.required && <span style={{ color: 'rgba(199,80,59,.8)' }}> *</span>}</label>
                 {f.options ? (
                   <select value={form[f.key] || ''} onChange={e => set(f.key, e.target.value)} style={{ ...input, cursor: 'pointer' }}>
-                    <option value="">—</option>
+                    <option value="">-</option>
                     {f.options.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 ) : f.textarea ? (

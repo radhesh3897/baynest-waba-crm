@@ -165,7 +165,7 @@ function Builder() {
     setSaving(false);
     if (res.ok) {
       if (nextStatus) setStatus(nextStatus);
-      setToast(nextStatus === 'active' ? 'Published — flow is live' : nextStatus === 'paused' ? 'Paused' : 'Saved');
+      setToast(nextStatus === 'active' ? 'Published, flow is live' : nextStatus === 'paused' ? 'Paused' : 'Saved');
       refreshList();
       setTimeout(() => setToast(''), 2400);
     } else {
@@ -224,7 +224,7 @@ function Builder() {
         </div>
 
         {loading && <div style={{ color: 'rgba(27,76,94,.5)', fontSize: 14 }}>Loading workflows…</div>}
-        {!loading && flowList.length === 0 && <div style={{ color: 'rgba(27,76,94,.55)', fontSize: 13.5 }}>No workflows yet — create your first one.</div>}
+        {!loading && flowList.length === 0 && <div style={{ color: 'rgba(27,76,94,.55)', fontSize: 13.5 }}>No workflows yet. Create your first one.</div>}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {flowList.map(f => {

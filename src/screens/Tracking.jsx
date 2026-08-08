@@ -204,7 +204,7 @@ export default function Tracking() {
                   {isOpen && (
                     <div style={{ padding: isMobile ? '0 13px 13px 33px' : '0 18px 15px 40px', borderTop: '1px solid rgba(27,76,94,.06)' }}>
                       <div style={{ fontSize: 12, color: 'rgba(27,76,94,.6)', margin: '11px 0 8px' }}>
-                        {r.phone || '—'}{r.email ? ' · ' + r.email : ''}{r.leadId ? ' · lead ' + r.leadId : ' · (no lead id)'}
+                        {r.phone || '-'}{r.email ? ' · ' + r.email : ''}{r.leadId ? ' · lead ' + r.leadId : ' · (no lead id)'}
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                         {Object.entries(r.attributes).filter(([k]) => !HIDE_ATTRS.has(k)).map(([k, v]) => (

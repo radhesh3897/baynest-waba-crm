@@ -157,7 +157,7 @@ export default function People() {
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.source}</span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.received}>{p.received}</span>
                 {formDef && formDef.fields.map(f => (
-                  <span key={f.key} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(p.attributes || {})[f.key] || '—'}</span>
+                  <span key={f.key} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(p.attributes || {})[f.key] || '-'}</span>
                 ))}
               </div>
             ))}
@@ -182,7 +182,7 @@ export default function People() {
               {sel.profile_name.charAt(0)}
             </div>
             <div style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{sel.profile_name}</div>
-            <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{sel.jobTitle !== '—' ? `${sel.jobTitle} · ` : ''}{sel.company !== '—' ? sel.company : ''}</div>
+            <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{sel.jobTitle !== '-' ? `${sel.jobTitle} · ` : ''}{sel.company !== '-' ? sel.company : ''}</div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 13 }}>
               {[{ Icon: IconMail }, { Icon: IconPhone }, { Icon: IconWhatsApp }, { Icon: IconZap }].map(({ Icon }, i) => (
                 <span key={i} style={{ width: 34, height: 34, borderRadius: 9, border: '1px solid rgba(27,76,94,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(27,76,94,.6)' }}>
@@ -209,8 +209,8 @@ export default function People() {
               { label: 'Last Name',  value: sel.lastName },
               { label: 'Email',     value: sel.email },
               { label: 'Phone',     value: sel.phone },
-              { label: 'Company',   value: sel.company !== '—' ? sel.company : null },
-              { label: 'Job Title', value: sel.jobTitle !== '—' ? sel.jobTitle : null },
+              { label: 'Company',   value: sel.company !== '-' ? sel.company : null },
+              { label: 'Job Title', value: sel.jobTitle !== '-' ? sel.jobTitle : null },
               { label: 'Source',    value: sel.source },
             ].filter(f => f.value).map(f => (
               <div key={f.label} style={{ marginBottom: 10 }}>

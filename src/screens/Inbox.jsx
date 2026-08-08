@@ -60,12 +60,12 @@ function fmtTimer(secs) {
 // parameter per variable or it rejects the send with error #132000.
 // Human-readable reason for a failed message (from Meta's error payload).
 const ERR_HINTS = {
-  131049: 'Meta limited delivery to protect engagement — this recipient has received too many marketing messages recently. Campaigns auto-retry this over 24h.',
-  131026: 'Undeliverable — the number may not be on WhatsApp, or can’t receive messages.',
+  131049: 'Meta limited delivery to protect engagement. This recipient has received too many marketing messages recently. Campaigns auto-retry this over 24h.',
+  131026: 'Undeliverable. The number may not be on WhatsApp, or can’t receive messages.',
   132012: 'Template parameter/format mismatch (e.g. a required image header wasn’t sent).',
   132000: 'Wrong number of template variables.',
-  131047: 'Outside the 24-hour window — a template is required to re-open the chat.',
-  470: 'Outside the 24-hour window — a template is required.',
+  131047: 'Outside the 24-hour window. A template is required to re-open the chat.',
+  470: 'Outside the 24-hour window. A template is required.',
 };
 function friendlyError(err) {
   if (!err) return 'Message not sent.';
@@ -174,7 +174,7 @@ export default function Inbox() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file || !contact?.wa_id) return;
-    if (file.size > 16 * 1024 * 1024) { setSendError('File too large — WhatsApp allows up to 16MB.'); return; }
+    if (file.size > 16 * 1024 * 1024) { setSendError('File too large. WhatsApp allows up to 16MB.'); return; }
     setSendError(''); setUploading(true); setShowEmoji(false);
     const res = await sendMediaLive(contact.wa_id, file, composerText.trim());
     setUploading(false);
@@ -487,7 +487,7 @@ export default function Inbox() {
     <div style={{ background: '#fff', borderTop: '1px solid rgba(27,76,94,.10)', padding: isMobile ? '10px 12px 12px' : '12px 20px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#FFF1DC', border: '1px solid #F0D9B5', borderRadius: 10, padding: '9px 13px', marginBottom: 10 }}>
         <span style={{ width: 16, height: 16, color: '#B6743A', display: 'flex', flexShrink: 0 }}><IconClock size={16} /></span>
-        <span style={{ fontSize: 12.5, color: '#8A6420', fontWeight: 600 }}>24-hour window closed — send a template to re-open the conversation.</span>
+        <span style={{ fontSize: 12.5, color: '#8A6420', fontWeight: 600 }}>24-hour window closed. Send a template to re-open the conversation.</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {!isMobile && (
@@ -602,7 +602,7 @@ export default function Inbox() {
       <div style={{ padding: '22px 20px 16px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: contact.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 11px' }}>{contact.profile_name?.charAt(0)}</div>
         <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</div>
-        <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '—' ? contact.jobTitle + ' · ' : ''}{contact.company !== '—' ? contact.company : ''}</div>
+        <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '-' ? contact.jobTitle + ' · ' : ''}{contact.company !== '-' ? contact.company : ''}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
           {[{ Icon: IconMail, color: 'var(--brand-primary)' }, { Icon: IconPhone, color: 'var(--brand-primary)' }, { Icon: IconWhatsApp, color: '#3B6B45' }, { Icon: IconZap, color: '#B6743A' }].map(({ Icon, color }, i) => (
             <span key={i} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid rgba(27,76,94,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><span style={{ width: 16, height: 16, color, display: 'flex' }}><Icon size={16} /></span></span>
@@ -625,8 +625,8 @@ export default function Inbox() {
           { label: 'Name', value: contact.profile_name },
           { label: 'Email', value: contact.email },
           { label: 'Phone', value: contact.phone },
-          { label: 'Company', value: contact.company !== '—' ? contact.company : null },
-          { label: 'Job Title', value: contact.jobTitle !== '—' ? contact.jobTitle : null },
+          { label: 'Company', value: contact.company !== '-' ? contact.company : null },
+          { label: 'Job Title', value: contact.jobTitle !== '-' ? contact.jobTitle : null },
         ].filter(f => f.value).map(f => (
           <div key={f.label} style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.45)', marginBottom: 4 }}>{f.label}</div>
@@ -765,7 +765,7 @@ export default function Inbox() {
                   <div style={{ flex: 1, minWidth: 0 }} onClick={() => setContactPanelOpen(true)}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</div>
                     <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {selConv?.lastSeen ? `last seen ${relativeTime(selConv.lastSeen)}` : `${contact?.company !== '—' ? contact?.company + ' · ' : ''}WhatsApp`}
+                      {selConv?.lastSeen ? `last seen ${relativeTime(selConv.lastSeen)}` : `${contact?.company !== '-' ? contact?.company + ' · ' : ''}WhatsApp`}
                     </div>
                   </div>
                   <button onClick={toggleConvStatus} title={selConv.status === 'closed' ? 'Reopen' : 'Close'} style={{ height: 34, padding: '0 11px', borderRadius: 8, border: '1px solid rgba(27,76,94,.16)', background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', flexShrink: 0 }}>
@@ -862,7 +862,7 @@ export default function Inbox() {
                   <div>
                     <div style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact?.profile_name}</div>
                     <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)' }}>
-                      {contact?.company !== '—' ? contact?.company + ' · ' : ''}WhatsApp
+                      {contact?.company !== '-' ? contact?.company + ' · ' : ''}WhatsApp
                       {selConv?.lastSeen && <> · last seen {relativeTime(selConv.lastSeen)}</>}
                     </div>
                   </div>

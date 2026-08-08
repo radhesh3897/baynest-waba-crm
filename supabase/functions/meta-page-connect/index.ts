@@ -87,6 +87,34 @@ serve(async (req: Request) => {
   }
   if (dryRun) return json({ ok: true, dry_run: true, steps });
 
+  // probe_instagram: can this token actually run an Instagram inbox? Reports the
+  // linked IG account, the scopes the token carries, and whether the messaging
+  // ones are present — read-only, changes nothing.
+  if (body.probe_instagram === true) {
+    const out: Record<string, unknown> = {};
+
+    const igRes = await fetch(g(`${page.id}?fields=instagram_business_account{id,username,name,followers_count},connected_instagram_account{id,username}&access_token=${page.token}`));
+    out.page_instagram = await igRes.json().catch(() => ({}));
+
+    const dbgRes = await fetch(g(`debug_token?input_token=${WHATSAPP_TOKEN}&access_token=${WHATSAPP_TOKEN}`));
+    const dbg = await dbgRes.json().catch(() => ({})) as Record<string, unknown>;
+    const scopes = (((dbg.data as Record<string, unknown>)?.scopes) as string[]) ?? [];
+    const need = ["instagram_basic", "instagram_manage_messages", "pages_manage_metadata", "pages_messaging"];
+    out.token_type = (dbg.data as Record<string, unknown>)?.type;
+    out.scopes_present = need.filter(s => scopes.includes(s));
+    out.scopes_missing = need.filter(s => !scopes.includes(s));
+    out.all_scopes = scopes;
+
+    // What is this app already subscribed to at the app level?
+    if (APP_ID && APP_SECRET) {
+      const lr = await fetch(g(`${APP_ID}/subscriptions?access_token=${APP_ID}|${APP_SECRET}`));
+      const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;
+      out.app_subscriptions = ((lj.data as Record<string, unknown>[]) ?? [])
+        .map(s => ({ object: s.object, fields: ((s.fields as Record<string, unknown>[]) ?? []).map(f => f.name) }));
+    }
+    return json({ ok: true, probe: "instagram", page: { id: page.id, name: page.name }, ...out });
+  }
+
   if (probeOnly) {
     const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(1){id,created_time,field_data}&limit=25&access_token=${page.token}`));
     const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;

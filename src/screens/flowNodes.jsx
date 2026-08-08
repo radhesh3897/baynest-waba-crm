@@ -35,7 +35,7 @@ export function TriggerNode({ data }) {
     <Shell icon={Icon} title="Trigger" headerDark>
       <div style={{ fontSize: 13, fontWeight: 800, color: FOREST }}>{TRIGGER_LABELS[data.trigger] || data.trigger}</div>
       <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>Flow starts here</div>
-      {data.trigger === 'keyword' && <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(27,76,94,.6)' }}>Keyword: <strong>{data.keyword || '—'}</strong></div>}
+      {data.trigger === 'keyword' && <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(27,76,94,.6)' }}>Keyword: <strong>{data.keyword || '-'}</strong></div>}
       <Handle type="source" position={Position.Right} id="out" style={handleStyle} />
     </Shell>
   );

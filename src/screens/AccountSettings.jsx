@@ -135,7 +135,7 @@ export default function AccountSettings() {
             <button onClick={saveStages} disabled={savingStages} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: savingStages ? 'default' : 'pointer', opacity: savingStages ? 0.6 : 1 }}>{savingStages ? 'Saving…' : 'Save pipeline'}</button>
             {stageMsg && <span style={{ fontSize: 12.5, fontWeight: 600, color: stageMsg.includes('saved') ? '#3B6B45' : '#C7503B' }}>{stageMsg}</span>}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>Renaming a stage won't move leads already in the old one — keep existing names if you have active leads, or re-drag them after.</div>
+          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>Renaming a stage won't move leads already in the old one. Keep existing names if you have active leads, or re-drag them after.</div>
         </div>
 
         {/* ── TEAM ── */}
@@ -146,7 +146,7 @@ export default function AccountSettings() {
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
               <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{(m.name || m.email || '?').charAt(0).toUpperCase()}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)' }}>{m.name || '—'}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)' }}>{m.name || '-'}</div>
                 <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email || ''}</div>
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)', background: 'rgba(27,76,94,.07)', padding: '3px 10px', borderRadius: 999 }}>{m.role || 'Member'}</span>

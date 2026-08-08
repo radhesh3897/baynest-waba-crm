@@ -4,7 +4,7 @@ const NOW = Date.now();
 const HOUR = 3600 * 1000;
 
 // ─── Lead Form Definitions ────────────────────────────────────────────────────
-// Each form has its own field set — values live in contact.attributes (jsonb)
+// Each form has its own field set, values live in contact.attributes (jsonb)
 export const LEAD_FORMS = [
   {
     id: 'form_ca',
@@ -110,40 +110,40 @@ const CONTACTS_RAW = [
   },
   {
     id: 'sunita', wa_id: '+919988776655', profile_name: 'Sunita Kapoor',
-    firstName: 'Sunita', lastName: 'Kapoor', company: '—',
-    jobTitle: '—', email: 'sunita.kapoor@gmail.com', phone: '+91 99887 76655',
+    firstName: 'Sunita', lastName: 'Kapoor', company: '-',
+    jobTitle: '-', email: 'sunita.kapoor@gmail.com', phone: '+91 99887 76655',
     lead_score: 78, lead_status: 'Hot', source: 'Meta Ads', color: '#C7503B',
     form_id: 'form_ivf', last_inbound_at: new Date(NOW - 40 * 60000).toISOString(),
     attributes: { city: 'Mumbai', treatment_interest: 'IVF', age: '36' },
   },
   {
     id: 'anjali', wa_id: '+919977112233', profile_name: 'Anjali Singh',
-    firstName: 'Anjali', lastName: 'Singh', company: '—',
-    jobTitle: '—', email: 'anjali.singh@gmail.com', phone: '+91 99771 12233',
+    firstName: 'Anjali', lastName: 'Singh', company: '-',
+    jobTitle: '-', email: 'anjali.singh@gmail.com', phone: '+91 99771 12233',
     lead_score: 63, lead_status: 'Warm', source: 'Meta Ads', color: '#7A5BB9',
     form_id: 'form_ivf', last_inbound_at: new Date(NOW - 3 * HOUR).toISOString(),
     attributes: { city: 'Delhi', treatment_interest: 'IVF', age: '33' },
   },
   {
     id: 'ramesh', wa_id: '+919855443322', profile_name: 'Ramesh Kulkarni',
-    firstName: 'Ramesh', lastName: 'Kulkarni', company: '—',
-    jobTitle: '—', email: 'ramesh.k@gmail.com', phone: '+91 98554 43322',
+    firstName: 'Ramesh', lastName: 'Kulkarni', company: '-',
+    jobTitle: '-', email: 'ramesh.k@gmail.com', phone: '+91 98554 43322',
     lead_score: 50, lead_status: 'Cool', source: 'Meta Ads', color: '#356E63',
     form_id: 'form_ivf', last_inbound_at: new Date(NOW - 8 * HOUR).toISOString(),
     attributes: { city: 'Bangalore', treatment_interest: 'ICSI', age: '38' },
   },
   {
     id: 'kavita', wa_id: '+919666554433', profile_name: 'Kavita Mehta',
-    firstName: 'Kavita', lastName: 'Mehta', company: '—',
-    jobTitle: '—', email: 'kavita.m@gmail.com', phone: '+91 96665 54433',
+    firstName: 'Kavita', lastName: 'Mehta', company: '-',
+    jobTitle: '-', email: 'kavita.m@gmail.com', phone: '+91 96665 54433',
     lead_score: 55, lead_status: 'New', source: 'Meta Ads', color: '#2E7BA8',
     form_id: 'form_ivf', last_inbound_at: new Date(NOW - 90 * 60000).toISOString(),
     attributes: { city: 'Pune', treatment_interest: 'IVF', age: '35' },
   },
   {
     id: 'prerna', wa_id: '+919432198765', profile_name: 'Prerna Shah',
-    firstName: 'Prerna', lastName: 'Shah', company: '—',
-    jobTitle: '—', email: 'prerna.shah@gmail.com', phone: '+91 94321 98765',
+    firstName: 'Prerna', lastName: 'Shah', company: '-',
+    jobTitle: '-', email: 'prerna.shah@gmail.com', phone: '+91 94321 98765',
     lead_score: 85, lead_status: 'Won', source: 'Meta Ads', color: '#2E9E4F',
     form_id: 'form_ivf', last_inbound_at: new Date(NOW - 6 * 24 * HOUR).toISOString(),
     attributes: { city: 'Mumbai', treatment_interest: 'IUI', age: '31' },
@@ -161,23 +161,23 @@ const CONTACTS_RAW = [
   {
     id: 'amit', wa_id: '+919123456780', profile_name: 'Amit Verma',
     firstName: 'Amit', lastName: 'Verma', company: 'Freelancer',
-    jobTitle: '—', email: 'amit.verma@gmail.com', phone: '+91 91234 56780',
+    jobTitle: '-', email: 'amit.verma@gmail.com', phone: '+91 91234 56780',
     lead_score: 82, lead_status: 'Hot', source: 'Meta Ads', color: '#C7503B',
     form_id: 'form_edtech', last_inbound_at: new Date(NOW - 2 * HOUR).toISOString(),
     attributes: { course_interest: 'Data Science', budget: '₹75,000', timeline: '1 month' },
   },
   {
     id: 'tarun', wa_id: '+919988001122', profile_name: 'Tarun Gupta',
-    firstName: 'Tarun', lastName: 'Gupta', company: '—',
-    jobTitle: '—', email: 'tarun.g@gmail.com', phone: '+91 99880 01122',
+    firstName: 'Tarun', lastName: 'Gupta', company: '-',
+    jobTitle: '-', email: 'tarun.g@gmail.com', phone: '+91 99880 01122',
     lead_score: 37, lead_status: 'New', source: 'Meta Ads', color: '#356E63',
     form_id: 'form_edtech', last_inbound_at: new Date(NOW - 30 * 60000).toISOString(),
     attributes: { course_interest: 'Full Stack Dev', budget: '₹60,000', timeline: 'ASAP' },
   },
   {
     id: 'priyanka', wa_id: '+919800112233', profile_name: 'Priyanka Singh',
-    firstName: 'Priyanka', lastName: 'Singh', company: '—',
-    jobTitle: '—', email: 'priyanka.s@gmail.com', phone: '+91 98001 12233',
+    firstName: 'Priyanka', lastName: 'Singh', company: '-',
+    jobTitle: '-', email: 'priyanka.s@gmail.com', phone: '+91 98001 12233',
     lead_score: 53, lead_status: 'Cool', source: 'Meta Ads', color: '#7A5BB9',
     form_id: 'form_edtech', last_inbound_at: new Date(NOW - 12 * HOUR).toISOString(),
     attributes: { course_interest: 'Python', budget: '₹35,000', timeline: '6 months' },
@@ -188,9 +188,9 @@ const CONTACTS_RAW = [
 let _contacts = CONTACTS_RAW.map(c => ({ ...c }));
 
 const CONVERSATIONS = [
-  { id: 'conv-rohan',  contact_id: 'rohan',  last_message_at: new Date(NOW - 2 * 60000).toISOString(),        window_expires_at: new Date(NOW + 23 * HOUR + 59 * 60000 + 12000).toISOString(), unread_count: 2, status: 'open',   preview: 'Sounds good — can you share the pricing for the Scale plan?' },
+  { id: 'conv-rohan',  contact_id: 'rohan',  last_message_at: new Date(NOW - 2 * 60000).toISOString(),        window_expires_at: new Date(NOW + 23 * HOUR + 59 * 60000 + 12000).toISOString(), unread_count: 2, status: 'open',   preview: 'Sounds good, can you share the pricing for the Scale plan?' },
   { id: 'conv-priya',  contact_id: 'priya',  last_message_at: new Date(NOW - 2 * 24 * HOUR).toISOString(),    window_expires_at: new Date(NOW - 2 * HOUR).toISOString(),                         unread_count: 0, status: 'open',   preview: 'Thanks, will review the proposal and revert.' },
-  { id: 'conv-arjun',  contact_id: 'arjun',  last_message_at: new Date(NOW - 5 * HOUR).toISOString(),         window_expires_at: new Date(NOW + 19 * HOUR).toISOString(),                        unread_count: 0, status: 'open',   preview: 'Great — let us book a call for Thursday.' },
+  { id: 'conv-arjun',  contact_id: 'arjun',  last_message_at: new Date(NOW - 5 * HOUR).toISOString(),         window_expires_at: new Date(NOW + 19 * HOUR).toISOString(),                        unread_count: 0, status: 'open',   preview: 'Great, let us book a call for Thursday.' },
   { id: 'conv-sneha',  contact_id: 'sneha',  last_message_at: new Date(NOW - 24 * HOUR).toISOString(),        window_expires_at: new Date(NOW + 1 * HOUR).toISOString(),                         unread_count: 1, status: 'open',   preview: 'What is the minimum ad spend you work with?' },
   { id: 'conv-vikram', contact_id: 'vikram', last_message_at: new Date(NOW - 3 * 24 * HOUR).toISOString(),    window_expires_at: new Date(NOW - 51 * HOUR).toISOString(),                        unread_count: 0, status: 'closed', preview: 'Okay noted, talk next week.' },
   { id: 'conv-aisha',  contact_id: 'aisha',  last_message_at: new Date(NOW - 6 * HOUR).toISOString(),         window_expires_at: new Date(NOW + 18 * HOUR).toISOString(),                        unread_count: 0, status: 'open',   preview: 'Can you also run our Google Ads?' },
@@ -200,8 +200,8 @@ const MESSAGES = {
   'conv-rohan': [
     { id: 'm1', wa_message_id: 'wamid-r1', direction: 'out', type: 'template', template_name: 'opt_in_message', body: 'Hi Rohan 👋 Thanks for your interest in Done For You. We build fully-automated lead engines that pipe qualified leads straight into your CRM. Want to see how we got Weavers-style D2C brands to 4x ROAS?', status: 'read', sent_by: 'Aarti (DFY)', created_at: new Date(NOW - 24 * HOUR - 58 * 60000).toISOString() },
     { id: 'm2', wa_message_id: 'wamid-r2', direction: 'in',  type: 'text', body: 'Yes, interested. We are spending on Meta but leads are mostly junk.', status: 'received', sent_by: null, created_at: new Date(NOW - 24 * HOUR - 46 * 60000).toISOString() },
-    { id: 'm3', wa_message_id: 'wamid-r3', direction: 'out', type: 'text', body: 'That is exactly what we fix — qualified leads only, auto-scored and delivered instantly. Not general timepass leads.', status: 'read', sent_by: 'Aarti (DFY)', created_at: new Date(NOW - 24 * HOUR - 40 * 60000).toISOString() },
-    { id: 'm4', wa_message_id: 'wamid-r4', direction: 'in',  type: 'text', body: 'Sounds good — can you share the pricing for the Scale plan?', status: 'received', sent_by: null, created_at: new Date(NOW - 2 * 60000).toISOString() },
+    { id: 'm3', wa_message_id: 'wamid-r3', direction: 'out', type: 'text', body: 'That is exactly what we fix, qualified leads only, auto-scored and delivered instantly. Not general timepass leads.', status: 'read', sent_by: 'Aarti (DFY)', created_at: new Date(NOW - 24 * HOUR - 40 * 60000).toISOString() },
+    { id: 'm4', wa_message_id: 'wamid-r4', direction: 'in',  type: 'text', body: 'Sounds good, can you share the pricing for the Scale plan?', status: 'received', sent_by: null, created_at: new Date(NOW - 2 * 60000).toISOString() },
   ],
   'conv-priya': [
     { id: 'm5', wa_message_id: 'wamid-p1', direction: 'in',  type: 'text', body: 'Hi, saw your case study on TalentZ-style hiring brands. Curious about CPL improvements.', status: 'received', sent_by: null, created_at: new Date(NOW - 2 * 24 * HOUR - 90 * 60000).toISOString() },
@@ -209,13 +209,13 @@ const MESSAGES = {
     { id: 'm7', wa_message_id: 'wamid-p3', direction: 'in',  type: 'text', body: 'Thanks, will review the proposal and revert.', status: 'received', sent_by: null, created_at: new Date(NOW - 2 * 24 * HOUR - 58 * 60000).toISOString() },
   ],
   'conv-arjun': [
-    { id: 'm8',  wa_message_id: 'wamid-a1', direction: 'in',  type: 'text', body: 'Your Hobfit results slide was wild — 5x constant ROI. Is that repeatable for a fitness D2C?', status: 'received', sent_by: null, created_at: new Date(NOW - 5 * HOUR + 10 * 60000).toISOString() },
+    { id: 'm8',  wa_message_id: 'wamid-a1', direction: 'in',  type: 'text', body: 'Your Hobfit results slide was wild, 5x constant ROI. Is that repeatable for a fitness D2C?', status: 'received', sent_by: null, created_at: new Date(NOW - 5 * HOUR + 10 * 60000).toISOString() },
     { id: 'm9',  wa_message_id: 'wamid-a2', direction: 'out', type: 'text', body: 'Repeatable when the offer + follow-up loop are tight. We handle both. Real revenue, not vanity metrics.', status: 'read', sent_by: 'Aarti (DFY)', created_at: new Date(NOW - 5 * HOUR + 18 * 60000).toISOString() },
-    { id: 'm10', wa_message_id: 'wamid-a3', direction: 'in',  type: 'text', body: 'Great — let us book a call for Thursday.', status: 'received', sent_by: null, created_at: new Date(NOW - 5 * HOUR + 25 * 60000).toISOString() },
+    { id: 'm10', wa_message_id: 'wamid-a3', direction: 'in',  type: 'text', body: 'Great, let us book a call for Thursday.', status: 'received', sent_by: null, created_at: new Date(NOW - 5 * HOUR + 25 * 60000).toISOString() },
   ],
   'conv-sneha': [
     { id: 'm11', wa_message_id: 'wamid-s1', direction: 'in',  type: 'text', body: 'Hi! We are a B2B SaaS doing LinkedIn ads. Do you handle that channel too?', status: 'received', sent_by: null, created_at: new Date(NOW - 24 * HOUR - 20 * 60000).toISOString() },
-    { id: 'm12', wa_message_id: 'wamid-s2', direction: 'out', type: 'text', body: 'Yes — Meta, Google and LinkedIn. We pick the channel where your buyers actually are.', status: 'delivered', sent_by: 'Aarti (DFY)', created_at: new Date(NOW - 24 * HOUR - 8 * 60000).toISOString() },
+    { id: 'm12', wa_message_id: 'wamid-s2', direction: 'out', type: 'text', body: 'Yes, Meta, Google and LinkedIn. We pick the channel where your buyers actually are.', status: 'delivered', sent_by: 'Aarti (DFY)', created_at: new Date(NOW - 24 * HOUR - 8 * 60000).toISOString() },
     { id: 'm13', wa_message_id: 'wamid-s3', direction: 'in',  type: 'text', body: 'What is the minimum ad spend you work with?', status: 'received', sent_by: null, created_at: new Date(NOW - 24 * HOUR + 1 * 60000).toISOString() },
   ],
   'conv-vikram': [
@@ -235,16 +235,16 @@ const TEMPLATES = [
   { id: 't2', name: 'opt_out_message',                 language: 'en', category: 'Utility',    status: 'Approved', body: 'You have been unsubscribed. You will no longer receive marketing messages from Done For You. Reply START to opt back in anytime.' },
   { id: 't3', name: 'utility_approved_message',        language: 'en', category: 'Utility',    status: 'Approved', body: 'Your request has been received. Our team will reach out within 24 hours with the next steps for your campaign.' },
   { id: 't4', name: '1st_msg_cheap_leads_nurturing',   language: 'en', category: 'Marketing',  status: 'Approved', body: 'Spending on ads but getting junk leads? We build automated lead engines that deliver qualified leads straight to your CRM. Want a quick teardown?' },
-  { id: 't5', name: 'cheap_leads_nurturing_message_1', language: 'en', category: 'Marketing',  status: 'Approved', body: 'Quick follow-up — most brands we work with see 40% lower CPLs in 60 days. Want me to share how that maps to your numbers?' },
+  { id: 't5', name: 'cheap_leads_nurturing_message_1', language: 'en', category: 'Marketing',  status: 'Approved', body: 'Quick follow-up, most brands we work with see 40% lower CPLs in 60 days. Want me to share how that maps to your numbers?' },
   { id: 't6', name: 'utility_2',                       language: 'en', category: 'Utility',    status: 'Approved', body: 'Your demo is confirmed. We have sent a calendar invite to your email. Reply RESCHEDULE if the time does not work.' },
   { id: 't7', name: 'festive_offer_oct',               language: 'en', category: 'Marketing',  status: 'Pending',  body: 'Festive season is peak buying time. Lock in your ad budget now and we will have your lead engine live before the rush. Limited slots.' },
 ];
 
 const SEQUENCES = [
-  { id: 'seq1', name: 'Lead Comes — First Message', status: 'active', exit_on_reply: true,  trigger_type: 'on_new_contact', enrollments: 1284 },
+  { id: 'seq1', name: 'Lead Comes: First Message', status: 'active', exit_on_reply: true,  trigger_type: 'on_new_contact', enrollments: 1284 },
   { id: 'seq2', name: 'Cheap-Leads Nurture',        status: 'active', exit_on_reply: true,  trigger_type: 'manual',         enrollments: 689 },
   { id: 'seq3', name: 'Re-engage Cold',             status: 'draft',  exit_on_reply: true,  trigger_type: 'manual',         enrollments: 0 },
-  { id: 'seq4', name: 'Demo Booked — Reminder',     status: 'paused', exit_on_reply: false, trigger_type: 'manual',         enrollments: 322 },
+  { id: 'seq4', name: 'Demo Booked: Reminder',     status: 'paused', exit_on_reply: false, trigger_type: 'manual',         enrollments: 322 },
   { id: 'seq5', name: 'Post-Call Follow-up',        status: 'active', exit_on_reply: true,  trigger_type: 'manual',         enrollments: 460 },
 ];
 
@@ -356,8 +356,8 @@ export function addLead(leadData) {
     profile_name: leadData.name || 'Unknown',
     firstName: nameParts[0] || '',
     lastName: nameParts.slice(1).join(' ') || '',
-    company: leadData.company || '—',
-    jobTitle: leadData.jobTitle || '—',
+    company: leadData.company || '-',
+    jobTitle: leadData.jobTitle || '-',
     email: leadData.email || '',
     phone: leadData.phone || '',
     lead_score: Math.min(100, Math.max(0, parseInt(leadData.lead_score) || 50)),
@@ -401,7 +401,7 @@ export function sendMessage(convId, payload) {
   if (!conv) return { ok: false, error: 'Conversation not found' };
   const windowOpen = new Date(conv.window_expires_at) > new Date();
   if (type === 'text' && !windowOpen) {
-    return { ok: false, error: 'outside 24h window — use a template' };
+    return { ok: false, error: 'outside 24h window, use a template' };
   }
   const newMsg = {
     id: 'm' + (++_msgIdCounter),
@@ -440,15 +440,15 @@ export function subscribe(event, callback) {
   return () => {};
 }
 
-// ─── Flow Builder (visual canvas) — MOCK ONLY ──────────────────────────────────
-// Templates the flow builder can send. Some have quick-reply BUTTONS — each button
+// ─── Flow Builder (visual canvas), MOCK ONLY ──────────────────────────────────
+// Templates the flow builder can send. Some have quick-reply BUTTONS, each button
 // becomes its own output handle (branch) on a Send Template node.
 export const FLOW_TEMPLATES = [
   { name: 'welcome',      category: 'Marketing', body: 'Hi 👋 Thanks for your interest in Done For You. We build automated lead engines. Keen to see how we hit 4x ROAS?', buttons: ['Interested', 'Not now'] },
   { name: 'book_a_call',  category: 'Utility',   body: 'Awesome! Pick a time and our strategist will call you.', buttons: ['Morning', 'Evening'] },
   { name: 'gentle_nudge', category: 'Marketing', body: 'Still on the fence? Here’s a 60-sec case study that might help.', buttons: [] },
   { name: 'opt_in',       category: 'Marketing', body: 'Reply to get growth tips, case studies and offers built for brands like yours.', buttons: ['Yes please', 'No thanks'] },
-  { name: 'demo_confirmed', category: 'Utility', body: 'Your demo is confirmed — calendar invite sent.', buttons: [] },
+  { name: 'demo_confirmed', category: 'Utility', body: 'Your demo is confirmed, calendar invite sent.', buttons: [] },
 ];
 export function getFlowTemplates() { return FLOW_TEMPLATES; }
 export function getTemplateButtons(name) {
@@ -461,7 +461,7 @@ export function getTemplateButtons(name) {
 //     Not now    → Delay 2 days → Gentle nudge
 const SEED_FLOW = {
   id: 'flow_demo',
-  name: 'New Lead — Welcome & Branch',
+  name: 'New Lead Welcome & Branch',
   nodes: [
     { id: 'n_trigger', type: 'trigger',      position: { x: 40,   y: 260 }, data: { trigger: 'new_lead' } },
     { id: 'n_welcome', type: 'sendTemplate', position: { x: 340,  y: 220 }, data: { templateName: 'welcome' } },

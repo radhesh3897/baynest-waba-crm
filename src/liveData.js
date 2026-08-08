@@ -28,7 +28,7 @@ function relativeTime(isoString) {
 
 // Exact local timestamp (IST) — e.g. "26 Jun 2026, 11:04 PM"
 function exactTime(isoString) {
-  if (!isoString) return '—';
+  if (!isoString) return '-';
   return new Date(isoString).toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit', hour12: true,
@@ -57,13 +57,13 @@ function mapContact(c) {
     profile_name: name,
     firstName: c.first_name || parts[0] || '',
     lastName: c.last_name || parts.slice(1).join(' ') || '',
-    company: c.company || '—',
-    jobTitle: c.job_title || '—',
+    company: c.company || '-',
+    jobTitle: c.job_title || '-',
     email: c.email || '',
     phone: c.wa_id || '',
     lead_score: c.lead_score ?? 0,
     lead_status: c.lead_status || 'New',
-    source: c.source || '—',
+    source: c.source || '-',
     attributes: c.attributes || {},
     color: colorFor(c.wa_id || c.id),
   };
@@ -830,11 +830,11 @@ export async function getPeopleLive() {
       lastName: c.last_name || parts.slice(1).join(' ') || '',
       phone: c.wa_id,
       email: c.email || '',
-      company: c.company || '—',
-      jobTitle: c.job_title || '—',
+      company: c.company || '-',
+      jobTitle: c.job_title || '-',
       lead_status: c.lead_status || 'New',
       lead_score: c.lead_score ?? 0,
-      source: c.source || '—',
+      source: c.source || '-',
       attributes: c.attributes || {},
       color: colorFor(c.wa_id || c.id),
       lastContacted: relativeTime(c.last_inbound_at || c.created_at),
@@ -859,9 +859,9 @@ export async function getLeadsOverview() {
     const attrs = c.attributes || {};
     const source = c.source_type
       || (c.ctwa_clid ? 'ctwa' : ((attrs.meta_lead_id || c.form_id) ? 'instant_form' : 'unknown'));
-    let funnel = '—';
+    let funnel = '-';
     if (source === 'ctwa') funnel = attrs.ctwa_headline || attrs.ctwa_source_id || attrs.ctwa_ad_id || 'CTWA ad';
-    else if (source === 'instant_form') funnel = c.fb_forms?.name || attrs.form_name || attrs.campaign_name || '—';
+    else if (source === 'instant_form') funnel = c.fb_forms?.name || attrs.form_name || attrs.campaign_name || '-';
     return {
       id: c.id,
       name: c.profile_name || c.wa_id || 'Unknown',

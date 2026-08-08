@@ -121,7 +121,7 @@ export default function MetaDashboard() {
               </div>
 
               <Card span={isMobile ? 2 : 3} k="SPEND SO FAR" v={inr(t.spend, 2)} corner="today" big />
-              <Card k="COST / LEAD" v={t.cpl != null ? inr(t.cpl) : '—'} />
+              <Card k="COST / LEAD" v={t.cpl != null ? inr(t.cpl) : '-'} />
               <Card k="CTR" v={pct(t.ctr)} />
 
               <Card k="COST / CLICK" v={inr(t.cpc)} corner="CPC" />
@@ -138,7 +138,7 @@ export default function MetaDashboard() {
                 color: aboveBench ? '#C0392B' : '#2E7D44',
               }}>
                 <b>{inr(t.cpl)}</b> CPL so far is <b>{aboveBench ? 'above' : 'below'}</b> your {inr(data.benchmarkCpl)} benchmark
-                {aboveBench ? ' — keep an eye on it.' : ' — nice work.'}
+                {aboveBench ? '. Keep an eye on it.' : '. Nice work.'}
               </div>
             )}
 
@@ -154,8 +154,8 @@ export default function MetaDashboard() {
                   <span key="s" style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: '#EAF7EC', color: '#2E7D44' }}>Active</span>,
                   inr(a.spend, 2),
                   num(a.leads),
-                  a.cpl != null ? inr(a.cpl) : '—',
-                  a.clicks ? inr(a.cpc) : '—',
+                  a.cpl != null ? inr(a.cpl) : '-',
+                  a.clicks ? inr(a.cpc) : '-',
                   pct(a.ctr),
                 ]} />
               )) : (
@@ -164,7 +164,7 @@ export default function MetaDashboard() {
             </div>
 
             <div style={{ marginTop: 16, fontSize: 11.5, color: 'rgba(27,76,94,.4)' }}>
-              Meta · {data.account?.name} ({data.account?.id}) · {data.account?.currency} · refreshes on open, on Refresh, and every 30 min · last updated {istTime(data.asOf)} · Performance only — no personal lead data shown
+              Meta · {data.account?.name} ({data.account?.id}) · {data.account?.currency} · refreshes on open, on Refresh, and every 30 min · last updated {istTime(data.asOf)} · Performance only. No personal lead data shown
             </div>
           </>
         )}

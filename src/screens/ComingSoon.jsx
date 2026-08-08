@@ -14,7 +14,7 @@ export default function ComingSoon({ screen }) {
         </div>
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: 'var(--brand-primary)' }}>{title}</h2>
         <p style={{ margin: '10px 0 0', fontSize: 14.5, lineHeight: 1.55, color: 'rgba(27,76,94,.6)' }}>
-          This channel isn't wired up yet. {title} campaigns and inbox routing are on the roadmap — for now everything runs through WhatsApp.
+          This channel isn't wired up yet. {title} campaigns and inbox routing are on the roadmap. For now everything runs through WhatsApp.
         </p>
         <button style={{ marginTop: 22, background: 'var(--brand-accent-soft)', color: 'var(--brand-primary)', border: 'none', fontSize: 13.5, fontWeight: 800, padding: '11px 22px', borderRadius: 10, cursor: 'pointer' }}>
           Notify me when ready

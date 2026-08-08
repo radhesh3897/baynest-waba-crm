@@ -27,7 +27,7 @@ const FILTERS = [
 ];
 
 function Badge({ map, k }) {
-  const b = map[k] || { label: k || '—', bg: 'rgba(27,76,94,.07)', fg: 'rgba(27,76,94,.55)' };
+  const b = map[k] || { label: k || '-', bg: 'rgba(27,76,94,.07)', fg: 'rgba(27,76,94,.55)' };
   return (
     <span style={{ display: 'inline-block', fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: b.bg, color: b.fg, whiteSpace: 'nowrap' }}>
       {b.label}

@@ -24,7 +24,7 @@ const LANGUAGES = [
 ];
 
 const CATEGORIES = [
-  { key: 'MARKETING', mode: 'standard', label: 'Marketing', desc: 'Promotions, offers, announcements — anything that builds awareness or drives sales.' },
+  { key: 'MARKETING', mode: 'standard', label: 'Marketing', desc: 'Promotions, offers, announcements: anything that builds awareness or drives sales.' },
   { key: 'UTILITY', mode: 'standard', label: 'Utility', desc: 'Order updates, confirmations, reminders tied to a specific transaction or request.' },
   { key: 'MARKETING', mode: 'carousel', label: 'Carousel', desc: 'Up to 10 swipeable cards, each with an image, text and buttons. (Marketing)' },
   { key: 'AUTHENTICATION', mode: 'standard', label: 'Authentication', desc: 'One-time passcodes to verify a user. Fixed OTP format.' },
@@ -396,7 +396,7 @@ function TemplateBuilder({ onClose, onCreated, initial }) {
                   </div>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(27,76,94,.5)', marginTop: 14, lineHeight: 1.5 }}>{isAuth ? 'Authentication templates use a fixed OTP format — Meta may adjust the wording on approval.' : 'After you create it, Meta reviews the template (minutes to a few hours). It shows as Pending here until approved.'}</div>
+              <div style={{ fontSize: 11, color: 'rgba(27,76,94,.5)', marginTop: 14, lineHeight: 1.5 }}>{isAuth ? 'Authentication templates use a fixed OTP format. Meta may adjust the wording on approval.' : 'After you create it, Meta reviews the template (minutes to a few hours). It shows as Pending here until approved.'}</div>
             </div>
           </div>
         )}
@@ -448,7 +448,7 @@ export default function Templates() {
     if (res.ok) { setSyncMsg(`Synced ${res.synced} template${res.synced === 1 ? '' : 's'} from Meta`); await load(); }
     else setSyncMsg(res.error || 'Sync failed');
   }
-  async function handleCreated() { setBuilder(null); setSyncMsg('Template submitted to Meta — pending review.'); await load(); }
+  async function handleCreated() { setBuilder(null); setSyncMsg('Template submitted to Meta. Pending review.'); await load(); }
 
   const filtered = templates.filter(t => !search || t.name.toLowerCase().includes(search.toLowerCase()) || (t.body || '').toLowerCase().includes(search.toLowerCase()));
 
@@ -477,7 +477,7 @@ export default function Templates() {
       </header>
 
       {syncMsg && <div style={{ margin: '0 30px 8px', fontSize: 12.5, fontWeight: 600, color: (syncMsg.includes('Synced') || syncMsg.includes('submitted')) ? '#3B6B45' : '#C7503B' }}>{syncMsg}</div>}
-      {!syncMsg && templates.length === 0 && <div style={{ margin: '0 30px 8px', fontSize: 12.5, color: 'rgba(27,76,94,.55)' }}>No templates yet — click “Add Template” to create one.</div>}
+      {!syncMsg && templates.length === 0 && <div style={{ margin: '0 30px 8px', fontSize: 12.5, color: 'rgba(27,76,94,.55)' }}>No templates yet. Click “Add Template” to create one.</div>}
 
       <div style={{ padding: '6px 30px 36px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(266px,1fr))', gap: 18 }}>

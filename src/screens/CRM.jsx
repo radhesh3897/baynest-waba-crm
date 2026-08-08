@@ -64,7 +64,7 @@ function ContactPanel({ contact, formDef, onClose }) {
             {contact.profile_name?.charAt(0)}
           </div>
           <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</div>
-          <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '—' ? `${contact.jobTitle} · ` : ''}{contact.company !== '—' ? contact.company : ''}</div>
+          <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '-' ? `${contact.jobTitle} · ` : ''}{contact.company !== '-' ? contact.company : ''}</div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 13 }}>
             <a href={`https://wa.me/${String(contact.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" title="Open WhatsApp chat"
               style={{ width: 42, height: 42, borderRadius: 12, border: '1px solid rgba(46,158,79,.3)', background: '#EAF6E4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B6B45', textDecoration: 'none' }}>
@@ -98,7 +98,7 @@ function FieldRow({ label, value }) {
     <div style={{ marginBottom: 10 }}>
       <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.45)', marginBottom: 3 }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(27,76,94,.13)', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, color: 'var(--brand-primary)', fontWeight: 500 }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || '—'}</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || '-'}</span>
         <span style={{ color: 'rgba(27,76,94,.3)', flexShrink: 0, marginLeft: 6, display: 'flex' }}><IconEdit size={12} /></span>
       </div>
     </div>
@@ -126,7 +126,7 @@ function KanbanCard({ lead, formDef, onDragStart, onClick }) {
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</div>
-          {lead.company !== '—' && <div style={{ fontSize: 10.5, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company}</div>}
+          {lead.company !== '-' && <div style={{ fontSize: 10.5, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company}</div>}
         </div>
       </div>
       {preview.map(p => (
@@ -498,7 +498,7 @@ export default function CRM() {
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
                 </span>
                 {(formDef?.fields || []).map(f => (
-                  <span key={f.key} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(lead.attributes || {})[f.key] || '—'}</span>
+                  <span key={f.key} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(lead.attributes || {})[f.key] || '-'}</span>
                 ))}
                 <span><span style={leadChip(lead.lead_status)}>{lead.lead_status}</span></span>
                 <span style={{ fontWeight: 700, color: scoreColor(lead.lead_score) }}>{lead.lead_score}</span>

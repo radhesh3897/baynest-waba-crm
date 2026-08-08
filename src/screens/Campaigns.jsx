@@ -84,7 +84,7 @@ function RecipientRow({ r }) {
               <span style={{ fontWeight: 700, color: FOREST, flexShrink: 0 }}>Try {a.n ?? i + 1}</span>
               <span style={{ color: 'rgba(27,76,94,.5)', flexShrink: 0 }}>{fmtTime(a.at)}</span>
               <span style={{ color: a.ok ? '#2E7D44' : '#C7503B' }}>
-                {a.ok ? 'sent' : `failed${a.code ? ` (#${a.code})` : ''}${a.error ? ` — ${a.error}` : ''}`}
+                {a.ok ? 'sent' : `failed${a.code ? ` (#${a.code})` : ''}${a.error ? `: ${a.error}` : ''}`}
               </span>
             </div>
           ))}
@@ -245,11 +245,11 @@ function Builder({ onClose, onDone, isMobile }) {
     setErr('');
     if (!name.trim()) return setErr('Give the campaign a name.');
     if (!tpl) return setErr('Pick a template.');
-    if (needsImage && !headerImage.trim()) return setErr('This template has an image header — add a header image URL.');
+    if (needsImage && !headerImage.trim()) return setErr('This template has an image header. Add a header image URL.');
     setBusy(true);
     const res = await createCampaign({ name: name.trim(), template_name: tpl.name, template_language: tpl.language, variables: vars, filters: filters(), header_image: needsImage ? headerImage.trim() : null, maxRetries });
     setBusy(false);
-    if (res.ok) { alert(`Campaign started — sending to ${res.count} people. It sends in batches; check the campaign for live progress.`); onDone(); }
+    if (res.ok) { alert(`Campaign started, sending to ${res.count} people. It sends in batches; check the campaign for live progress.`); onDone(); }
     else setErr(res.error || 'Failed to create campaign.');
   }
 
@@ -382,11 +382,11 @@ function Detail({ id, onClose, isMobile }) {
               </div>
               <div style={{ fontSize: 11.8, color: 'rgba(27,76,94,.7)', lineHeight: 1.6 }}>
                 {c.retryAttempts > 0 && <div><strong>{c.retryAttempts}</strong> retry attempt{c.retryAttempts > 1 ? 's' : ''} made so far.</div>}
-                {c.recovered > 0 && <div style={{ color: '#2E7D44' }}>✓ <strong>{c.recovered}</strong> recovered — delivered on a retry.</div>}
+                {c.recovered > 0 && <div style={{ color: '#2E7D44' }}>✓ <strong>{c.recovered}</strong> recovered, delivered on a retry.</div>}
                 {c.gaveUp > 0 && <div style={{ color: '#C7503B' }}>✗ <strong>{c.gaveUp}</strong> still failed after retrying.</div>}
                 {c.retrying > 0
-                  ? <div><strong>{c.retrying}</strong> recipient{c.retrying > 1 ? 's' : ''} waiting to retry{c.nextRetryAt ? ` — next ${fromNow(c.nextRetryAt)}` : ''}.</div>
-                  : (c.retryAttempts > 0 && <div style={{ color: 'rgba(27,76,94,.5)' }}>All retries finished — nothing else queued.</div>)}
+                  ? <div><strong>{c.retrying}</strong> recipient{c.retrying > 1 ? 's' : ''} waiting to retry{c.nextRetryAt ? `, next ${fromNow(c.nextRetryAt)}` : ''}.</div>
+                  : (c.retryAttempts > 0 && <div style={{ color: 'rgba(27,76,94,.5)' }}>All retries finished. Nothing else queued.</div>)}
               </div>
             </div>
           )}
