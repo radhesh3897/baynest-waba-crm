@@ -164,6 +164,51 @@ serve(async (req: Request) => {
     return json({ ok: !!igSub, page: { id: page.id, name: page.name }, steps: steps2 });
   }
 
+  // probe_ig_messaging: read-only proof that Instagram messaging access is
+  // actually live. Listing IG conversations needs instagram_manage_messages AND
+  // the "Connected Tools" toggle in the Instagram app, so a clean response is
+  // real evidence rather than a guess. Returns counts only, never message text.
+  if (body.probe_ig_messaging === true) {
+    const out: Record<string, unknown> = {};
+
+    // Meta requires the MESSAGING task on the Page for this token; without it
+    // the API returns the same "owner disabled access" error as the Instagram
+    // Connected Tools toggle, so check both before blaming the toggle.
+    const accRes = await fetch(g(`me/accounts?fields=id,name,tasks&limit=25&access_token=${WHATSAPP_TOKEN}`));
+    const accJ = await accRes.json().catch(() => ({})) as Record<string, unknown>;
+    const thisPage = ((accJ.data as Record<string, unknown>[]) ?? []).find(p => String(p.id) === page.id);
+    const tasks = (thisPage?.tasks as string[]) ?? [];
+    out.page_tasks = tasks;
+    out.has_messaging_task = tasks.includes("MESSAGING");
+
+    // Does the token itself still carry the messaging scope?
+    const dbg = await (await fetch(g(`debug_token?input_token=${WHATSAPP_TOKEN}&access_token=${WHATSAPP_TOKEN}`))).json().catch(() => ({})) as Record<string, unknown>;
+    const scopes = (((dbg.data as Record<string, unknown>)?.scopes) as string[]) ?? [];
+    out.has_manage_messages_scope = scopes.includes("instagram_manage_messages");
+
+    // Is the Instagram account itself assigned to this system user in Business
+    // Settings? The Page being assigned does not imply the IG asset is.
+    const igDirect = await fetch(g(`${(await (await fetch(g(`${page.id}?fields=instagram_business_account&access_token=${page.token}`))).json().catch(() => ({})) as Record<string, unknown>)?.instagram_business_account?.["id"] ?? "0"}?fields=id,username&access_token=${WHATSAPP_TOKEN}`));
+    const igDirectJ = await igDirect.json().catch(() => ({})) as Record<string, unknown>;
+    out.ig_asset_readable_by_system_user = igDirect.ok;
+    if (!igDirect.ok) out.ig_asset_error = (igDirectJ.error as Record<string, unknown>)?.message;
+
+    const r = await fetch(g(`${page.id}/conversations?platform=instagram&fields=id,updated_time,message_count&limit=25&access_token=${page.token}`));
+    const j = await r.json().catch(() => ({})) as Record<string, unknown>;
+    out.http_ok = r.ok;
+    if (!r.ok) {
+      const e = (j.error as Record<string, unknown>) ?? {};
+      out.error = { message: e.message, code: e.code, subcode: e.error_subcode, type: e.type };
+      out.verdict = "Instagram messaging is NOT reachable yet";
+    } else {
+      const rows = (j.data as Record<string, unknown>[]) ?? [];
+      out.conversations_visible = rows.length;
+      out.most_recent = rows[0]?.updated_time ?? null;
+      out.verdict = "Instagram messaging is reachable";
+    }
+    return json({ ok: r.ok, probe: "ig_messaging", ig: { username: "baynestrealty" }, ...out });
+  }
+
   if (probeOnly) {
     const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(1){id,created_time,field_data}&limit=25&access_token=${page.token}`));
     const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;
