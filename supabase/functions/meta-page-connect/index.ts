@@ -209,6 +209,58 @@ serve(async (req: Request) => {
     return json({ ok: r.ok, probe: "ig_messaging", ig: { username: "baynestrealty" }, ...out });
   }
 
+  // probe_leadgen: why are Lead Ads not arriving? Reports the app-level
+  // subscription (object, callback, fields), what the Page is subscribed to,
+  // and the timestamps of the most recent real leads. Timestamps only, no PII.
+  if (body.probe_leadgen === true) {
+    const out: Record<string, unknown> = {};
+
+    if (APP_ID && APP_SECRET) {
+      const appToken = `${APP_ID}|${APP_SECRET}`;
+      const l = await (await fetch(g(`${APP_ID}/subscriptions?access_token=${appToken}`))).json().catch(() => ({})) as Record<string, unknown>;
+      out.app_subscriptions = ((l.data as Record<string, unknown>[]) ?? []).map(s => ({
+        object: s.object,
+        callback_url: s.callback_url,
+        active: s.active,
+        fields: ((s.fields as Record<string, unknown>[]) ?? []).map(f => `${f.name}${f.version ? "" : ""}`),
+      }));
+    }
+
+    const sa = await (await fetch(g(`${page.id}/subscribed_apps?access_token=${page.token}`))).json().catch(() => ({})) as Record<string, unknown>;
+    out.page_subscribed_apps = ((sa.data as Record<string, unknown>[]) ?? [])
+      .map(a => ({ app: a.name ?? a.id, fields: a.subscribed_fields }));
+
+    // Most recent leads actually sitting on Meta, newest first.
+    const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(3){id,created_time}&limit=40&access_token=${page.token}`));
+    const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;
+    const recent: { form: string; form_id: string; lead_id: string; created_time: string }[] = [];
+    for (const f of ((lj.data as Record<string, unknown>[]) ?? [])) {
+      for (const l of ((((f.leads as Record<string, unknown>)?.data) as Record<string, unknown>[]) ?? [])) {
+        recent.push({ form: String(f.name ?? ""), form_id: String(f.id), lead_id: String(l.id), created_time: String(l.created_time ?? "") });
+      }
+    }
+    recent.sort((a, b) => b.created_time.localeCompare(a.created_time));
+    out.recent_leads = recent.slice(0, 8);
+    out.page_checked = { id: page.id, name: page.name };
+    return json({ ok: true, probe: "leadgen", ...out });
+  }
+
+  // create_test_lead: fires Meta's own Lead Ads test submission against a form.
+  // If this reaches the webhook, delivery works and something is filtering real
+  // leads; if it does not, delivery itself is broken. Test leads carry dummy
+  // data and never touch a real person.
+  if (body.create_test_lead === true) {
+    const formId = String(body.form_id ?? "");
+    if (!formId) return json({ error: "form_id required" }, 422);
+    const r = await fetch(g(`${formId}/test_leads`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: page.token }),
+    });
+    const j = await r.json().catch(() => ({}));
+    return json({ ok: r.ok, probe: "test_lead", form_id: formId, response: j }, r.ok ? 200 : 502);
+  }
+
   if (probeOnly) {
     const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(1){id,created_time,field_data}&limit=25&access_token=${page.token}`));
     const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;

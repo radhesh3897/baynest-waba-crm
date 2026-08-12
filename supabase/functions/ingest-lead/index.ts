@@ -98,17 +98,24 @@ serve(async (req: Request) => {
   // not here.
   // Fire the "new lead" trigger for the visual Flow Builder (and the legacy
   // linear sequences, harmless if none are active).
+  // Backfill callers (poll-leads catching up on old leads) pass skip_automation
+  // so a three-day-old enquiry does not get a "we just received your enquiry"
+  // message. The lead still lands in the CRM, it just isn't messaged.
+  const skipAutomation = body.skip_automation === true;
+
   let enrolled = 0;
-  try {
-    const { data: nf } = await db.rpc("enroll_into_flows", { p_contact_id: contact.id, p_trigger: "new_lead" });
-    enrolled = (nf as number) ?? 0;
-    await db.rpc("enroll_into_trigger", { p_contact_id: contact.id, p_trigger: "new_lead" });
-  } catch (e) {
-    console.error("enroll failed", e);
+  if (!skipAutomation) {
+    try {
+      const { data: nf } = await db.rpc("enroll_into_flows", { p_contact_id: contact.id, p_trigger: "new_lead" });
+      enrolled = (nf as number) ?? 0;
+      await db.rpc("enroll_into_trigger", { p_contact_id: contact.id, p_trigger: "new_lead" });
+    } catch (e) {
+      console.error("enroll failed", e);
+    }
   }
 
   // Email + phone-push alerts on a brand-new lead.
-  if (!existing) {
+  if (!existing && !skipAutomation) {
     const src = (body.source as string) ?? "Meta Lead Ads";
     fetch(`${SUPABASE_URL}/functions/v1/notify`, {
       method: "POST",
