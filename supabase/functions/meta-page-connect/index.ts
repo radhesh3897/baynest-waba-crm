@@ -261,6 +261,20 @@ serve(async (req: Request) => {
     return json({ ok: r.ok, probe: "test_lead", form_id: formId, response: j }, r.ok ? 200 : 502);
   }
 
+  // probe_waba: which WhatsApp Business Account is this tool actually bound to,
+  // and what does Meta say about its billing readiness? A portfolio can hold
+  // several WABAs with near-identical names, so paying on the wrong one looks
+  // done from the dashboard while sends keep failing.
+  if (body.probe_waba === true) {
+    const WABA_ID = (Deno.env.get("WHATSAPP_WABA_ID") ?? "").trim();
+    if (!WABA_ID) return json({ error: "WHATSAPP_WABA_ID not set" }, 500);
+    const fields = "id,name,currency,timezone_id,account_review_status,business_verification_status,owner_business_info,primary_funding_id";
+    const r = await fetch(g(`${WABA_ID}?fields=${fields}&access_token=${WHATSAPP_TOKEN}`));
+    const j = await r.json().catch(() => ({}));
+    const phones = await (await fetch(g(`${WABA_ID}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating,status&access_token=${WHATSAPP_TOKEN}`))).json().catch(() => ({}));
+    return json({ ok: r.ok, probe: "waba", configured_waba_id: WABA_ID, waba: j, phone_numbers: phones }, r.ok ? 200 : 502);
+  }
+
   if (probeOnly) {
     const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(1){id,created_time,field_data}&limit=25&access_token=${page.token}`));
     const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;
