@@ -193,6 +193,31 @@ serve(async (req: Request) => {
     out.ig_asset_readable_by_system_user = igDirect.ok;
     if (!igDirect.ok) out.ig_asset_error = (igDirectJ.error as Record<string, unknown>)?.message;
 
+    // Try every documented way to reach IG messaging before blaming the
+    // account setting: a single endpoint erroring could be my call, not theirs.
+    const igId = String((((await (await fetch(g(`${page.id}?fields=instagram_business_account&access_token=${page.token}`))).json().catch(() => ({}))) as Record<string, unknown>)?.instagram_business_account as Record<string, unknown>)?.id ?? "");
+    const variants: { label: string; url: string }[] = [
+      { label: "page/conversations?platform=instagram", url: g(`${page.id}/conversations?platform=instagram&fields=id&limit=5&access_token=${page.token}`) },
+      { label: "me/conversations?platform=instagram",   url: g(`me/conversations?platform=instagram&fields=id&limit=5&access_token=${page.token}`) },
+      { label: "ig_user/conversations",                 url: igId ? g(`${igId}/conversations?fields=id&limit=5&access_token=${page.token}`) : "" },
+      { label: "ig_user/messages(read-check)",          url: igId ? g(`${igId}?fields=id,username&access_token=${page.token}`) : "" },
+    ];
+    const tried: Record<string, unknown>[] = [];
+    for (const v of variants) {
+      if (!v.url) continue;
+      const vr = await fetch(v.url);
+      const vj = await vr.json().catch(() => ({})) as Record<string, unknown>;
+      tried.push({
+        endpoint: v.label, ok: vr.ok,
+        error: vr.ok ? null : {
+          message: (vj.error as Record<string, unknown>)?.message,
+          code: (vj.error as Record<string, unknown>)?.code,
+          subcode: (vj.error as Record<string, unknown>)?.error_subcode,
+        },
+      });
+    }
+    out.endpoints_tried = tried;
+
     const r = await fetch(g(`${page.id}/conversations?platform=instagram&fields=id,updated_time,message_count&limit=25&access_token=${page.token}`));
     const j = await r.json().catch(() => ({})) as Record<string, unknown>;
     out.http_ok = r.ok;
@@ -273,6 +298,35 @@ serve(async (req: Request) => {
     const j = await r.json().catch(() => ({}));
     const phones = await (await fetch(g(`${WABA_ID}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating,status&access_token=${WHATSAPP_TOKEN}`))).json().catch(() => ({}));
     return json({ ok: r.ok, probe: "waba", configured_waba_id: WABA_ID, waba: j, phone_numbers: phones }, r.ok ? 200 : 502);
+  }
+
+  // probe_assets: what Pages and Instagram accounts can this token actually
+  // see? Adding a second Instagram inbox needs a second Page with its own
+  // linked IG account, assigned to this system user.
+  if (body.probe_assets === true) {
+    const out: Record<string, unknown> = {};
+    const acc = await (await fetch(g(`me/accounts?fields=id,name,tasks,instagram_business_account{id,username,followers_count}&limit=50&access_token=${WHATSAPP_TOKEN}`))).json().catch(() => ({})) as Record<string, unknown>;
+    out.pages = ((acc.data as Record<string, unknown>[]) ?? []).map(p => ({
+      page_id: p.id, page_name: p.name,
+      instagram: p.instagram_business_account ?? null,
+      has_messaging_task: ((p.tasks as string[]) ?? []).includes("MESSAGING"),
+    }));
+
+    const biz = await (await fetch(g(`me/businesses?fields=id,name&limit=25&access_token=${WHATSAPP_TOKEN}`))).json().catch(() => ({})) as Record<string, unknown>;
+    const businesses = ((biz.data as Record<string, unknown>[]) ?? []);
+    out.businesses = businesses.map(b => ({ id: b.id, name: b.name }));
+
+    // Instagram accounts owned by each business, whether or not they are
+    // currently assigned to this system user.
+    const owned: Record<string, unknown>[] = [];
+    for (const b of businesses) {
+      const r = await fetch(g(`${b.id}/owned_instagram_accounts?fields=id,username&limit=50&access_token=${WHATSAPP_TOKEN}`));
+      const jj = await r.json().catch(() => ({})) as Record<string, unknown>;
+      if (r.ok) for (const a of ((jj.data as Record<string, unknown>[]) ?? [])) owned.push({ business: b.name, id: a.id, username: a.username });
+      else owned.push({ business: b.name, error: (jj.error as Record<string, unknown>)?.message });
+    }
+    out.business_instagram_accounts = owned;
+    return json({ ok: true, probe: "assets", ...out });
   }
 
   if (probeOnly) {
