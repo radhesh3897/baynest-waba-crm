@@ -69,7 +69,7 @@ export default function App() {
   if (!session) return <Login />;
 
   function renderMain() {
-    if (screen === 'home')       return <Home />;
+    if (screen === 'home')       return <Home onNav={navigate} />;
     if (screen === 'inbox')      return <Inbox channel="whatsapp" />;
     if (screen === 'ig-inbox')   return <Inbox key="ig" channel="instagram" />;
     if (screen === 'automation') return <Automation />;

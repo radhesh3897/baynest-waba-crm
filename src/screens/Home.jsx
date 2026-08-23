@@ -1,6 +1,12 @@
 import { useState, useEffect, Fragment } from 'react';
 import { getHomeStatsLive, getQualificationStats } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
+import { supabase } from '../supabaseClient';
+import { CLIENT } from '../config/client.js';
+import {
+  IconInbox, IconInstagram, IconPeople, IconBuilding, IconZap,
+  IconTemplate, IconSend, IconChart, IconDb,
+} from '../icons';
 
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14 };
@@ -51,17 +57,37 @@ function FunnelBar({ p, color }) {
   );
 }
 
-export default function Home() {
+// One Quick Links tile: soft icon chip, the number, then the label. Tapping it
+// goes straight to the screen, so the dashboard is a launcher rather than a
+// wall of figures nobody can read on a phone.
+function QuickTile({ icon: Icon, tint, fg, count, label, onClick }) {
+  return (
+    <button onClick={onClick}
+      style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '16px 8px 14px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minHeight: 116 }}>
+      <span style={{ width: 44, height: 44, borderRadius: 13, background: tint, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon size={22} />
+      </span>
+      <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-primary)', lineHeight: 1 }}>{count}</span>
+      <span style={{ fontSize: 11.5, fontWeight: 600, color: 'rgba(27,76,94,.62)', textAlign: 'center', lineHeight: 1.25 }}>{label}</span>
+    </button>
+  );
+}
+
+export default function Home({ onNav }) {
   const isMobile = useIsMobile();
   const [stats, setStats] = useState(null);
   const [qual, setQual] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [me, setMe] = useState('');
 
   async function load() {
     const [s, q] = await Promise.all([getHomeStatsLive(), getQualificationStats()]);
     setStats(s); setQual(q); setLoading(false);
   }
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMe(data?.user?.email || '')).catch(() => {});
+  }, []);
 
   if (loading || !stats) {
     return <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', fontSize: 14 }}>Loading dashboard…</div>;
@@ -80,6 +106,72 @@ export default function Home() {
     { label: 'Qualified', count: stats.qualified, conv: pct(stats.qualified, stats.conversations || stats.leadsIn), accent: 'var(--brand-muted)' },
     { label: 'Won', count: stats.won, conv: pct(stats.won, stats.qualified || stats.leadsIn), accent: 'var(--brand-accent-soft)' },
   ];
+
+  // Quick Links tiles. Each one is a real count and a real destination; nothing
+  // here is decorative.
+  const tiles = [
+    { key: 'crm',        icon: IconDb,        label: 'New Leads',   count: stats.newLeads,   tint: 'rgba(192,138,69,.16)',  fg: '#8A5E22' },
+    { key: 'inbox',      icon: IconInbox,     label: 'Unread Chats',count: stats.unreadWa,   tint: 'rgba(115,167,111,.20)', fg: '#3B6B45' },
+    { key: 'ig-inbox',   icon: IconInstagram, label: 'Instagram',   count: stats.unreadIg,   tint: 'rgba(199,80,59,.12)',   fg: '#9A3F2C' },
+    { key: 'people',     icon: IconPeople,    label: 'Contacts',    count: stats.leadsIn,    tint: 'rgba(27,76,94,.10)',    fg: '#1B4C5E' },
+    { key: 'properties', icon: IconBuilding,  label: 'Properties',  count: stats.properties, tint: 'rgba(62,107,120,.14)',  fg: '#2C6579' },
+    { key: 'automation', icon: IconZap,       label: 'Active Flows',count: stats.activeFlows,tint: 'rgba(192,138,69,.16)',  fg: '#8A5E22' },
+    { key: 'templates',  icon: IconTemplate,  label: 'Templates',   count: stats.templates,  tint: 'rgba(27,76,94,.10)',    fg: '#1B4C5E' },
+    { key: 'campaigns',  icon: IconSend,      label: 'Campaigns',   count: stats.campaigns,  tint: 'rgba(115,167,111,.20)', fg: '#3B6B45' },
+    { key: 'reports',    icon: IconChart,     label: 'Reports',     count: stats.leadsMonth, tint: 'rgba(62,107,120,.14)',  fg: '#2C6579' },
+  ];
+
+  // Phone: a launcher, matching the layout Manish asked for. The funnel, donut
+  // and message bars stay on desktop, where there is room to read them.
+  if (isMobile) {
+    return (
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px 28px' }}>
+        {/* Profile card */}
+        <div style={{ ...CARD, padding: '14px 15px', display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 }}>
+          <div style={{ width: 54, height: 54, borderRadius: 12, background: 'var(--brand-tint-soft)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <img src={CLIENT.logo} alt={CLIENT.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 6, boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>{CLIENT.name}</div>
+            <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{me || CLIENT.tagline}</div>
+          </div>
+          <button onClick={() => { setLoading(true); load(); }}
+            style={{ background: 'transparent', border: '1px solid rgba(27,76,94,.16)', color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 999, cursor: 'pointer', flexShrink: 0 }}>
+            Refresh
+          </button>
+        </div>
+
+        <h2 style={{ margin: '18px 2px 12px', fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>Quick Links</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
+          {tiles.map(t => (
+            <QuickTile key={t.key} icon={t.icon} tint={t.tint} fg={t.fg}
+              count={fmt(t.count)} label={t.label} onClick={() => onNav?.(t.key)} />
+          ))}
+        </div>
+
+        {/* Recent leads stay: the one list worth scanning on a phone. */}
+        <h2 style={{ margin: '22px 2px 10px', fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>Recent Leads</h2>
+        <div style={{ ...CARD, padding: '6px 15px 8px' }}>
+          {stats.recent.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)', padding: '12px 0' }}>No leads yet.</div>}
+          {stats.recent.map(r => {
+            const st = STATUS_STYLE[r.status] || STATUS_STYLE.New;
+            return (
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+                  <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 800, flexShrink: 0 }}>{(r.name || '?').charAt(0).toUpperCase()}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>{r.source}</div>
+                  </div>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: st.fg, background: st.bg, padding: '3px 10px', borderRadius: 999, flexShrink: 0, marginLeft: 8 }}>{r.status}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
