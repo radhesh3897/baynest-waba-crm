@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import {
   PROPERTY_FIELDS, PROPERTY_STATUSES, REJECTION_REASONS,
   getPropertyLeads, createProperty, updateProperty, deleteProperty,
-  getPeopleLive, tagLeadProperty, setLeadPropertyStatus, removeLeadProperty,
+  getPeopleLive, tagLeadProperty, setLeadPropertyStatus, removeLeadProperty, uploadPropertyImage,
 } from '../liveData';
-import { IconX, IconPlus, IconSearch } from '../icons';
+import { IconX, IconPlus, IconSearch, IconClip } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 
 const LEAD_ST = {
@@ -55,6 +55,18 @@ export default function PropertyDetail({ property, onClose, onSaved, onTagsChang
     const res = await deleteProperty(property.id);
     setSaving(false);
     if (res.ok) onSaved(); else setErr(res.error || 'Could not archive.');
+  }
+
+  // ── Image upload ──
+  const [uploading, setUploading] = useState('');
+  const [uploadErr, setUploadErr] = useState({});
+  async function handleUpload(key, file) {
+    if (!file) return;
+    setUploading(key); setUploadErr(e => ({ ...e, [key]: '' }));
+    const res = await uploadPropertyImage(file);
+    setUploading('');
+    if (!res.ok) { setUploadErr(e => ({ ...e, [key]: res.error })); return; }
+    set(key, res.url);
   }
 
   // ── Property-side tagging ──
@@ -128,6 +140,28 @@ export default function PropertyDetail({ property, onClose, onSaved, onTagsChang
                     <option value="">-</option>
                     {f.options.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
+                ) : f.image ? (
+                  // Pasting a URL is fine if you already host the image, but
+                  // nobody has one to hand, so upload is the primary action and
+                  // the URL box stays for anything already online.
+                  <div>
+                    <div style={{ display: 'flex', gap: 7, alignItems: 'stretch' }}>
+                      <input type="text" value={form[f.key] ?? ''} onChange={e => set(f.key, e.target.value)}
+                        placeholder="Paste an image URL, or upload" style={{ ...input, flex: 1, minWidth: 0 }} />
+                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid rgba(27,76,94,.16)', borderRadius: 9, padding: '0 12px', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-primary)', cursor: uploading === f.key ? 'default' : 'pointer', background: '#fff', whiteSpace: 'nowrap', opacity: uploading === f.key ? .6 : 1 }}>
+                        <IconClip size={14} />
+                        {uploading === f.key ? 'Uploading…' : 'Upload'}
+                        <input type="file" accept="image/*" style={{ display: 'none' }}
+                          disabled={uploading === f.key}
+                          onChange={e => handleUpload(f.key, e.target.files?.[0])} />
+                      </label>
+                    </div>
+                    {form[f.key] && (
+                      <img src={form[f.key]} alt="" onError={e => { e.currentTarget.style.display = 'none'; }}
+                        style={{ marginTop: 8, width: '100%', maxHeight: 130, objectFit: 'cover', borderRadius: 9, border: '1px solid rgba(27,76,94,.12)', display: 'block' }} />
+                    )}
+                    {uploadErr[f.key] && <div style={{ marginTop: 6, fontSize: 11.5, color: '#C7503B', fontWeight: 600 }}>{uploadErr[f.key]}</div>}
+                  </div>
                 ) : f.textarea ? (
                   <textarea value={form[f.key] || ''} onChange={e => set(f.key, e.target.value)} rows={3} style={{ ...input, resize: 'vertical' }} />
                 ) : (

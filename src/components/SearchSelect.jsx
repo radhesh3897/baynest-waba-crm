@@ -74,15 +74,20 @@ export default function SearchSelect({
         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: selected ? 'var(--brand-primary)' : 'rgba(27,76,94,.45)' }}>
           {selected ? selected.label : placeholder}
         </span>
+        {/* The clear control needs its own hit area and a divider, otherwise it
+            crowds the chevron and it is unclear which one you are about to hit. */}
         {allowClear && selected && (
-          <span role="button" tabIndex={0} aria-label="Clear"
-            onClick={e => { e.stopPropagation(); pick(null); }}
-            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); pick(null); } }}
-            style={{ display: 'flex', color: 'rgba(27,76,94,.4)', flexShrink: 0 }}>
-            <IconX size={13} />
-          </span>
+          <>
+            <span role="button" tabIndex={0} aria-label="Clear selection" title="Clear"
+              onClick={e => { e.stopPropagation(); pick(null); }}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); pick(null); } }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: 5, color: 'rgba(27,76,94,.45)', flexShrink: 0, cursor: 'pointer' }}>
+              <IconX size={12} />
+            </span>
+            <span aria-hidden="true" style={{ width: 1, height: 16, background: 'rgba(27,76,94,.14)', flexShrink: 0 }} />
+          </>
         )}
-        <span style={{ display: 'flex', color: 'rgba(27,76,94,.45)', flexShrink: 0 }}><IconChevDown size={13} /></span>
+        <span style={{ display: 'flex', alignItems: 'center', color: 'rgba(27,76,94,.45)', flexShrink: 0 }}><IconChevDown size={13} /></span>
       </button>
 
       {open && (

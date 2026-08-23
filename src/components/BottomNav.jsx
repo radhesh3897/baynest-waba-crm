@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   IconHome, IconInbox, IconZap, IconDb, IconPeople, IconWhatsApp,
   IconTemplate, IconSettings, IconLogs, IconHelp, IconTarget, IconSend,
-  IconInstagram, IconCalendar, IconFunnel, IconMegaphone, IconReport
+  IconInstagram, IconCalendar, IconFunnel, IconMeta, IconReport
 } from '../icons';
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
@@ -20,7 +20,7 @@ const MORE = [
   { key: 'visits', label: 'Visits', Icon: IconCalendar },
   { key: 'ig-inbox', label: 'Instagram Inbox', Icon: IconInstagram },
   { key: 'leads-overview', label: 'Leads Overview', Icon: IconFunnel },
-  { key: 'ads',       label: 'Ads Dashboard',    Icon: IconMegaphone },
+  { key: 'ads',       label: 'Ads Dashboard',    Icon: IconMeta },
   { key: 'reports',   label: 'Reports',          Icon: IconReport },
   { key: 'tracking',  label: 'Tracking',         Icon: IconTarget, locked: true },
   { key: 'campaigns', label: 'Campaigns',        Icon: IconSend },

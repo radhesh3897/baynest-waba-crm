@@ -369,7 +369,14 @@ export async function syncTemplatesFromMeta() {
 // ─── Meta Ads dashboard ──────────────────────────────────────────────────────────────────────────────────────────────────
 // Live, on-demand pull from the read-only meta-ads-insights edge function.
 export async function getMetaAdsInsights() {
-  const { data, error } = await supabase.functions.invoke('meta-ads-insights', { body: {} });
+  // invoke() has no timeout of its own, so a stalled call leaves the dashboard
+  // spinning with nothing to report. Race it and surface a real message instead.
+  const timeout = new Promise(resolve =>
+    setTimeout(() => resolve({ data: null, error: { message: 'Meta took too long to respond. Try Refresh.' } }), 25000));
+  const { data, error } = await Promise.race([
+    supabase.functions.invoke('meta-ads-insights', { body: {} }),
+    timeout,
+  ]);
   if (error) {
     let detail = error.message;
     try {
@@ -1140,6 +1147,22 @@ export async function getPropertyLeads(propertyId) {
 
 // Editable master fields. Numeric helpers (price_min_cr, carpet_min/max) power
 // the lead-matching, so they are edited too.
+// Upload a project photo or developer logo and return its public URL. Reuses
+// the existing public wa-media bucket under a properties/ prefix, so nothing
+// new has to be provisioned or made public.
+export async function uploadPropertyImage(file) {
+  if (!file) return { ok: false, error: 'No file selected.' };
+  if (!/^image\//.test(file.type || '')) return { ok: false, error: 'Pick an image file.' };
+  if (file.size > 5 * 1024 * 1024) return { ok: false, error: 'Image must be under 5MB.' };
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const path = `properties/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('wa-media')
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (error) { console.error('uploadPropertyImage', error); return { ok: false, error: error.message }; }
+  const { data } = supabase.storage.from('wa-media').getPublicUrl(path);
+  return { ok: true, url: data.publicUrl };
+}
+
 // ── Lead tags and custom fields ──────────────────────────────────────────────
 // Both live in contacts.attributes, which already holds whatever a lead form
 // sent. Tags are attributes.tags (the same array the flow builder's "Add tag"
@@ -1230,8 +1253,8 @@ export async function updateVisit(id, patch) {
 export const PROPERTY_FIELDS = [
   { key: 'name', label: 'Project name', required: true },
   { key: 'developer', label: 'Developer' },
-  { key: 'image_url', label: 'Project photo URL (card hero image)' },
-  { key: 'developer_logo_url', label: 'Developer logo URL' },
+  { key: 'image_url', label: 'Project photo', image: true },
+  { key: 'developer_logo_url', label: 'Developer logo', image: true },
   { key: 'area', label: 'Area / Micro-market' },
   { key: 'status', label: 'Status', options: ['RTMI', 'UC', 'Launch'] },
   { key: 'project_size', label: 'Project size (e.g. 1.7 Acre · 2 Towers · 197 units)' },

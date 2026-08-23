@@ -9,10 +9,25 @@ const STATUS_STYLE = {
   UC:     { bg: 'rgba(192,138,69,.18)',  fg: '#8A5E22' },
   Launch: { bg: 'rgba(27,76,94,.12)',    fg: 'var(--brand-primary)' },
 };
-function statusChip(status) {
+// The table sits on white, so a soft tint reads fine there. Over the card's
+// dark hero image the same tint is nearly invisible, so that variant uses a
+// solid opaque chip instead.
+const STATUS_SOLID = {
+  RTMI:   { bg: '#3B6B45', fg: '#fff' },
+  UC:     { bg: '#8A5E22', fg: '#fff' },
+  Launch: { bg: 'var(--brand-primary)', fg: '#fff' },
+};
+function statusChip(status, onImage = false) {
+  const base = { fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap', letterSpacing: '.02em' };
+  if (onImage) {
+    const s = STATUS_SOLID[status] || { bg: 'rgba(18,54,66,.85)', fg: '#fff' };
+    return { ...base, background: s.bg, color: s.fg, boxShadow: '0 2px 8px rgba(0,0,0,.28)' };
+  }
   const s = STATUS_STYLE[status] || { bg: 'rgba(27,76,94,.08)', fg: 'var(--brand-primary)' };
-  return { background: s.bg, color: s.fg, fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 999, whiteSpace: 'nowrap' };
+  return { ...base, background: s.bg, color: s.fg };
 }
+// Codes are jargon on a card; spell them out where there is room.
+const STATUS_SHORT = { RTMI: 'Ready', UC: 'Under construction', Launch: 'New launch' };
 
 // Developer monogram. Real logos win when developer_logo_url is set; until then
 // a branded monogram reads as deliberate, where a scraped 16px favicon would
@@ -103,7 +118,9 @@ function PropertyCard({ r, ip, onClick }) {
         </div>
 
         {/* Status chip */}
-        <span style={{ position: 'absolute', top: 12, right: 12, ...statusChip(r.status), boxShadow: '0 2px 8px rgba(0,0,0,.14)' }}>{r.status}</span>
+        <span style={{ position: 'absolute', top: 12, right: 12, ...statusChip(r.status, true) }}>
+          {STATUS_SHORT[r.status] || r.status}
+        </span>
 
         {/* Price overlay */}
         {price && (
