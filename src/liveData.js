@@ -1140,6 +1140,37 @@ export async function getPropertyLeads(propertyId) {
 
 // Editable master fields. Numeric helpers (price_min_cr, carpet_min/max) power
 // the lead-matching, so they are edited too.
+// ── Lead tags and custom fields ──────────────────────────────────────────────
+// Both live in contacts.attributes, which already holds whatever a lead form
+// sent. Tags are attributes.tags (the same array the flow builder's "Add tag"
+// action writes to, so the two stay in sync). Anything a person types by hand
+// goes under attributes.custom, kept in its own namespace so it can never
+// collide with a form answer or an internal key like meta_lead_id.
+export async function getLeadExtras(contactId) {
+  const { data, error } = await supabase
+    .from('contacts').select('attributes').eq('id', contactId).maybeSingle();
+  if (error) { console.error('getLeadExtras', error); return { tags: [], custom: {} }; }
+  const a = data?.attributes || {};
+  return {
+    tags: Array.isArray(a.tags) ? a.tags : [],
+    custom: (a.custom && typeof a.custom === 'object') ? a.custom : {},
+  };
+}
+
+// Read-merge-write: attributes is a single jsonb column, so writing only the
+// keys we touch would otherwise wipe the rest.
+export async function saveLeadExtras(contactId, { tags, custom }) {
+  const { data, error: readErr } = await supabase
+    .from('contacts').select('attributes').eq('id', contactId).maybeSingle();
+  if (readErr) { console.error('saveLeadExtras read', readErr); return { ok: false, error: readErr.message }; }
+  const next = { ...(data?.attributes || {}) };
+  if (tags !== undefined) next.tags = tags;
+  if (custom !== undefined) next.custom = custom;
+  const { error } = await supabase.from('contacts').update({ attributes: next }).eq('id', contactId);
+  if (error) { console.error('saveLeadExtras write', error); return { ok: false, error: error.message }; }
+  return { ok: true };
+}
+
 // ── Site visits ──────────────────────────────────────────────────────────────
 // scope: 'upcoming' | 'past' | 'all'. Upcoming drives the dashboard tile and is
 // the default view, since a visit tracker is about what is coming, not history.

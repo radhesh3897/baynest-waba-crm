@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   IconHome, IconInbox, IconZap, IconDb, IconPeople, IconWhatsApp,
-  IconTemplate, IconSettings, IconLogs, IconHelp, IconChart, IconTarget, IconSend,
-  IconInstagram, IconCalendar,
+  IconTemplate, IconSettings, IconLogs, IconHelp, IconTarget, IconSend,
+  IconInstagram, IconCalendar, IconFunnel, IconMegaphone, IconReport
 } from '../icons';
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
@@ -19,9 +19,9 @@ const MAIN = [
 const MORE = [
   { key: 'visits', label: 'Visits', Icon: IconCalendar },
   { key: 'ig-inbox', label: 'Instagram Inbox', Icon: IconInstagram },
-  { key: 'leads-overview', label: 'Leads Overview', Icon: IconChart },
-  { key: 'ads',       label: 'Ads Dashboard',    Icon: IconChart },
-  { key: 'reports',   label: 'Reports',          Icon: IconChart },
+  { key: 'leads-overview', label: 'Leads Overview', Icon: IconFunnel },
+  { key: 'ads',       label: 'Ads Dashboard',    Icon: IconMegaphone },
+  { key: 'reports',   label: 'Reports',          Icon: IconReport },
   { key: 'tracking',  label: 'Tracking',         Icon: IconTarget, locked: true },
   { key: 'campaigns', label: 'Campaigns',        Icon: IconSend },
   { key: 'people',    label: 'People',           Icon: IconPeople },

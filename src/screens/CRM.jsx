@@ -3,6 +3,7 @@ import { getFormsLive, getPeopleLive, updateLeadStatusLive, addLeadLive, getPipe
 import { IconPlus, IconSearch, IconChevDown, IconX, IconMail, IconPhone, IconWhatsApp, IconZap, IconEdit } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
+import LeadCustomFields from '../components/LeadCustomFields';
 
 // ── Pipeline stages ──────────────────────────────────────────────────────────
 const STAGES = ['New', 'Prospecting', 'Visits', 'Negotiation', 'Closed', 'Lost'];
@@ -84,7 +85,12 @@ function ContactPanel({ contact, formDef, onClose }) {
         </div>
         <div style={{ padding: '8px 20px 24px' }}>
           <LeadAnswers attributes={contact.attributes} />
-          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16 }}>
+          {/* Same tags and custom fields the Inbox panel edits, so whatever the
+              team captures mid-chat is here when the lead is opened from CRM. */}
+          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 4 }}>
+            <LeadCustomFields contactId={contact.id} />
+          </div>
+          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
             <ContactNotes contactId={contact.id} />
           </div>
         </div>

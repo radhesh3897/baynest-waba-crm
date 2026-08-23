@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconChart, IconTarget, IconSend, IconBuilding, IconInstagram , IconCalendar} from '../icons';
+import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconTarget, IconSend, IconBuilding, IconInstagram , IconCalendar, IconFunnel, IconMegaphone, IconReport} from '../icons';
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
 import { CLIENT } from '../config/client.js';
@@ -21,11 +21,11 @@ const NAV_ITEMS_LEAD_MGMT = [
   { key: 'people',         label: 'People',         Icon: IconPeople },
   { key: 'properties',     label: 'Properties',     Icon: IconBuilding },
   { key: 'visits',         label: 'Visits',         Icon: IconCalendar },
-  { key: 'leads-overview', label: 'Leads Overview', Icon: IconChart },
+  { key: 'leads-overview', label: 'Leads Overview', Icon: IconFunnel },
 ];
 const NAV_ITEMS_ANALYTICS = [
-  { key: 'ads', label: 'Ads Dashboard', Icon: IconChart },
-  { key: 'reports', label: 'Reports', Icon: IconChart },
+  { key: 'ads', label: 'Ads Dashboard', Icon: IconMegaphone },
+  { key: 'reports', label: 'Reports', Icon: IconReport },
   // Locked: CAPI lead-qualification tooling is not part of this rollout.
   { key: 'tracking', label: 'Tracking', Icon: IconTarget, locked: true },
 ];
