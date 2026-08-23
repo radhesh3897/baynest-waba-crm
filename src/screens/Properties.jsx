@@ -14,6 +14,34 @@ function statusChip(status) {
   return { background: s.bg, color: s.fg, fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 999, whiteSpace: 'nowrap' };
 }
 
+// Developer monogram. Real logos win when developer_logo_url is set; until then
+// a branded monogram reads as deliberate, where a scraped 16px favicon would
+// just look broken. Colour is derived from the name so a developer always gets
+// the same badge, and the ramp is muted to match the rest of the UI.
+const BADGE_TONES = [
+  { bg: 'rgba(27,76,94,.10)',   fg: '#1B4C5E' },
+  { bg: 'rgba(192,138,69,.16)', fg: '#8A5E22' },
+  { bg: 'rgba(115,167,111,.18)',fg: '#3B6B45' },
+  { bg: 'rgba(62,107,120,.14)', fg: '#2C6579' },
+  { bg: 'rgba(199,80,59,.12)',  fg: '#9A3F2C' },
+];
+function badgeTone(name) {
+  let h = 0;
+  for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return BADGE_TONES[h % BADGE_TONES.length];
+}
+// "Lodha Group" -> LG, "Kalpataru" -> KA. Skips filler words so the monogram
+// reflects the brand rather than its suffix.
+function monogram(name) {
+  const skip = new Set(['group', 'realty', 'developers', 'properties', 'ltd', 'limited', 'the', 'and', '&']);
+  const words = String(name || '').split(/[\s.]+/).filter(w => w && !skip.has(w.toLowerCase()));
+  if (words.length === 0) return (name || '?').trim().slice(0, 2).toUpperCase();
+  // A short single word is already the mark ("L&T"); truncating it to two
+  // characters would produce "L&".
+  if (words.length === 1) return words[0].slice(0, words[0].length <= 3 ? 3 : 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
 // Short status codes read as jargon to a buyer; spell them out on the card.
 const STATUS_LONG = { RTMI: 'Ready to move in', UC: 'Under construction', Launch: 'New launch' };
 function friendlyStatus(s) { return STATUS_LONG[s] || s || ''; }
@@ -46,7 +74,8 @@ function PropertyCard({ r, ip, onClick }) {
   const price = priceRange(r);
   const possession = r.possession ? `Possession: ${r.possession}` : '';
   const statusLine = [friendlyStatus(r.status), possession].filter(Boolean).join('  |  ');
-  const initials = (r.developer || r.name || '?').trim().slice(0, 2).toUpperCase();
+  const initials = monogram(r.developer || r.name);
+  const tone = badgeTone(r.developer || r.name);
 
   return (
     <button onClick={onClick}
@@ -62,8 +91,13 @@ function PropertyCard({ r, ip, onClick }) {
         {/* Developer badge */}
         <div style={{ position: 'absolute', top: 12, left: 12, width: 40, height: 40, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
           {r.developer_logo_url
-            ? <img src={r.developer_logo_url} alt={r.developer} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-primary)' }}>{initials}</span>}
+            ? <img src={r.developer_logo_url} alt={r.developer}
+                // A logo is a wordmark or a mark; contain keeps it whole where
+                // cover would crop it. Padding stops it touching the rim.
+                style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 5, boxSizing: 'border-box' }} />
+            : <div title={r.developer || ''} style={{ width: '100%', height: '100%', background: tone.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '.02em', color: tone.fg }}>{initials}</span>
+              </div>}
         </div>
 
         {/* Status chip */}
