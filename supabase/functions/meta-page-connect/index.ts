@@ -329,6 +329,40 @@ serve(async (req: Request) => {
     return json({ ok: true, probe: "assets", ...out });
   }
 
+  // probe_env: the edge functions authorise a browser call by building an anon
+  // client from SUPABASE_ANON_KEY and calling getUser(userJwt). If that env var
+  // is missing or is a new-format key rather than the legacy JWT, every signed-in
+  // user gets a 401 while service-role calls still succeed, which is exactly the
+  // shape of "works when I test it, fails in the app". Reports formats only.
+  if (body.probe_env === true) {
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const svcKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const shape = (k: string) => !k ? "MISSING"
+      : k.startsWith("eyJ") ? `legacy JWT (${k.length} chars)`
+      : k.startsWith("sb_") ? `new format ${k.slice(0, 14)}… (${k.length} chars)`
+      : `unknown (${k.length} chars)`;
+
+    // Does the anon client actually reach GoTrue? A deliberately bad token
+    // should come back "invalid JWT"; anything about the API key means the
+    // client itself is misconfigured.
+    let getUserErr = "";
+    try {
+      const anon = createClient(SUPABASE_URL, anonKey);
+      const { error } = await anon.auth.getUser("not-a-real-token");
+      getUserErr = error ? `${error.status ?? ""} ${error.message}`.trim() : "no error (unexpected)";
+    } catch (e) {
+      getUserErr = `threw: ${String((e as Error).message ?? e)}`;
+    }
+
+    return json({
+      ok: true, probe: "env",
+      supabase_url: SUPABASE_URL,
+      anon_key: shape(anonKey),
+      service_role_key: shape(svcKey),
+      getUser_with_bad_token: getUserErr,
+    });
+  }
+
   if (probeOnly) {
     const lr = await fetch(g(`${page.id}/leadgen_forms?fields=id,name,leads.limit(1){id,created_time,field_data}&limit=25&access_token=${page.token}`));
     const lj = await lr.json().catch(() => ({})) as Record<string, unknown>;

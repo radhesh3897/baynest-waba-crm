@@ -1,9 +1,9 @@
-// DFY Inbox service worker — minimal, install-enabling.
+// Service worker: minimal, install-enabling.
 // This is a LIVE real-time tool, so we deliberately do NOT cache app code/data
 // (no stale bundles). We only cache the app shell as an offline fallback for
 // navigations; everything else goes straight to the network.
 
-const CACHE = 'dfy-inbox-shell-v2';
+const CACHE = 'baynest-shell-v1';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add('/')).then(() => self.skipWaiting()));
@@ -37,7 +37,7 @@ self.addEventListener('push', (e) => {
       icon: '/icon-192.png',
       badge: '/icon-192.png',
       data: { url: d.url || '/' },
-      tag: d.tag || 'dfy-lead',
+      tag: d.tag || 'baynest-lead',
       renotify: true,
     })
   );
