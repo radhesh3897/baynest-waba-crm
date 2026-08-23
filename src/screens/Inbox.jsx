@@ -11,9 +11,10 @@ import {
   IconChevDown, IconCalendar, IconInbox, IconFlow, TickIcon, IconX,
 } from '../icons';
 import { useIsMobile } from '../useIsMobile';
-import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
+import ContactNotes from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
 import LeadCustomFields from '../components/LeadCustomFields';
+import LeadAnswersEditable from '../components/LeadAnswersEditable';
 
 function IconPanelClose() {
   return (
@@ -660,7 +661,7 @@ export default function Inbox({ channel = 'whatsapp' }) {
             <div style={{ border: '1px solid rgba(27,76,94,.13)', borderRadius: 9, padding: '8px 11px', fontSize: 12.5, color: 'var(--brand-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.value}</div>
           </div>
         ))}
-        <div style={{ marginTop: 6 }}><LeadAnswers attributes={contact.attributes} /></div>
+        <div style={{ marginTop: 6 }}><LeadAnswersEditable contactId={contact.id} attributes={contact.attributes} /></div>
         <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(27,76,94,.10)' }}>
           <LeadCustomFields contactId={contact.id} />
         </div>

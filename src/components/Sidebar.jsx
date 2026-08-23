@@ -89,6 +89,30 @@ function NavBtn({ item, active, onClick }) {
   );
 }
 
+// Collapsible nav section. The whole list at once is a long scroll, so each
+// group folds under its title. Choices persist, and a group containing the
+// current screen always opens so you can never collapse yourself out of view.
+function NavSection({ title, items, screen, onNav, open, onToggle }) {
+  const holdsActive = items.some(i => i.key === screen);
+  const expanded = open || holdsActive;
+  return (
+    <div>
+      <button onClick={onToggle}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', border: 'none', background: 'transparent',
+          cursor: 'pointer', padding: '10px 12px 5px', fontSize: 10, fontWeight: 800, letterSpacing: '.12em',
+          color: 'rgba(27,76,94,.42)', textTransform: 'uppercase' }}>
+        <span style={{ flex: 1, textAlign: 'left' }}>{title}</span>
+        <span style={{ display: 'flex', transition: 'transform .18s ease', transform: expanded ? 'none' : 'rotate(-90deg)', opacity: .8 }}>
+          <IconChevDown size={12} />
+        </span>
+      </button>
+      {expanded && items.map(item => (
+        <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
+      ))}
+    </div>
+  );
+}
+
 export default function Sidebar({ screen, onNav }) {
   // Counted per channel so each inbox carries its own badge.
   const [unread, setUnread] = useState(0);
@@ -105,9 +129,23 @@ export default function Sidebar({ screen, onNav }) {
     return () => { alive = false; clearInterval(t); };
   }, [screen]);
 
+  // Which groups are open. Remembered across sessions, because a person's nav
+  // shape is a preference, not something to reset on every reload.
+  const [openSections, setOpenSections] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('nav.sections') || 'null');
+      if (saved && typeof saved === 'object') return saved;
+    } catch { /* corrupt or unavailable storage: fall through to the default */ }
+    return { whatsapp: true, instagram: true, leads: true, analytics: true };
+  });
+  const toggleSection = (id) => setOpenSections(s => {
+    const next = { ...s, [id]: !s[id] };
+    try { localStorage.setItem('nav.sections', JSON.stringify(next)); } catch { /* ignore */ }
+    return next;
+  });
+
   const waItems = NAV_ITEMS_WHATSAPP.map(it => it.key === 'inbox' ? { ...it, badge: unread > 0 ? String(unread) : null } : it);
   const igItems = NAV_ITEMS_INSTAGRAM.map(it => it.key === 'ig-inbox' ? { ...it, badge: igUnread > 0 ? String(igUnread) : null } : it);
-  const sectionLabel = { fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.42)', padding: '9px 12px 4px' };
 
   return (
     <aside style={{ width: 248, flexShrink: 0, background: '#fff', borderRight: '1px solid rgba(27,76,94,.10)', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -118,24 +156,16 @@ export default function Sidebar({ screen, onNav }) {
       <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 12px 10px' }}>
         <NavBtn item={NAV_HOME} active={screen === 'home'} onClick={() => onNav('home')} />
 
-        <div style={sectionLabel}>WHATSAPP</div>
-        {waItems.map(item => (
-          <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
-        ))}
-
-        <div style={sectionLabel}>INSTAGRAM</div>
-        {igItems.map(item => (
-          <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
-        ))}
-
-        <div style={sectionLabel}>LEAD MANAGEMENT</div>
-        {NAV_ITEMS_LEAD_MGMT.map(item => (
-          <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
-        ))}
-
-        <div style={sectionLabel}>ANALYTICS</div>
-        {NAV_ITEMS_ANALYTICS.map(item => (
-          <NavBtn key={item.key} item={item} active={screen === item.key} onClick={() => onNav(item.key)} />
+        {[
+          { id: 'whatsapp',  title: 'WhatsApp',        items: waItems },
+          { id: 'instagram', title: 'Instagram',       items: igItems },
+          { id: 'leads',     title: 'Lead Management', items: NAV_ITEMS_LEAD_MGMT },
+          { id: 'analytics', title: 'Analytics',       items: NAV_ITEMS_ANALYTICS },
+        ].map(sec => (
+          <NavSection key={sec.id} title={sec.title} items={sec.items}
+            screen={screen} onNav={onNav}
+            open={openSections[sec.id]}
+            onToggle={() => toggleSection(sec.id)} />
         ))}
       </nav>
 

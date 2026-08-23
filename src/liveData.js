@@ -1171,6 +1171,15 @@ export async function saveLeadExtras(contactId, { tags, custom }) {
   return { ok: true };
 }
 
+// Writes the whole attributes object back. The caller has already merged, since
+// only it knows whether an answer belongs at the top level or inside
+// form_answers.
+export async function saveLeadAnswers(contactId, attributes) {
+  const { error } = await supabase.from('contacts').update({ attributes }).eq('id', contactId);
+  if (error) { console.error('saveLeadAnswers', error); return { ok: false, error: error.message }; }
+  return { ok: true };
+}
+
 // ── Site visits ──────────────────────────────────────────────────────────────
 // scope: 'upcoming' | 'past' | 'all'. Upcoming drives the dashboard tile and is
 // the default view, since a visit tracker is about what is coming, not history.

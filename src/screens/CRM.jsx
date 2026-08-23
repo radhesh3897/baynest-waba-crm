@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { getFormsLive, getPeopleLive, updateLeadStatusLive, addLeadLive, getPipelineStages } from '../liveData';
 import { IconPlus, IconSearch, IconChevDown, IconX, IconMail, IconPhone, IconWhatsApp, IconZap, IconEdit } from '../icons';
 import { useIsMobile } from '../useIsMobile';
-import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
+import ContactNotes from '../components/ContactNotes';
 import LeadCustomFields from '../components/LeadCustomFields';
+import LeadAnswersEditable from '../components/LeadAnswersEditable';
 
 // ── Pipeline stages ──────────────────────────────────────────────────────────
 const STAGES = ['New', 'Prospecting', 'Visits', 'Negotiation', 'Closed', 'Lost'];
@@ -84,7 +85,7 @@ function ContactPanel({ contact, formDef, onClose }) {
           ))}
         </div>
         <div style={{ padding: '8px 20px 24px' }}>
-          <LeadAnswers attributes={contact.attributes} />
+          <LeadAnswersEditable contactId={contact.id} attributes={contact.attributes} />
           {/* Same tags and custom fields the Inbox panel edits, so whatever the
               team captures mid-chat is here when the lead is opened from CRM. */}
           <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 4 }}>
