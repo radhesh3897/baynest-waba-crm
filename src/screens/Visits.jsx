@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getVisits, createVisit, updateVisit, getPeopleLive, getProperties } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
 import { IconPlus, IconCalendar, IconX } from '../icons';
+import SearchSelect from '../components/SearchSelect';
 
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14 };
 
@@ -56,6 +57,23 @@ function ScheduleDrawer({ onClose, onSaved, isMobile }) {
     getProperties().then(p => setProps(p || []));
   }, []);
 
+  // Phone shows as the secondary line so two people with the same name are
+  // still distinguishable, and searching a number finds the lead.
+  // getPeopleLive already resolves profile_name and exposes the number as
+  // `phone`, so the number is only shown when it adds something the name does
+  // not already say.
+  const leadOptions = useMemo(() => leads.map(l => ({
+    value: l.id,
+    label: l.profile_name || 'Unknown',
+    sub: l.phone && l.phone !== l.profile_name ? l.phone : '',
+  })), [leads]);
+
+  const propertyOptions = useMemo(() => props.map(p => ({
+    value: p.id,
+    label: p.name,
+    sub: [p.developer, p.area].filter(Boolean).join(' · '),
+  })), [props]);
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   async function save() {
@@ -81,16 +99,24 @@ function ScheduleDrawer({ onClose, onSaved, isMobile }) {
         </div>
 
         <label style={label}>Lead</label>
-        <select value={form.contact_id} onChange={e => set('contact_id', e.target.value)} style={input}>
-          <option value="">Choose a lead…</option>
-          {leads.map(l => <option key={l.id} value={l.id}>{l.profile_name || l.wa_id}</option>)}
-        </select>
+        <SearchSelect
+          options={leadOptions}
+          value={form.contact_id}
+          onChange={v => set('contact_id', v)}
+          placeholder="Choose a lead…"
+          searchPlaceholder="Search by name or number…"
+          emptyLabel="No lead matches that search"
+        />
 
         <label style={label}>Property</label>
-        <select value={form.property_id} onChange={e => set('property_id', e.target.value)} style={input}>
-          <option value="">No specific project</option>
-          {props.map(p => <option key={p.id} value={p.id}>{p.name}{p.area ? ` — ${p.area}` : ''}</option>)}
-        </select>
+        <SearchSelect
+          options={propertyOptions}
+          value={form.property_id}
+          onChange={v => set('property_id', v)}
+          placeholder="No specific project"
+          searchPlaceholder="Search projects…"
+          emptyLabel="No project matches"
+        />
 
         <label style={label}>Date and time</label>
         <input type="datetime-local" value={form.scheduled_at} onChange={e => set('scheduled_at', e.target.value)} style={input} />
