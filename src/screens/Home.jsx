@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { CLIENT } from '../config/client.js';
 import {
   IconInbox, IconInstagram, IconPeople, IconBuilding, IconZap,
-  IconTemplate, IconSend, IconChart, IconDb,
+  IconTemplate, IconSend, IconDb, IconCalendar,
 } from '../icons';
 
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
@@ -13,11 +13,12 @@ const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borde
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
 const STATUS_STYLE = {
-  New: { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' },
-  Warm: { bg: 'rgba(27,76,94,.16)', fg: 'var(--brand-primary)' },
-  Hot: { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
-  Won: { bg: 'rgba(115,167,111,.22)', fg: 'var(--brand-primary-dark)' },
-  Lost: { bg: 'rgba(27,76,94,.05)', fg: 'rgba(27,76,94,.45)' },
+  New:         { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' },
+  Prospecting: { bg: 'rgba(27,76,94,.13)', fg: 'var(--brand-primary)' },
+  Visits:      { bg: 'rgba(192,138,69,.18)', fg: '#8A5E22' },
+  Negotiation: { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
+  Closed:      { bg: 'rgba(115,167,111,.22)', fg: 'var(--brand-primary-dark)' },
+  Lost:        { bg: 'rgba(27,76,94,.05)', fg: 'rgba(27,76,94,.45)' },
 };
 const FLOW_STATUS = {
   active: { bg: 'rgba(115,167,111,.18)', fg: '#3B6B45', dot: '#3B6B45' },
@@ -118,7 +119,7 @@ export default function Home({ onNav }) {
     { key: 'automation', icon: IconZap,       label: 'Active Flows',count: stats.activeFlows,tint: 'rgba(192,138,69,.16)',  fg: '#8A5E22' },
     { key: 'templates',  icon: IconTemplate,  label: 'Templates',   count: stats.templates,  tint: 'rgba(27,76,94,.10)',    fg: '#1B4C5E' },
     { key: 'campaigns',  icon: IconSend,      label: 'Campaigns',   count: stats.campaigns,  tint: 'rgba(115,167,111,.20)', fg: '#3B6B45' },
-    { key: 'reports',    icon: IconChart,     label: 'Reports',     count: stats.leadsMonth, tint: 'rgba(62,107,120,.14)',  fg: '#2C6579' },
+    { key: 'visits',     icon: IconCalendar,  label: 'Visits',      count: stats.visitsUpcoming, tint: 'rgba(199,80,59,.12)', fg: '#9A3F2C' },
   ];
 
   // Phone: a launcher, matching the layout Manish asked for. The funnel, donut

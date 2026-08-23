@@ -10,6 +10,7 @@ import Templates from './screens/Templates';
 import CRM from './screens/CRM';
 import People from './screens/People';
 import Properties from './screens/Properties';
+import Visits from './screens/Visits';
 import MetaDashboard from './screens/MetaDashboard';
 import Reports from './screens/Reports';
 import Campaigns from './screens/Campaigns';
@@ -77,6 +78,7 @@ export default function App() {
     if (screen === 'crm')        return <CRM />;
     if (screen === 'people')     return <People />;
     if (screen === 'properties') return <Properties />;
+    if (screen === 'visits')     return <Visits />;
     if (screen === 'ads')        return <MetaDashboard />;
     // 'tracking' is intentionally locked — the nav greys it out and the route is
     // removed, so it cannot be reached even by restoring a stale nav state.

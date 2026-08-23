@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   IconHome, IconInbox, IconZap, IconDb, IconPeople, IconWhatsApp,
   IconTemplate, IconSettings, IconLogs, IconHelp, IconChart, IconTarget, IconSend,
-  IconInstagram,
+  IconInstagram, IconCalendar,
 } from '../icons';
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
@@ -17,6 +17,7 @@ const MAIN = [
 ];
 // Everything else lives behind the "More" sheet.
 const MORE = [
+  { key: 'visits', label: 'Visits', Icon: IconCalendar },
   { key: 'ig-inbox', label: 'Instagram Inbox', Icon: IconInstagram },
   { key: 'leads-overview', label: 'Leads Overview', Icon: IconChart },
   { key: 'ads',       label: 'Ads Dashboard',    Icon: IconChart },

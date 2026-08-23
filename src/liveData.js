@@ -1140,6 +1140,53 @@ export async function getPropertyLeads(propertyId) {
 
 // Editable master fields. Numeric helpers (price_min_cr, carpet_min/max) power
 // the lead-matching, so they are edited too.
+// ── Site visits ──────────────────────────────────────────────────────────────
+// scope: 'upcoming' | 'past' | 'all'. Upcoming drives the dashboard tile and is
+// the default view, since a visit tracker is about what is coming, not history.
+export async function getVisits(scope = 'upcoming') {
+  let q = supabase
+    .from('visits')
+    .select('*, contacts(id, profile_name, wa_id, ig_username), properties(id, name, area)');
+  const nowIso = new Date().toISOString();
+  if (scope === 'upcoming') q = q.gte('scheduled_at', nowIso).eq('status', 'scheduled').order('scheduled_at', { ascending: true });
+  else if (scope === 'past') q = q.lt('scheduled_at', nowIso).order('scheduled_at', { ascending: false });
+  else q = q.order('scheduled_at', { ascending: false });
+
+  const { data, error } = await q.limit(200);
+  if (error) { console.error('getVisits', error); return []; }
+  return (data || []).map(v => ({
+    ...v,
+    leadName: v.contacts?.profile_name || v.contacts?.wa_id || (v.contacts?.ig_username ? `@${v.contacts.ig_username}` : 'Unknown'),
+    leadPhone: v.contacts?.wa_id || '',
+    propertyName: v.properties?.name || '',
+    propertyArea: v.properties?.area || '',
+  }));
+}
+
+export async function createVisit(v) {
+  // Default the reminder to 2 hours before, which is the useful moment for a
+  // site visit: enough time to leave, not so early it is forgotten.
+  const remind = v.remind_at
+    ?? (v.scheduled_at ? new Date(new Date(v.scheduled_at).getTime() - 2 * 3600_000).toISOString() : null);
+  const { data, error } = await supabase.from('visits').insert({
+    contact_id: v.contact_id,
+    property_id: v.property_id || null,
+    scheduled_at: v.scheduled_at,
+    duration_mins: Number(v.duration_mins) || 60,
+    location: v.location || null,
+    notes: v.notes || null,
+    remind_at: remind,
+  }).select('id').single();
+  if (error) { console.error('createVisit', error); return { ok: false, error: error.message }; }
+  return { ok: true, id: data.id };
+}
+
+export async function updateVisit(id, patch) {
+  const { error } = await supabase.from('visits').update(patch).eq('id', id);
+  if (error) { console.error('updateVisit', error); return { ok: false, error: error.message }; }
+  return { ok: true };
+}
+
 export const PROPERTY_FIELDS = [
   { key: 'name', label: 'Project name', required: true },
   { key: 'developer', label: 'Developer' },

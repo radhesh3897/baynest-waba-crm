@@ -5,7 +5,7 @@ import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
 
 // ── Pipeline stages ──────────────────────────────────────────────────────────
-const STAGES = ['New', 'Cool', 'Warm', 'Hot', 'Won', 'Lost'];
+const STAGES = ['New', 'Prospecting', 'Visits', 'Negotiation', 'Closed', 'Lost'];
 
 const LEAD_SOURCES = [
   { key: 'Meta Lead Ads', label: 'Meta Ads', icon: '📘' },
@@ -17,21 +17,21 @@ const LEAD_SOURCES = [
 ];
 
 const STAGE_STYLE = {
-  New:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.25)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
-  Cool: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.42)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
-  Warm: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.62)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' },
-  Hot:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-primary)',            fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.13)' },
-  Won:  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)',            fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
-  Lost: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
+  New:         { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.25)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
+  Prospecting: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.45)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
+  Visits:      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.18)' },
+  Negotiation: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-primary)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.13)' },
+  Closed:      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#3B6B45', fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
+  Lost:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
 };
 
 const LEAD_STATUS_STYLE = {
-  New:  { bg: 'rgba(27,76,94,.07)',      fg: 'var(--brand-primary)' },
-  Cool: { bg: 'rgba(27,76,94,.11)',      fg: 'var(--brand-primary)' },
-  Warm: { bg: 'rgba(27,76,94,.16)',      fg: 'var(--brand-primary)' },
-  Hot:  { bg: 'var(--brand-primary)',                 fg: 'var(--app-bg)' },
-  Won:  { bg: 'rgba(115,167,111,.22)',    fg: 'var(--brand-primary-dark)' },
-  Lost: { bg: 'rgba(27,76,94,.05)',      fg: 'rgba(27,76,94,.45)' },
+  New:         { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' },
+  Prospecting: { bg: 'rgba(27,76,94,.13)', fg: 'var(--brand-primary)' },
+  Visits:      { bg: 'rgba(192,138,69,.18)', fg: '#8A5E22' },
+  Negotiation: { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
+  Closed:      { bg: 'rgba(115,167,111,.22)', fg: '#3B6B45' },
+  Lost:        { bg: 'rgba(27,76,94,.05)', fg: 'rgba(27,76,94,.45)' },
 };
 
 function leadChip(status) {
