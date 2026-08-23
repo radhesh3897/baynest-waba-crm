@@ -79,7 +79,9 @@ function PropertyCard({ r, ip, onClick }) {
 
   return (
     <button onClick={onClick}
-      style={{ display: 'block', width: '100%', textAlign: 'left', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, overflow: 'hidden', marginBottom: 14, cursor: 'pointer', padding: 0, boxShadow: '0 2px 10px rgba(14,58,53,.05)' }}>
+      // Spacing lives on the parent grid, not the card, so the same card works
+      // in a one-column phone list and a multi-column desktop grid.
+      style={{ display: 'block', width: '100%', textAlign: 'left', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, overflow: 'hidden', cursor: 'pointer', padding: 0, boxShadow: '0 2px 10px rgba(14,58,53,.05)' }}>
       {/* Hero */}
       <div style={{ position: 'relative', height: 190, background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-muted))' }}>
         {r.image_url
@@ -160,6 +162,10 @@ export default function Properties() {
   const [area, setArea] = useState('All');
   const [status, setStatus] = useState('All');
   const [editing, setEditing] = useState(undefined); // undefined=closed, null=new, obj=edit
+  // Desktop can show either. Cards are the default because that is the layout
+  // Manish asked for; the table stays for per-project analysis, which is what a
+  // wide screen is actually good for. Mobile is always cards.
+  const [view, setView] = useState('cards');
 
   async function load() {
     const [p, s] = await Promise.all([getProperties(), getPropertyStats()]);
@@ -206,11 +212,23 @@ export default function Properties() {
           style={{ border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '8px 12px', fontSize: 13, color: 'var(--brand-primary)', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
           {areas.map(a => <option key={a} value={a}>{a === 'All' ? 'All areas' : a}</option>)}
         </select>
+
+        {!isMobile && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, background: 'rgba(27,76,94,.06)', borderRadius: 999, padding: 3 }}>
+            {[['cards', 'Cards'], ['table', 'Table']].map(([k, label]) => (
+              <button key={k} onClick={() => setView(k)}
+                style={{ border: 'none', cursor: 'pointer', borderRadius: 999, padding: '6px 14px', fontSize: 12.5, fontWeight: 700,
+                  background: view === k ? '#fff' : 'transparent', color: view === k ? 'var(--brand-primary)' : 'rgba(27,76,94,.6)',
+                  boxShadow: view === k ? '0 1px 4px rgba(14,58,53,.10)' : 'none' }}>{label}</button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Mobile: cards. A 7-column table is unusable on a phone. */}
-      {isMobile ? (
-        <div>
+      {/* Cards on mobile always, and on desktop unless the table is chosen. The
+          grid collapses to one column on a phone, so the same card serves both. */}
+      {(isMobile || view === 'cards') ? (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isMobile ? 14 : 16, alignItems: 'start' }}>
           {loading ? (
             <div style={{ fontSize: 13, color: 'rgba(27,76,94,.5)' }}>Loading…</div>
           ) : filtered.length === 0 ? (

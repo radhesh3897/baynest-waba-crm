@@ -191,6 +191,18 @@ export default function Home({ onNav }) {
 
       <div style={{ padding: isMobile ? '16px 16px 28px' : '20px 30px 40px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
+        {/* Quick Links. Same launcher as the phone, so the team learns one
+            layout; desktop keeps the analytics below it rather than instead. */}
+        <div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', marginBottom: 10 }}>Quick Links</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+            {tiles.map(t => (
+              <QuickTile key={t.key} icon={t.icon} tint={t.tint} fg={t.fg}
+                count={fmt(t.count)} label={t.label} onClick={() => onNav?.(t.key)} />
+            ))}
+          </div>
+        </div>
+
         {/* KPI row */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: isMobile ? 10 : 14 }}>
           {kpis.map(k => (
