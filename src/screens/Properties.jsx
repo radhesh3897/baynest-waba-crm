@@ -14,6 +14,21 @@ function statusChip(status) {
   return { background: s.bg, color: s.fg, fontSize: 11, fontWeight: 800, padding: '3px 9px', borderRadius: 999, whiteSpace: 'nowrap' };
 }
 
+// Short status codes read as jargon to a buyer; spell them out on the card.
+const STATUS_LONG = { RTMI: 'Ready to move in', UC: 'Under construction', Launch: 'New launch' };
+function friendlyStatus(s) { return STATUS_LONG[s] || s || ''; }
+
+// "Sale Range" line. Prefer an explicit min–max in Cr; fall back to the free-text
+// starting price so a half-filled project still shows something sensible.
+function priceRange(r) {
+  const min = Number(r.price_min_cr) || 0;
+  const max = Number(r.price_max_cr) || 0;
+  if (min && max && max > min) return `₹ ${min} Cr - ${max} Cr`;
+  if (r.starting_price) return String(r.starting_price);
+  if (min) return `₹ ${min} Cr+`;
+  return '';
+}
+
 const TH = { textAlign: 'left', fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)', padding: '16px 14px 10px', textTransform: 'uppercase', whiteSpace: 'nowrap' };
 const TD = { fontSize: 13, color: 'var(--brand-primary)', padding: '13px 14px', borderTop: '1px solid rgba(27,76,94,.07)', verticalAlign: 'middle' };
 // Count "pill" for the Interested / Rejected columns.
@@ -22,6 +37,84 @@ function countCell(n, tone) {
   const bg = tone === 'accept' ? 'rgba(115,167,111,.16)' : 'rgba(199,80,59,.09)';
   if (!n) return <span style={{ color: 'rgba(27,76,94,.28)' }}>0</span>;
   return <span style={{ background: bg, color: fg, fontWeight: 800, fontSize: 12.5, padding: '2px 10px', borderRadius: 999, minWidth: 22, display: 'inline-block', textAlign: 'center' }}>{n}</span>;
+}
+
+// Image-forward project card (Manish's reference): hero photo, developer badge,
+// price overlay, then the project facts. Used on mobile; also available as a
+// grid card if we ever want it on desktop.
+function PropertyCard({ r, ip, onClick }) {
+  const price = priceRange(r);
+  const possession = r.possession ? `Possession: ${r.possession}` : '';
+  const statusLine = [friendlyStatus(r.status), possession].filter(Boolean).join('  |  ');
+  const initials = (r.developer || r.name || '?').trim().slice(0, 2).toUpperCase();
+
+  return (
+    <button onClick={onClick}
+      style={{ display: 'block', width: '100%', textAlign: 'left', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, overflow: 'hidden', marginBottom: 14, cursor: 'pointer', padding: 0, boxShadow: '0 2px 10px rgba(14,58,53,.05)' }}>
+      {/* Hero */}
+      <div style={{ position: 'relative', height: 190, background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-muted))' }}>
+        {r.image_url
+          ? <img src={r.image_url} alt={r.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.5)' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>
+            </div>}
+
+        {/* Developer badge */}
+        <div style={{ position: 'absolute', top: 12, left: 12, width: 40, height: 40, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {r.developer_logo_url
+            ? <img src={r.developer_logo_url} alt={r.developer} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-primary)' }}>{initials}</span>}
+        </div>
+
+        {/* Status chip */}
+        <span style={{ position: 'absolute', top: 12, right: 12, ...statusChip(r.status), boxShadow: '0 2px 8px rgba(0,0,0,.14)' }}>{r.status}</span>
+
+        {/* Price overlay */}
+        {price && (
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '30px 14px 12px', background: 'linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0))' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(255,255,255,.8)', textTransform: 'uppercase' }}>Sale range</div>
+            <div style={{ fontSize: 19, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{price}</div>
+            {r.price_per_sqft && <div style={{ fontSize: 12, color: 'rgba(255,255,255,.85)', marginTop: 1 }}>{r.price_per_sqft}</div>}
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: '13px 15px 14px' }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>{r.name}</div>
+        {r.area && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12.5, color: 'rgba(27,76,94,.6)', marginTop: 3 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            {r.area}
+          </div>
+        )}
+        {statusLine && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.7)', fontWeight: 600, marginTop: 8 }}>{statusLine}</div>}
+
+        {r.project_size && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.42)', textTransform: 'uppercase' }}>Project size</div>
+            <div style={{ fontSize: 13, color: 'var(--brand-primary)', fontWeight: 600, marginTop: 2 }}>{r.project_size}</div>
+          </div>
+        )}
+
+        {(r.configuration || r.carpet_size) && (
+          <div style={{ marginTop: 11, paddingTop: 11, borderTop: '1px solid rgba(27,76,94,.08)' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.42)', textTransform: 'uppercase' }}>Configurations</div>
+            <div style={{ fontSize: 13, color: 'var(--brand-primary)', fontWeight: 600, marginTop: 2 }}>
+              {[r.configuration, r.carpet_size ? `${r.carpet_size} sq ft` : ''].filter(Boolean).join('  •  ')}
+            </div>
+          </div>
+        )}
+
+        {/* Lead traction, kept from the analytics view */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 13 }}>
+          <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>Leads:</span>
+          {countCell(ip.interested, 'accept')}<span style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>interested</span>
+          {countCell(ip.rejected, 'reject')}<span style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>rejected</span>
+        </div>
+      </div>
+    </button>
+  );
 }
 
 export default function Properties() {
@@ -88,31 +181,9 @@ export default function Properties() {
             <div style={{ fontSize: 13, color: 'rgba(27,76,94,.5)' }}>Loading…</div>
           ) : filtered.length === 0 ? (
             <div style={{ fontSize: 13, color: 'rgba(27,76,94,.5)' }}>No projects match.</div>
-          ) : filtered.map(r => {
-            const ip = stats.byProp[r.id] || { interested: 0, rejected: 0 };
-            return (
-              <button key={r.id} onClick={() => setEditing(r)}
-                style={{ display: 'block', width: '100%', textAlign: 'left', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '13px 14px', marginBottom: 10, cursor: 'pointer' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--brand-primary)' }}>{r.name}</div>
-                    <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', marginTop: 2 }}>
-                      {[r.developer, r.area].filter(Boolean).join(' · ')}
-                    </div>
-                  </div>
-                  <span style={statusChip(r.status)}>{r.status}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--brand-primary)' }}>{r.starting_price}</span>
-                  <span style={{ fontSize: 12, color: 'rgba(27,76,94,.6)' }}>{r.configuration}</span>
-                  <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {countCell(ip.interested, 'accept')}
-                    {countCell(ip.rejected, 'reject')}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+          ) : filtered.map(r => (
+            <PropertyCard key={r.id} r={r} ip={stats.byProp[r.id] || { interested: 0, rejected: 0 }} onClick={() => setEditing(r)} />
+          ))}
         </div>
       ) : (
       /* Desktop table — per-project analysis: Interested vs Rejected */
