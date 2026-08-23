@@ -3,7 +3,10 @@ import { getSettings, saveSettings, getTemplatesLive } from '../liveData';
 import { IconWhatsApp } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 
-const WEBHOOK_URL = 'https://rkmngnkgesteohigvsxe.supabase.co/functions/v1/whatsapp-webhook';
+// Derived from this workspace's own Supabase URL. It used to be hardcoded to
+// the project this template was cloned from, so the setup screen told you to
+// point Meta's webhook at someone else's backend.
+const WEBHOOK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-webhook`;
 
 function Field({ label, children }) {
   return (

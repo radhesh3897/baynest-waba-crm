@@ -22,6 +22,8 @@ export default function MetaDashboard() {
   const isMobile = useIsMobile();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [diag, setDiag] = useState('');
+  const [signedIn, setSignedIn] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const firstLoad = useRef(true);
@@ -34,6 +36,8 @@ export default function MetaDashboard() {
       setError('');
     } else {
       setError(res?.error || 'Could not load Meta data.');
+      setDiag(res?.diag || '');
+      setSignedIn(res?.signedIn ?? null);
     }
     setLoading(false);
     setRefreshing(false);
@@ -92,8 +96,13 @@ export default function MetaDashboard() {
           <div style={{ background: '#FCEFEF', border: '1px solid #F3D6D6', borderRadius: 14, padding: '22px 24px', color: '#C0392B' }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Couldn’t load Meta data</div>
             <div style={{ fontSize: 13.5, lineHeight: 1.5 }}>{error}</div>
+            {diag && (
+              <div style={{ fontSize: 12, marginTop: 8, color: 'rgba(27,76,94,.55)', fontFamily: 'monospace' }}>{diag}</div>
+            )}
             <div style={{ fontSize: 12.5, marginTop: 10, color: 'rgba(27,76,94,.55)' }}>
-              If this says “Unauthorized” or a token error, confirm the <b>META_ADS_TOKEN</b> secret is set in Supabase with ads_read on the ad account.
+              {signedIn === false
+                ? 'Your session has expired. Sign out and sign back in.'
+                : <>If this mentions a token, confirm the <b>META_ADS_TOKEN</b> secret is set in Supabase with ads_read on the ad account.</>}
             </div>
           </div>
         )}

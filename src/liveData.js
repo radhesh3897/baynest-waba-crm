@@ -378,12 +378,22 @@ export async function getMetaAdsInsights() {
     timeout,
   ]);
   if (error) {
+    // Report enough to identify the cause from the screen alone. "Failed to
+    // load" on its own says nothing; a 401 means the session, a 5xx means Meta.
     let detail = error.message;
+    let status = error.context?.status ?? null;
     try {
       const ctx = await error.context?.json?.();
       if (ctx?.error) detail = ctx.error;
-    } catch { /* ignore */ }
-    return { ok: false, error: detail };
+    } catch { /* body was not json */ }
+    const { data: s } = await supabase.auth.getSession().catch(() => ({ data: null }));
+    return {
+      ok: false,
+      error: detail,
+      status,
+      signedIn: !!s?.session,
+      diag: `status ${status ?? 'n/a'} · session ${s?.session ? 'present' : 'missing'}`,
+    };
   }
   return data;
 }
