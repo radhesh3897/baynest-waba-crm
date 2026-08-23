@@ -456,6 +456,35 @@ function buildHistory(msgs: unknown[] | null): { role: string; content: string }
   return history.slice(-30);
 }
 
+// Everything the ad form already captured about this lead, so the qualifier
+// never asks for something they typed into the form minutes earlier. Internal
+// bookkeeping is excluded: it is not something a person "told us".
+const NOT_AN_ANSWER = new Set([
+  "meta_lead_id", "tags", "custom", "notes", "source", "form_id",
+  "skip_automation", "lead_created_time", "form_name", "is_organic", "platform",
+  "campaign_name", "ad_name", "adset_name", "last_comment_id", "last_comment_text",
+  "last_comment_at", "form_answers",
+]);
+function knownAnswers(c: Record<string, unknown> | null): Record<string, unknown> {
+  const attrs = (c?.attributes as Record<string, unknown>) ?? {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(attrs)) {
+    if (NOT_AN_ANSWER.has(k) || v == null || String(v).trim() === "") continue;
+    out[k] = v;
+  }
+  // The real form questions live nested under form_answers.
+  const fa = attrs.form_answers as Record<string, unknown> | undefined;
+  if (fa && typeof fa === "object") {
+    for (const [k, v] of Object.entries(fa)) {
+      if (v == null || String(v).trim() === "") continue;
+      // Contact details are already known to the chat; only carry the answers.
+      if (["phone", "phone_number", "email", "full_name", "first_name", "last_name"].includes(k)) continue;
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 // Auto lead-qualifier. Returns true if the AI is handling this contact (so the
 // caller skips other reply routing). Only engages "new / first-time" chats:
 // activates when a brand-new conversation opens and the contact has never been
@@ -477,7 +506,7 @@ async function maybeRunAiQualifier(
   if (!settings?.ai_qualify_enabled) return false;
 
   const { data: c } = await db
-    .from("contacts").select("ai_status, qualification").eq("id", contactId).maybeSingle();
+    .from("contacts").select("ai_status, qualification, attributes, email").eq("id", contactId).maybeSingle();
   let status = (c?.ai_status as string | null) ?? null;
 
   // Activation is limited to first-time chats. Claim it ATOMICALLY: if a lead
@@ -515,7 +544,7 @@ async function maybeRunAiQualifier(
   const aiRes = await fetch(`${SUPABASE_URL}/functions/v1/ai-qualify`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SERVICE_ROLE}` },
-    body: JSON.stringify({ messages: history, name }),
+    body: JSON.stringify({ messages: history, name, known: knownAnswers(c) }),
   });
   const ai = await aiRes.json().catch(() => ({} as Record<string, unknown>));
   const reply = (ai as Record<string, unknown>)?.reply as string | undefined;
@@ -537,7 +566,14 @@ async function maybeRunAiQualifier(
     await db.from("contacts").update({ ai_status: "done" }).eq("id", contactId);
     const outcome = (ai as Record<string, unknown>)?.outcome as string | undefined;
 
-    if (outcome === "affiliate") {
+    if (outcome === "abusive") {
+      // Abusive lead: tag for review and assign to a human. Deliberately no Meta
+      // event, because this is not a prospect signal worth optimising towards.
+      await db.rpc("tag_contact", { p_contact: contactId, p_tag: "abusive" }).catch(() => {});
+      const { data: o } = await db
+        .from("profiles").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle();
+      if (o?.id) await db.from("conversations").update({ assigned_to: o.id }).eq("id", conversationId);
+    } else if (outcome === "affiliate") {
       // Affiliate / MLM / reseller: we do not work with them. Tag and stop. NO
       // Meta event (not a prospect) and NO expert hand-off (we declined them).
       await db.rpc("tag_contact", { p_contact: contactId, p_tag: "affiliate" });
