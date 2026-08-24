@@ -566,10 +566,19 @@ async function maybeRunAiQualifier(
     await db.from("contacts").update({ ai_status: "done" }).eq("id", contactId);
     const outcome = (ai as Record<string, unknown>)?.outcome as string | undefined;
 
+    // Move the lead on the board to match what the AI concluded. Only ever
+    // within the Lead pipeline: once a human has moved someone into a Deal
+    // stage, the qualifier must not drag them back.
+    const advanceStage = async (stage: string) => {
+      await db.from("contacts").update({ lead_status: stage })
+        .eq("id", contactId).eq("pipeline", "lead").catch(() => {});
+    };
+
     if (outcome === "abusive") {
       // Abusive lead: tag for review and assign to a human. Deliberately no Meta
       // event, because this is not a prospect signal worth optimising towards.
       await db.rpc("tag_contact", { p_contact: contactId, p_tag: "abusive" }).catch(() => {});
+      await advanceStage("Junk");
       const { data: o } = await db
         .from("profiles").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle();
       if (o?.id) await db.from("conversations").update({ assigned_to: o.id }).eq("id", conversationId);
@@ -577,12 +586,17 @@ async function maybeRunAiQualifier(
       // Affiliate / MLM / reseller: we do not work with them. Tag and stop. NO
       // Meta event (not a prospect) and NO expert hand-off (we declined them).
       await db.rpc("tag_contact", { p_contact: contactId, p_tag: "affiliate" });
+      await advanceStage("Junk");
     } else {
       if (outcome === "buy_leads") {
         // Wants to buy leads, not run ads. Tag for the team and fire NOTHING: a
         // Qualified event here would teach Meta to find more lead buyers.
         await db.rpc("tag_buy_leads", { p_contact: contactId });
+        await advanceStage("Junk");
       } else {
+        // A real prospect the AI has finished with. Park them at the end of the
+        // Lead pipeline so they surface on Manish's board as ready for the call.
+        await advanceStage("Qualified");
         // A real ads prospect: mark Qualified + fire the CRM pixel event, which
         // chains the CTWA conversion event for leads that came from a WhatsApp ad.
         fetch(`${SUPABASE_URL}/functions/v1/capi-lead-event`, {

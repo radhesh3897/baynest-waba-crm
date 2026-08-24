@@ -7,19 +7,13 @@ import {
   IconInbox, IconInstagram, IconPeople, IconBuilding, IconZap,
   IconTemplate, IconSend, IconDb, IconCalendar,
 } from '../icons';
+import TemperatureTag from '../components/TemperatureTag';
+import { leadChip, formatCr } from '../pipeline';
 
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14 };
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
-const STATUS_STYLE = {
-  New:         { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' },
-  Prospecting: { bg: 'rgba(27,76,94,.13)', fg: 'var(--brand-primary)' },
-  Visits:      { bg: 'rgba(192,138,69,.18)', fg: '#8A5E22' },
-  Negotiation: { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
-  Closed:      { bg: 'rgba(115,167,111,.22)', fg: 'var(--brand-primary-dark)' },
-  Lost:        { bg: 'rgba(27,76,94,.05)', fg: 'rgba(27,76,94,.45)' },
-};
 const FLOW_STATUS = {
   active: { bg: 'rgba(115,167,111,.18)', fg: '#3B6B45', dot: '#3B6B45' },
   draft: { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.6)', dot: 'rgba(27,76,94,.4)' },
@@ -74,6 +68,61 @@ function QuickTile({ icon: Icon, tint, fg, count, label, onClick }) {
   );
 }
 
+// The two boards at a glance, plus what the deal side is actually worth.
+// Rupees rather than a lead count, because after the call that is the number
+// that matters and it is the whole point of splitting the pipelines.
+function PipelineSummary({ stats, onNav }) {
+  const boards = [
+    { key: 'lead', label: 'Leads',  sub: 'before the call', n: stats.leadPipeline },
+    { key: 'deal', label: 'Deals',  sub: 'after the call',  n: stats.dealPipeline },
+  ];
+  const tags = [
+    { k: 'hot',  label: 'Hot',  n: stats.hotLeads,  dot: '#C7503B' },
+    { k: 'warm', label: 'Warm', n: stats.warmLeads, dot: '#C08A45' },
+    { k: 'cold', label: 'Cold', n: stats.coldLeads, dot: 'rgba(27,76,94,.4)' },
+  ];
+  return (
+    <div style={{ ...CARD, padding: '15px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>PIPELINE</span>
+        <button onClick={() => onNav?.('crm')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700, color: 'var(--brand-muted)', padding: 0 }}>
+          Open CRM →
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {boards.map(b => (
+          <button key={b.key} onClick={() => onNav?.('crm')} style={{
+            textAlign: 'left', border: '1px solid rgba(27,76,94,.10)', background: 'var(--brand-tint-soft, #F2F8F2)',
+            borderRadius: 11, padding: '11px 12px', cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--brand-primary)', letterSpacing: '-.02em', lineHeight: 1.05 }}>{fmt(b.n)}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 3 }}>{b.label}</div>
+            <div style={{ fontSize: 10.5, color: 'rgba(27,76,94,.45)' }}>{b.sub}</div>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 11, borderTop: '1px solid rgba(27,76,94,.07)' }}>
+        <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>In play</span>
+        <strong style={{ fontSize: 19, fontWeight: 900, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>{formatCr(stats.dealValueOpen, { dash: '₹0 Cr' })}</strong>
+        {stats.dealValueBooked > 0 && (
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#3B6B45' }}>· {formatCr(stats.dealValueBooked)} booked</span>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 9 }}>
+        {tags.map(t => (
+          <span key={t.k} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'rgba(27,76,94,.6)', fontWeight: 600 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: t.dot }} />
+            {t.label} <strong style={{ color: 'var(--brand-primary)', fontWeight: 800 }}>{fmt(t.n)}</strong>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home({ onNav }) {
   const isMobile = useIsMobile();
   const [stats, setStats] = useState(null);
@@ -105,7 +154,7 @@ export default function Home({ onNav }) {
     { label: 'Leads In', count: stats.leadsIn, conv: null, accent: 'rgba(27,76,94,.55)' },
     { label: 'Conversations', count: stats.conversations, conv: pct(stats.conversations, stats.leadsIn), accent: 'var(--brand-primary)' },
     { label: 'Qualified', count: stats.qualified, conv: pct(stats.qualified, stats.conversations || stats.leadsIn), accent: 'var(--brand-muted)' },
-    { label: 'Won', count: stats.won, conv: pct(stats.won, stats.qualified || stats.leadsIn), accent: 'var(--brand-accent-soft)' },
+    { label: 'Booked', count: stats.won, conv: pct(stats.won, stats.qualified || stats.leadsIn), accent: 'var(--brand-accent-soft)' },
   ];
 
   // Quick Links tiles. Each one is a real count and a real destination; nothing
@@ -142,6 +191,8 @@ export default function Home({ onNav }) {
           </button>
         </div>
 
+        <PipelineSummary stats={stats} onNav={onNav} />
+
         <h2 style={{ margin: '18px 2px 12px', fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>Quick Links</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10 }}>
           {tiles.map(t => (
@@ -155,17 +206,19 @@ export default function Home({ onNav }) {
         <div style={{ ...CARD, padding: '6px 15px 8px' }}>
           {stats.recent.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)', padding: '12px 0' }}>No leads yet.</div>}
           {stats.recent.map(r => {
-            const st = STATUS_STYLE[r.status] || STATUS_STYLE.New;
             return (
               <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
                   <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 800, flexShrink: 0 }}>{(r.name || '?').charAt(0).toUpperCase()}</span>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                      <TemperatureTag temp={r.temperature} />
+                    </div>
                     <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>{r.source}</div>
                   </div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: st.fg, background: st.bg, padding: '3px 10px', borderRadius: 999, flexShrink: 0, marginLeft: 8 }}>{r.status}</span>
+                <span style={{ ...leadChip(r.status), flexShrink: 0, marginLeft: 8 }}>{r.status}</span>
               </div>
             );
           })}
@@ -190,6 +243,8 @@ export default function Home({ onNav }) {
       </header>
 
       <div style={{ padding: isMobile ? '16px 16px 28px' : '20px 30px 40px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        <PipelineSummary stats={stats} onNav={onNav} />
 
         {/* Quick Links. Same launcher as the phone, so the team learns one
             layout; desktop keeps the analytics below it rather than instead. */}
@@ -334,7 +389,6 @@ export default function Home({ onNav }) {
           <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', marginBottom: 14 }}>Recent Leads</div>
           {stats.recent.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No leads yet.</div>}
           {stats.recent.map(r => {
-            const st = STATUS_STYLE[r.status] || STATUS_STYLE.New;
             return (
               <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>

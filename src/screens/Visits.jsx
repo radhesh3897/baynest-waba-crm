@@ -3,6 +3,8 @@ import { getVisits, createVisit, updateVisit, getPeopleLive, getProperties } fro
 import { useIsMobile } from '../useIsMobile';
 import { IconPlus, IconCalendar, IconX } from '../icons';
 import SearchSelect from '../components/SearchSelect';
+import TemperatureTag from '../components/TemperatureTag';
+import { tempStyle } from '../pipeline';
 
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14 };
 
@@ -65,7 +67,8 @@ function ScheduleDrawer({ onClose, onSaved, isMobile }) {
   const leadOptions = useMemo(() => leads.map(l => ({
     value: l.id,
     label: l.profile_name || 'Unknown',
-    sub: l.phone && l.phone !== l.profile_name ? l.phone : '',
+    sub: [l.phone && l.phone !== l.profile_name ? l.phone : '', tempStyle(l.temperature).label]
+      .filter(Boolean).join(' · '),
   })), [leads]);
 
   const propertyOptions = useMemo(() => props.map(p => ({
@@ -208,7 +211,10 @@ export default function Visits() {
           <div key={v.id} style={{ ...CARD, padding: '14px 15px', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>{v.leadName}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>{v.leadName}</span>
+                  <TemperatureTag temp={v.leadTemperature} />
+                </div>
                 {v.propertyName && (
                   <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.6)', marginTop: 2 }}>
                     {v.propertyName}{v.propertyArea ? ` · ${v.propertyArea}` : ''}

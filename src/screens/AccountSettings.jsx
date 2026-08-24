@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  getPipelineStages, savePipelineStages, getTeamLive, addTeamMember, removeTeamMember,
+  getStageConfig, savePipelineStages, saveDealStages, getTeamLive, addTeamMember, removeTeamMember,
   getSettings, getTemplatesLive, getFlowList,
 } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
@@ -41,6 +41,7 @@ function ConnRow({ Icon, label, value, ok }) {
 export default function AccountSettings() {
   const isMobile = useIsMobile();
   const [stages, setStages] = useState([]);
+  const [dealStages, setDealStages] = useState([]);
   const [savingStages, setSavingStages] = useState(false);
   const [stageMsg, setStageMsg] = useState('');
   const [team, setTeam] = useState([]);
@@ -61,7 +62,7 @@ export default function AccountSettings() {
   }
 
   useEffect(() => {
-    getPipelineStages().then(setStages);
+    getStageConfig().then(c => { setStages(c.lead); setDealStages(c.deal); });
     getTeamLive().then(setTeam);
     pushStatus().then(setPush);
     (async () => {
@@ -75,24 +76,40 @@ export default function AccountSettings() {
     })();
   }, []);
 
-  function setStage(i, v) { setStages(st => st.map((s, idx) => idx === i ? v : s)); }
-  function removeStage(i) { setStages(st => st.filter((_, idx) => idx !== i)); }
-  function addStage() { setStages(st => [...st, '']); }
-  function moveStage(i, dir) {
-    setStages(st => {
+  // Both boards edit the same way, so the handlers take the setter rather than
+  // being written out twice.
+  const editors = (set) => ({
+    setStage: (i, v) => set(st => st.map((s, idx) => idx === i ? v : s)),
+    removeStage: (i) => set(st => st.filter((_, idx) => idx !== i)),
+    addStage: () => set(st => [...st, '']),
+    moveStage: (i, dir) => set(st => {
       const j = i + dir;
       if (j < 0 || j >= st.length) return st;
       const next = [...st];
       [next[i], next[j]] = [next[j], next[i]];
       return next;
-    });
-  }
+    }),
+  });
+  const leadEd = editors(setStages);
+  const dealEd = editors(setDealStages);
+
   async function saveStages() {
     setSavingStages(true); setStageMsg('');
-    const res = await savePipelineStages(stages);
+    const lead = stages.map(s => s.trim()).filter(Boolean);
+    const deal = dealStages.map(s => s.trim()).filter(Boolean);
+    // A name in both lists would make the pipeline a contact belongs to
+    // ambiguous, and the DB derives the board from the stage name.
+    const clash = lead.filter(s => deal.includes(s));
+    if (clash.length) {
+      setSavingStages(false);
+      setStageMsg(`"${clash[0]}" is in both boards. Stage names must be unique across the two.`);
+      setTimeout(() => setStageMsg(''), 4000);
+      return;
+    }
+    const [a, b] = await Promise.all([savePipelineStages(lead), saveDealStages(deal)]);
     setSavingStages(false);
-    if (res.ok) { setStageMsg('Pipeline saved.'); setStages(stages.map(s => s.trim()).filter(Boolean)); }
-    else setStageMsg(res.error || 'Could not save.');
+    if (a.ok && b.ok) { setStageMsg('Pipelines saved.'); setStages(lead); setDealStages(deal); }
+    else setStageMsg(a.error || b.error || 'Could not save.');
     setTimeout(() => setStageMsg(''), 2500);
   }
 
@@ -116,26 +133,39 @@ export default function AccountSettings() {
 
       <div style={{ padding: isMobile ? '6px 16px 28px' : '6px 30px 40px', maxWidth: 760 }}>
 
-        {/* ── CRM SETTINGS: pipeline editor ── */}
+        {/* ── CRM SETTINGS: both pipeline editors ── */}
         <div style={CARD}>
-          <SectionHead Icon={IconDb} title="CRM pipeline" sub="The lead stages shown as columns in your CRM Kanban." />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {stages.map((s, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(27,76,94,.4)', width: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
-                <input value={s} onChange={e => setStage(i, e.target.value)} placeholder="Stage name" style={{ ...inputStyle, flex: 1 }} />
-                <button onClick={() => moveStage(i, -1)} disabled={i === 0} title="Move up" style={{ ...arrowBtn, opacity: i === 0 ? 0.35 : 1 }}>↑</button>
-                <button onClick={() => moveStage(i, 1)} disabled={i === stages.length - 1} title="Move down" style={{ ...arrowBtn, opacity: i === stages.length - 1 ? 0.35 : 1 }}>↓</button>
-                <button onClick={() => removeStage(i)} title="Remove stage" style={{ width: 34, height: 34, flexShrink: 0, border: 'none', background: '#FDECEA', borderRadius: 8, cursor: 'pointer', color: '#C7503B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
+          <SectionHead Icon={IconDb} title="CRM pipelines" sub="Two boards: leads before the call, deals after it. A contact sits on whichever board its stage belongs to." />
+
+          {[
+            { key: 'lead', title: 'Lead pipeline', blurb: 'Before the call. No money attached yet.', list: stages, ed: leadEd },
+            { key: 'deal', title: 'Deal pipeline', blurb: 'After the call. Every contact here carries a deal value.', list: dealStages, ed: dealEd },
+          ].map(board => (
+            <div key={board.key} style={{ marginBottom: 22 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{board.title}</div>
+              <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', margin: '2px 0 10px' }}>{board.blurb}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {board.list.map((s, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(27,76,94,.4)', width: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <input value={s} onChange={e => board.ed.setStage(i, e.target.value)} placeholder="Stage name" style={{ ...inputStyle, flex: 1 }} />
+                    <button onClick={() => board.ed.moveStage(i, -1)} disabled={i === 0} title="Move up" style={{ ...arrowBtn, opacity: i === 0 ? 0.35 : 1 }}>↑</button>
+                    <button onClick={() => board.ed.moveStage(i, 1)} disabled={i === board.list.length - 1} title="Move down" style={{ ...arrowBtn, opacity: i === board.list.length - 1 ? 0.35 : 1 }}>↓</button>
+                    <button onClick={() => board.ed.removeStage(i)} title="Remove stage" style={{ width: 34, height: 34, flexShrink: 0, border: 'none', background: '#FDECEA', borderRadius: 8, cursor: 'pointer', color: '#C7503B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <button onClick={addStage} style={{ marginTop: 10, border: '1px dashed rgba(27,76,94,.3)', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconPlus size={14} /> Add stage</button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-            <button onClick={saveStages} disabled={savingStages} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: savingStages ? 'default' : 'pointer', opacity: savingStages ? 0.6 : 1 }}>{savingStages ? 'Saving…' : 'Save pipeline'}</button>
+              <button onClick={board.ed.addStage} style={{ marginTop: 10, border: '1px dashed rgba(27,76,94,.3)', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconPlus size={14} /> Add stage</button>
+            </div>
+          ))}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+            <button onClick={saveStages} disabled={savingStages} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: savingStages ? 'default' : 'pointer', opacity: savingStages ? 0.6 : 1 }}>{savingStages ? 'Saving…' : 'Save pipelines'}</button>
             {stageMsg && <span style={{ fontSize: 12.5, fontWeight: 600, color: stageMsg.includes('saved') ? '#3B6B45' : '#C7503B' }}>{stageMsg}</span>}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>Renaming a stage won't move leads already in the old one. Keep existing names if you have active leads, or re-drag them after.</div>
+          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>
+            A stage name decides which board a contact appears on, so the same name cannot be used in both lists. Renaming a stage won't move leads already in the old one — keep existing names if you have active leads, or re-drag them after.
+          </div>
         </div>
 
         {/* ── TEAM ── */}

@@ -4,20 +4,10 @@ import { IconSearch, IconPlus, IconX, IconMail, IconPhone, IconWhatsApp, IconZap
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
+import TemperatureTag from '../components/TemperatureTag';
+import PipelineMover from '../components/PipelineMover';
+import { leadChip, formatCr, pipelineOf } from '../pipeline';
 
-const LEAD_STATUS_STYLE = {
-  New:  { bg: 'rgba(27,76,94,.07)',   fg: 'var(--brand-primary)' },
-  Cool: { bg: 'rgba(27,76,94,.11)',   fg: 'var(--brand-primary)' },
-  Warm: { bg: 'rgba(27,76,94,.16)',   fg: 'var(--brand-primary)' },
-  Hot:  { bg: 'var(--brand-primary)',              fg: 'var(--app-bg)' },
-  Won:  { bg: 'rgba(115,167,111,.22)', fg: 'var(--brand-primary-dark)' },
-  Lost: { bg: 'rgba(27,76,94,.05)',   fg: 'rgba(27,76,94,.45)' },
-  Cold: { bg: 'rgba(27,76,94,.09)',   fg: 'var(--brand-primary)' },
-};
-function leadChip(status) {
-  const c = LEAD_STATUS_STYLE[status] || { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' };
-  return { background: c.bg, color: c.fg, fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 999 };
-}
 
 export default function People() {
   const isMobile = useIsMobile();
@@ -150,6 +140,7 @@ export default function People() {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                   <span style={{ width: 30, height: 30, borderRadius: '50%', background: p.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{p.profile_name.charAt(0)}</span>
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profile_name}</span>
+                  <TemperatureTag temp={p.temperature} override={p.temperature_override} />
                 </span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.phone}</span>
                 <span><span style={leadChip(p.lead_status)}>{p.lead_status}</span></span>
@@ -181,7 +172,14 @@ export default function People() {
             <div style={{ width: 60, height: 60, borderRadius: '50%', background: sel.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, margin: '0 auto 10px' }}>
               {sel.profile_name.charAt(0)}
             </div>
-            <div style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{sel.profile_name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{sel.profile_name}</span>
+              <TemperatureTag
+                temp={sel.temperature} override={sel.temperature_override}
+                contactId={sel.id} editable size="md"
+                onChange={(t, o) => setContacts(cs => cs.map(c => c.id === sel.id ? { ...c, temperature: t, temperature_override: o } : c))}
+              />
+            </div>
             <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{sel.jobTitle !== '-' ? `${sel.jobTitle} · ` : ''}{sel.company !== '-' ? sel.company : ''}</div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 13 }}>
               {[{ Icon: IconMail }, { Icon: IconPhone }, { Icon: IconWhatsApp }, { Icon: IconZap }].map(({ Icon }, i) => (
@@ -196,10 +194,26 @@ export default function People() {
                 <div style={{ fontSize: 19, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 2 }}>{sel.lead_score}</div>
               </div>
               <div style={{ flex: 1, background: '#F2F8F2', border: '1px solid rgba(27,76,94,.10)', borderRadius: 10, padding: '8px 10px' }}>
-                <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>STATUS</div>
-                <div style={{ marginTop: 4 }}><span style={leadChip(sel.lead_status)}>{sel.lead_status}</span></div>
+                <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>
+                  {pipelineOf(sel.lead_status) === 'deal' ? 'DEAL VALUE' : 'STATUS'}
+                </div>
+                {pipelineOf(sel.lead_status) === 'deal'
+                  ? <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 3 }}>{formatCr(sel.deal_value_cr, { dash: 'Not set' })}</div>
+                  : <div style={{ marginTop: 4 }}><span style={leadChip(sel.lead_status)}>{sel.lead_status}</span></div>}
               </div>
             </div>
+          </div>
+
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
+            <PipelineMover
+              contactId={sel.id}
+              stage={sel.lead_status}
+              dealValue={sel.deal_value_cr}
+              dealValueIsManual={sel.deal_value_is_manual}
+              compact
+              onMoved={(s, p) => setContacts(cs => cs.map(c => c.id === sel.id ? { ...c, lead_status: s, pipeline: p } : c))}
+              onValueChange={(v, m) => setContacts(cs => cs.map(c => c.id === sel.id ? { ...c, deal_value_cr: v, deal_value_is_manual: m } : c))}
+            />
           </div>
           <div style={{ padding: '14px 18px 24px' }}>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'var(--brand-primary)', marginBottom: 10 }}>CONTACT DETAILS</div>

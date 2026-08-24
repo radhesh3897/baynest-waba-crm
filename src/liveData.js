@@ -1,6 +1,7 @@
 // Supabase-backed data layer for the live Inbox.
 // Maps raw DB rows into the shape the UI components already expect.
 import { supabase } from './supabaseClient';
+import { LEAD_STAGES, DEAL_STAGES, TEMPERATURES } from './pipeline';
 
 const AVATAR_COLORS = ['#356E63', '#2E7BA8', '#7A5BB9', '#B6743A', '#C7503B', '#3B6B45', '#15514B', '#4A6EA8'];
 
@@ -66,6 +67,11 @@ function mapContact(c) {
     phone: c.wa_id || '',
     lead_score: c.lead_score ?? 0,
     lead_status: c.lead_status || 'New',
+    pipeline: c.pipeline || 'lead',
+    temperature: c.temperature || 'cold',
+    temperature_override: c.temperature_override || null,
+    deal_value_cr: c.deal_value_cr ?? null,
+    deal_value_is_manual: !!c.deal_value_is_manual,
     source: c.source || '-',
     attributes: c.attributes || {},
     color: colorFor(c.wa_id || c.ig_id || c.id),
@@ -502,6 +508,8 @@ async function resolveAudience(filters) {
   if (filters.date_to) q = q.lte('created_at', filters.date_to + 'T23:59:59');
   if (filters.qualifications?.length) q = q.in('qualification', filters.qualifications);
   if (filters.lead_statuses?.length) q = q.in('lead_status', filters.lead_statuses);
+  if (filters.pipelines?.length) q = q.in('pipeline', filters.pipelines);
+  if (filters.temperatures?.length) q = q.in('temperature', filters.temperatures);
   // Lead-age segment: 'old' = the historical/imported list; 'new' = everything else.
   if (filters.segment === 'old') q = q.eq('attributes->>imported', 'true');
   else if (filters.segment === 'new') q = q.or('attributes->>imported.is.null,attributes->>imported.neq.true');
@@ -792,6 +800,8 @@ export async function addContactLive({ name, phone, email, company, source }) {
 const EMPTY_STATS = {
   leadsIn: 0, leadsMonth: 0, conversations: 0, qualified: 0, won: 0,
   sent: 0, received: 0, flowRuns: 0, activeFlows: 0, completedRuns: 0,
+  hotLeads: 0, warmLeads: 0, coldLeads: 0,
+  leadPipeline: 0, dealPipeline: 0, dealValueOpen: 0, dealValueBooked: 0,
   recent: [], flows: [],
 };
 export async function getHomeStatsLive() {
@@ -802,6 +812,9 @@ export async function getHomeStatsLive() {
     ...data,
     recent: (data.recent || []).map(c => ({
       id: c.id, name: c.name, source: c.source, status: c.status,
+      temperature: c.temperature || 'cold',
+      pipeline: c.pipeline || 'lead',
+      deal_value_cr: c.deal_value_cr ?? null,
       received: exactTime(c.created_at),
     })),
     flows: data.flows || [],
@@ -819,16 +832,72 @@ export async function saveSettings(patch) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-export const DEFAULT_STAGES = ['New', 'Cool', 'Warm', 'Hot', 'Won', 'Lost'];
+export const DEFAULT_STAGES = LEAD_STAGES;
 export async function getPipelineStages() {
   const s = await getSettings();
   const st = s?.pipeline_stages;
-  return Array.isArray(st) && st.length ? st : DEFAULT_STAGES;
+  return Array.isArray(st) && st.length ? st : LEAD_STAGES;
 }
 export async function savePipelineStages(stages) {
   const clean = (stages || []).map(s => String(s).trim()).filter(Boolean);
   if (!clean.length) return { ok: false, error: 'Keep at least one stage.' };
   return saveSettings({ pipeline_stages: clean });
+}
+export async function getDealStages() {
+  const s = await getSettings();
+  const st = s?.deal_stages;
+  return Array.isArray(st) && st.length ? st : DEAL_STAGES;
+}
+export async function saveDealStages(stages) {
+  const clean = (stages || []).map(s => String(s).trim()).filter(Boolean);
+  if (!clean.length) return { ok: false, error: 'Keep at least one stage.' };
+  return saveSettings({ deal_stages: clean });
+}
+// Both boards in one round trip — every screen that renders a stage needs both
+// lists, if only to work out which board a contact belongs to.
+export async function getStageConfig() {
+  const s = await getSettings();
+  const lead = Array.isArray(s?.pipeline_stages) && s.pipeline_stages.length ? s.pipeline_stages : LEAD_STAGES;
+  const deal = Array.isArray(s?.deal_stages)     && s.deal_stages.length     ? s.deal_stages     : DEAL_STAGES;
+  return { lead, deal };
+}
+
+// ─── Temperature + deal value ───────────────────────────────────────────────
+// `temperature` itself is a generated column, so we only ever write the
+// override. Passing null hands the lead back to the automatic rule.
+export async function setLeadTemperature(id, temp) {
+  const v = temp === null || temp === undefined || temp === 'auto' ? null : String(temp).toLowerCase();
+  if (v !== null && !TEMPERATURES.includes(v)) return { ok: false, error: 'Not a valid tag.' };
+  const { data, error } = await supabase.from('contacts')
+    .update({ temperature_override: v }).eq('id', id)
+    .select('temperature, temperature_override').maybeSingle();
+  return error ? { ok: false, error: error.message } : { ok: true, ...data };
+}
+
+// Setting a number pins it; passing null lets the property/budget rule take
+// over again on the next write.
+export async function setDealValue(id, cr) {
+  const manual = cr !== null && cr !== undefined && String(cr).trim() !== '';
+  const n = manual ? Number(String(cr).replace(/[^\d.]/g, '')) : null;
+  if (manual && (!Number.isFinite(n) || n < 0)) return { ok: false, error: 'Enter a number in crore.' };
+  const patch = manual
+    ? { deal_value_cr: n, deal_value_is_manual: true }
+    : { deal_value_is_manual: false, updated_at: new Date().toISOString() };
+  const { data, error } = await supabase.from('contacts')
+    .update(patch).eq('id', id)
+    .select('deal_value_cr, deal_value_is_manual').maybeSingle();
+  return error ? { ok: false, error: error.message } : { ok: true, ...data };
+}
+
+// Move a contact between boards. `lead_status` is authoritative — the DB
+// trigger derives `pipeline` from it — so this is a stage write with a guard
+// that the stage actually belongs to the board being asked for.
+export async function moveLeadToPipeline(id, pipeline, stage) {
+  const { lead, deal } = await getStageConfig();
+  const list = pipeline === 'deal' ? deal : lead;
+  const target = list.includes(stage) ? stage : list[0];
+  const { error } = await supabase.from('contacts').update({ lead_status: target }).eq('id', id);
+  return error ? { ok: false, error: error.message } : { ok: true, lead_status: target, pipeline };
 }
 
 // ─── Team roster ────────────────────────────────────────────────────────────────
@@ -879,6 +948,11 @@ export async function getPeopleLive() {
       jobTitle: c.job_title || '-',
       lead_status: c.lead_status || 'New',
       lead_score: c.lead_score ?? 0,
+      pipeline: c.pipeline || 'lead',
+      temperature: c.temperature || 'cold',
+      temperature_override: c.temperature_override || null,
+      deal_value_cr: c.deal_value_cr ?? null,
+      deal_value_is_manual: !!c.deal_value_is_manual,
       source: c.source || '-',
       attributes: c.attributes || {},
       color: colorFor(c.wa_id || c.id),
@@ -897,7 +971,7 @@ export async function getPeopleLive() {
 export async function getLeadsOverview() {
   const { data, error } = await supabase
     .from('contacts')
-    .select('id, profile_name, wa_id, source_type, ctwa_clid, form_id, qualification, created_at, attributes, fb_forms(name)')
+    .select('id, profile_name, wa_id, source_type, ctwa_clid, form_id, qualification, created_at, attributes, temperature, lead_status, pipeline, deal_value_cr, fb_forms(name)')
     .order('created_at', { ascending: false });
   if (error) { console.error('getLeadsOverview', error); return []; }
   return (data || []).map(c => {
@@ -914,6 +988,10 @@ export async function getLeadsOverview() {
       source,                       // 'ctwa' | 'instant_form' | 'unknown'
       funnel,
       type: c.qualification || 'Intake',
+      temperature: c.temperature || 'cold',
+      lead_status: c.lead_status || 'New',
+      pipeline: c.pipeline || 'lead',
+      deal_value_cr: c.deal_value_cr ?? null,
       created_at: c.created_at,
       created_rel: relativeTime(c.created_at),
     };
@@ -1219,7 +1297,7 @@ export async function saveLeadAnswers(contactId, attributes) {
 export async function getVisits(scope = 'upcoming') {
   let q = supabase
     .from('visits')
-    .select('*, contacts(id, profile_name, wa_id, ig_username), properties(id, name, area)');
+    .select('*, contacts(id, profile_name, wa_id, ig_username, temperature, lead_status, deal_value_cr), properties(id, name, area)');
   const nowIso = new Date().toISOString();
   if (scope === 'upcoming') q = q.gte('scheduled_at', nowIso).eq('status', 'scheduled').order('scheduled_at', { ascending: true });
   else if (scope === 'past') q = q.lt('scheduled_at', nowIso).order('scheduled_at', { ascending: false });
@@ -1230,6 +1308,8 @@ export async function getVisits(scope = 'upcoming') {
   return (data || []).map(v => ({
     ...v,
     leadName: v.contacts?.profile_name || v.contacts?.wa_id || (v.contacts?.ig_username ? `@${v.contacts.ig_username}` : 'Unknown'),
+    leadTemperature: v.contacts?.temperature || 'cold',
+    leadStage: v.contacts?.lead_status || 'New',
     leadPhone: v.contacts?.wa_id || '',
     propertyName: v.properties?.name || '',
     propertyArea: v.properties?.area || '',

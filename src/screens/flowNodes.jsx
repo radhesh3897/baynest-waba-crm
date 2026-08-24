@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Handle, Position, useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
 import { getCachedTemplates as getFlowTemplates, getCachedTemplateButtons as getTemplateButtons } from '../liveData';
 import { IconWhatsApp, IconClock, IconBranch, IconPeople, IconFlow, IconInbox, IconFacebook, IconTemplate, IconDb, IconInstagram } from '../icons';
+import { LEAD_STAGES, DEAL_STAGES } from '../pipeline';
 
 const FOREST = 'var(--brand-primary)';
 const LIME = 'var(--brand-accent-soft)';
@@ -300,8 +301,15 @@ export function ActionNode({ id, data }) {
     <Shell nodeId={id} icon={IconDb} title={ACTION_LABELS[data.action] || 'Action'} tint="#F3ECFB">
       <Handle type="target" position={Position.Left} id="in" style={targetStyle} />
       {data.action === 'status' && (
-        <select className="nodrag" value={data.value || 'Hot'} onChange={e => updateNodeData(id, { value: e.target.value })} style={selectStyle}>
-          {['New', 'Cool', 'Warm', 'Hot', 'Won', 'Lost'].map(s => <option key={s} value={s}>{s}</option>)}
+        // Grouped by board: picking a Deal stage here moves the lead across
+        // pipelines, which is worth seeing before you choose it.
+        <select className="nodrag" value={data.value || 'Contacted'} onChange={e => updateNodeData(id, { value: e.target.value })} style={selectStyle}>
+          <optgroup label="Leads — before the call">
+            {LEAD_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+          </optgroup>
+          <optgroup label="Deals — after the call">
+            {DEAL_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+          </optgroup>
         </select>
       )}
       {data.action === 'score' && (

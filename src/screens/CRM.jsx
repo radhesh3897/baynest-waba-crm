@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
-import { getFormsLive, getPeopleLive, updateLeadStatusLive, addLeadLive, getPipelineStages } from '../liveData';
+import { useState, useEffect, useMemo } from 'react';
+import { getFormsLive, getPeopleLive, updateLeadStatusLive, addLeadLive, getStageConfig } from '../liveData';
 import { IconPlus, IconSearch, IconChevDown, IconX, IconMail, IconPhone, IconWhatsApp, IconZap, IconEdit } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes from '../components/ContactNotes';
 import LeadCustomFields from '../components/LeadCustomFields';
 import LeadAnswersEditable from '../components/LeadAnswersEditable';
+import LeadProperties from '../components/LeadProperties';
+import TemperatureTag from '../components/TemperatureTag';
+import PipelineMover from '../components/PipelineMover';
+import {
+  LEAD_STAGES, DEAL_STAGES, PIPELINES, DEAD_STAGES, WON_STAGES,
+  pipelineOf, formatCr, sumDealValue, openDealValue, TEMPERATURES, tempStyle, leadChip,
+} from '../pipeline';
 
 // ── Pipeline stages ──────────────────────────────────────────────────────────
-const STAGES = ['New', 'Prospecting', 'Visits', 'Negotiation', 'Closed', 'Lost'];
+const STAGES = LEAD_STAGES;
 
 const LEAD_SOURCES = [
   { key: 'Meta Lead Ads', label: 'Meta Ads', icon: '📘' },
@@ -18,28 +25,25 @@ const LEAD_SOURCES = [
   { key: 'Manual',        label: 'Manual', icon: '✍️' },
 ];
 
+// Both boards run cool-to-committed left to right: faint at New, solid forest
+// by Negotiation, green at Booked, and greyed out once a lead is dead.
 const STAGE_STYLE = {
-  New:         { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.25)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
-  Prospecting: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.45)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
-  Visits:      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.18)' },
-  Negotiation: { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-primary)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.13)' },
-  Closed:      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#3B6B45', fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
-  Lost:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
+  // Lead pipeline
+  New:              { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.25)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
+  Attempted:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.35)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
+  Contacted:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.5)',  fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' },
+  'Follow Up':      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.18)' },
+  Qualified:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#3B6B45', fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
+  Junk:             { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
+  // Deal pipeline
+  'Visit Scheduled': { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(192,138,69,.55)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.16)' },
+  Visited:          { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.20)' },
+  'Offer Made':     { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#C08A45', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.24)' },
+  Negotiation:      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-primary)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.13)' },
+  Booked:           { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#3B6B45', fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
+  Lost:             { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
 };
 
-const LEAD_STATUS_STYLE = {
-  New:         { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' },
-  Prospecting: { bg: 'rgba(27,76,94,.13)', fg: 'var(--brand-primary)' },
-  Visits:      { bg: 'rgba(192,138,69,.18)', fg: '#8A5E22' },
-  Negotiation: { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
-  Closed:      { bg: 'rgba(115,167,111,.22)', fg: '#3B6B45' },
-  Lost:        { bg: 'rgba(27,76,94,.05)', fg: 'rgba(27,76,94,.45)' },
-};
-
-function leadChip(status) {
-  const c = LEAD_STATUS_STYLE[status] || { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' };
-  return { display: 'inline-flex', alignItems: 'center', gap: 5, background: c.bg, color: c.fg, fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 999 };
-}
 // Style for a stage column — falls back gracefully for custom stage names.
 function stageStyle(stage) {
   return STAGE_STYLE[stage] || { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.45)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' };
@@ -52,7 +56,7 @@ function scoreColor(score) {
 }
 
 // ── Contact detail pop-up (centered modal) ────────────────────────────────────
-function ContactPanel({ contact, formDef, onClose }) {
+function ContactPanel({ contact, formDef, onClose, onUpdate }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(480px,96vw)', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(14,58,53,.3)' }}>
@@ -65,7 +69,17 @@ function ContactPanel({ contact, formDef, onClose }) {
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: contact.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 10px' }}>
             {contact.profile_name?.charAt(0)}
           </div>
-          <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</div>
+          {/* Name and tag travel together, here as everywhere else. This is the
+              one place the tag is editable — Manish has the lead open and can
+              see the answers the automatic call was made from. */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</span>
+            <TemperatureTag
+              temp={contact.temperature} override={contact.temperature_override}
+              contactId={contact.id} editable size="md"
+              onChange={(t, o) => onUpdate?.(contact.id, { temperature: t, temperature_override: o })}
+            />
+          </div>
           <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '-' ? `${contact.jobTitle} · ` : ''}{contact.company !== '-' ? contact.company : ''}</div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 13 }}>
             <a href={`https://wa.me/${String(contact.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" title="Open WhatsApp chat"
@@ -74,7 +88,20 @@ function ContactPanel({ contact, formDef, onClose }) {
             </a>
           </div>
         </div>
-        <div style={{ padding: '16px 20px 6px' }}>
+        {/* Move between boards. First thing under the header because on a phone
+            this is the reason Manish opened the lead at all. */}
+        <div style={{ padding: '16px 20px 4px' }}>
+          <PipelineMover
+            contactId={contact.id}
+            stage={contact.lead_status}
+            dealValue={contact.deal_value_cr}
+            dealValueIsManual={contact.deal_value_is_manual}
+            onMoved={(s, p) => onUpdate?.(contact.id, { lead_status: s, pipeline: p })}
+            onValueChange={(v, m) => onUpdate?.(contact.id, { deal_value_cr: v, deal_value_is_manual: m })}
+          />
+        </div>
+
+        <div style={{ padding: '16px 20px 6px', borderTop: '1px solid rgba(27,76,94,.08)', marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'var(--brand-primary)', marginBottom: 10 }}>CONTACT DETAILS</div>
           {[
             { label: 'Phone',   value: contact.phone },
@@ -88,7 +115,12 @@ function ContactPanel({ contact, formDef, onClose }) {
           <LeadAnswersEditable contactId={contact.id} attributes={contact.attributes} />
           {/* Same tags and custom fields the Inbox panel edits, so whatever the
               team captures mid-chat is here when the lead is opened from CRM. */}
+          {/* Which projects they are chasing — this is what sets the deal value
+              above, so it belongs on the same screen as it. */}
           <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 4 }}>
+            <LeadProperties contactId={contact.id} lead={contact} />
+          </div>
+          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
             <LeadCustomFields contactId={contact.id} />
           </div>
           <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
@@ -113,7 +145,7 @@ function FieldRow({ label, value }) {
 }
 
 // ── Kanban card ───────────────────────────────────────────────────────────────
-function KanbanCard({ lead, formDef, onDragStart, onClick }) {
+function KanbanCard({ lead, formDef, onDragStart, onClick, showValue = false }) {
   const preview = (formDef?.cardFields || []).map(key => {
     const field = formDef.fields.find(f => f.key === key);
     const val = (lead.attributes || {})[key];
@@ -131,8 +163,11 @@ function KanbanCard({ lead, formDef, onDragStart, onClick }) {
         <div style={{ width: 28, height: 28, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
           {lead.profile_name?.charAt(0)}
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
+            <TemperatureTag temp={lead.temperature} override={lead.temperature_override} />
+          </div>
           {lead.company !== '-' && <div style={{ fontSize: 10.5, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company}</div>}
         </div>
       </div>
@@ -142,9 +177,17 @@ function KanbanCard({ lead, formDef, onDragStart, onClick }) {
           <span style={{ color: 'var(--brand-primary)', fontWeight: 700 }}>{p.val}</span>
         </div>
       ))}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(27,76,94,.07)' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(27,76,94,.4)', background: 'rgba(27,76,94,.06)', padding: '2px 7px', borderRadius: 999 }}>Meta Ads</span>
-        <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor(lead.lead_score) }}>{lead.lead_score}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(27,76,94,.07)' }}>
+        {/* On the Deal board the money is the headline; the lead score stops
+            mattering once someone has taken the call. */}
+        {showValue ? (
+          <span style={{ fontSize: 13, fontWeight: 800, color: lead.deal_value_cr ? 'var(--brand-primary)' : 'rgba(27,76,94,.3)' }}>
+            {formatCr(lead.deal_value_cr, { dash: 'No value' })}
+          </span>
+        ) : (
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(27,76,94,.4)', background: 'rgba(27,76,94,.06)', padding: '2px 7px', borderRadius: 999 }}>Meta Ads</span>
+        )}
+        <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor(lead.lead_score), flexShrink: 0 }}>{lead.lead_score}</span>
       </div>
     </div>
   );
@@ -316,18 +359,31 @@ export default function CRM() {
   const [selContact, setSelContact] = useState(null);
   const [showFormDropdown, setShowFormDropdown] = useState(false);
   const [showAddLead, setShowAddLead] = useState(false);
-  const [stages, setStages] = useState(STAGES);
+  const [cfg, setCfg] = useState({ lead: LEAD_STAGES, deal: DEAL_STAGES });
+  const [pipeline, setPipeline] = useState('lead');
+  const [tempFilter, setTempFilter] = useState('all');
 
   async function load() {
-    const [f, l, st] = await Promise.all([getFormsLive(), getPeopleLive(), getPipelineStages()]);
-    setForms(f); setAllLeads(l); setStages(st); setLoading(false);
+    const [f, l, st] = await Promise.all([getFormsLive(), getPeopleLive(), getStageConfig()]);
+    setForms(f); setAllLeads(l); setCfg(st); setLoading(false);
   }
   useEffect(() => { load(); }, []);
 
   const formDef = forms.find(f => f.id === formId) || null;
+  const stages = pipeline === 'deal' ? cfg.deal : cfg.lead;
 
-  const leads = allLeads.filter(l => {
+  // Patch one lead in place rather than refetching all 92 — the detail panel
+  // stays open and the card just re-renders where it is.
+  function patchLead(id, patch) {
+    setAllLeads(prev => prev.map(l => l.id === id ? { ...l, ...patch } : l));
+    setSelContact(c => (c && c.id === id ? { ...c, ...patch } : c));
+  }
+
+  // Everything matching the current form + search, before the board split. The
+  // board toggle counts read off this so both numbers stay honest.
+  const matching = useMemo(() => allLeads.filter(l => {
     if (formId && l.form_uuid !== formId) return false;
+    if (tempFilter !== 'all' && l.temperature !== tempFilter) return false;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       if (!(l.profile_name || '').toLowerCase().includes(q) &&
@@ -335,7 +391,21 @@ export default function CRM() {
           !(l.phone || '').toLowerCase().includes(q)) return false;
     }
     return true;
-  });
+  }), [allLeads, formId, search, tempFilter]);
+
+  const counts = useMemo(() => ({
+    lead: matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === 'lead').length,
+    deal: matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === 'deal').length,
+  }), [matching, cfg.deal]);
+
+  const leads = useMemo(
+    () => matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === pipeline),
+    [matching, pipeline, cfg.deal]);
+
+  // Only what is still in play. Booked has already landed and Lost never will.
+  const boardValue = useMemo(() => openDealValue(leads), [leads]);
+  const bookedValue = useMemo(
+    () => sumDealValue(leads.filter(l => WON_STAGES.includes(l.lead_status))), [leads]);
 
   async function handleAddLead(leadData) {
     const res = await addLeadLive(leadData);
@@ -353,8 +423,9 @@ export default function CRM() {
     const lead = allLeads.find(l => l.id === dragId);
     if (lead && lead.lead_status !== stage) {
       updateLeadStatusLive(dragId, stage);
-      setAllLeads(prev => prev.map(l => l.id === dragId ? { ...l, lead_status: stage } : l));
-      if (selContact?.id === dragId) setSelContact(c => ({ ...c, lead_status: stage }));
+      // The DB derives `pipeline` from the stage; mirror that here so the card
+      // does not flicker onto the wrong board before the next load.
+      patchLead(dragId, { lead_status: stage, pipeline: pipelineOf(stage, cfg.deal) });
     }
     setDragId(null);
     setDragOver(null);
@@ -371,6 +442,28 @@ export default function CRM() {
           <div>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.45)' }}>COLLECTIONS</div>
             <h1 style={{ margin: '5px 0 0', fontSize: 22, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>CRM</h1>
+          </div>
+
+          {/* Board switch. Two genuinely separate funnels, so this sits at the
+              top rather than hiding as a filter. */}
+          <div style={{ display: 'flex', gap: 3, background: '#fff', border: '1px solid rgba(27,76,94,.14)', borderRadius: 12, padding: 3, flex: isMobile ? '1 1 100%' : 'none', order: isMobile ? 3 : 0 }}>
+            {PIPELINES.map(p => {
+              const on = pipeline === p.key;
+              return (
+                <button key={p.key} onClick={() => { setPipeline(p.key); setSelContact(null); }}
+                  style={{
+                    flex: isMobile ? 1 : 'none', padding: '7px 16px', borderRadius: 9, border: 'none',
+                    cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.3, textAlign: 'center',
+                    background: on ? 'var(--brand-primary)' : 'transparent',
+                    color: on ? '#EAF6E4' : 'rgba(27,76,94,.65)',
+                  }}>
+                  <span style={{ display: 'block', fontSize: 13, fontWeight: on ? 800 : 600 }}>
+                    {p.label} <span style={{ opacity: .65, fontWeight: 700 }}>{counts[p.key]}</span>
+                  </span>
+                  <span style={{ display: 'block', fontSize: 9.5, fontWeight: 600, opacity: on ? .7 : .5 }}>{p.blurb}</span>
+                </button>
+              );
+            })}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
 
@@ -412,8 +505,41 @@ export default function CRM() {
           </div>
         </div>
 
+        {/* Tag filter + what the board is worth */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 12, flexWrap: 'wrap' }}>
+          {[{ key: 'all', label: 'All' }, ...TEMPERATURES.map(t => ({ key: t, label: tempStyle(t).label }))].map(f => {
+            const on = tempFilter === f.key;
+            const n = f.key === 'all'
+              ? matching.length
+              : matching.filter(l => l.temperature === f.key).length;
+            const s = f.key === 'all' ? null : tempStyle(f.key);
+            return (
+              <button key={f.key} onClick={() => setTempFilter(f.key)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
+                padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+                border: '1px solid ' + (on ? 'var(--brand-primary)' : 'rgba(27,76,94,.16)'),
+                background: on ? 'var(--brand-primary)' : '#fff',
+                color: on ? '#EAF6E4' : 'rgba(27,76,94,.7)',
+              }}>
+                {s && <span style={{ width: 7, height: 7, borderRadius: '50%', background: on ? '#EAF6E4' : s.dot }} />}
+                {f.label} <span style={{ opacity: .65 }}>{n}</span>
+              </button>
+            );
+          })}
+
+          <span style={{ flex: 1 }} />
+
+          {pipeline === 'deal' && (
+            <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 7, fontSize: 12, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>
+              <span>In play</span>
+              <strong style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{formatCr(boardValue)}</strong>
+              {bookedValue > 0 && <span style={{ color: '#3B6B45', fontWeight: 700 }}>· {formatCr(bookedValue)} booked</span>}
+            </span>
+          )}
+        </div>
+
         {/* Form field pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 14, borderBottom: '1px solid rgba(27,76,94,.09)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 14, borderBottom: '1px solid rgba(27,76,94,.09)', flexWrap: 'wrap' }}>
           {formDef ? (
             <>
               <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600, marginRight: 4 }}>Form fields:</span>
@@ -424,7 +550,9 @@ export default function CRM() {
           ) : (
             <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>All leads across every form</span>
           )}
-          <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', marginLeft: 6 }}>{leads.length} lead{leads.length === 1 ? '' : 's'}</span>
+          <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', marginLeft: 6 }}>
+            {leads.length} {pipeline === 'deal' ? 'deal' : 'lead'}{leads.length === 1 ? '' : 's'} on this board
+          </span>
         </div>
       </header>
 
@@ -448,11 +576,19 @@ export default function CRM() {
                   onDrop={() => handleDrop(stage)}
                   style={{ flex: '0 0 220px', display: 'flex', flexDirection: 'column', borderRadius: 14, background: isOver ? ss.hd : ss.col, border: `1.5px solid ${isOver ? ss.dot : 'rgba(27,76,94,.13)'}`, transition: 'background .15s, border .15s', minHeight: 200 }}
                 >
-                  {/* Column header */}
-                  <div style={{ padding: '11px 13px 10px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: ss.dot, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12.5, fontWeight: 800, color: ss.fg, flex: 1 }}>{stage}</span>
-                    <span style={{ fontSize: 11, fontWeight: 800, background: ss.count, color: ss.fg, padding: '2px 8px', borderRadius: 999 }}>{cards.length}</span>
+                  {/* Column header — on the Deal board each column carries its
+                      own subtotal, so the forecast reads left to right. */}
+                  <div style={{ padding: '11px 13px 10px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: ss.dot, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12.5, fontWeight: 800, color: ss.fg, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stage}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, background: ss.count, color: ss.fg, padding: '2px 8px', borderRadius: 999, flexShrink: 0 }}>{cards.length}</span>
+                    </div>
+                    {pipeline === 'deal' && cards.length > 0 && (
+                      <div style={{ fontSize: 11.5, fontWeight: 800, color: DEAD_STAGES.includes(stage) ? 'rgba(27,76,94,.35)' : 'rgba(27,76,94,.6)', marginTop: 4, marginLeft: 16 }}>
+                        {formatCr(sumDealValue(cards))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Cards */}
@@ -462,6 +598,7 @@ export default function CRM() {
                         key={lead.id}
                         lead={lead}
                         formDef={formDef}
+                        showValue={pipeline === 'deal'}
                         onDragStart={() => setDragId(lead.id)}
                         onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)}
                       />
@@ -489,25 +626,30 @@ export default function CRM() {
 
           <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden', minWidth: isMobile ? 620 : 'auto' }}>
             {/* Dynamic column headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1fr .8fr 1fr`, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'deal' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
               <span>NAME</span>
               {(formDef?.fields || []).map(f => <span key={f.key}>{f.label.toUpperCase()}</span>)}
-              <span>STATUS</span>
+              <span>{pipeline === 'deal' ? 'DEAL STAGE' : 'STATUS'}</span>
+              {pipeline === 'deal' && <span>VALUE</span>}
               <span>SCORE</span>
               <span>LAST SEEN</span>
             </div>
 
             {/* Rows */}
             {leads.map(lead => (
-              <div key={lead.id} onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)} style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1fr .8fr 1fr`, gap: 10, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.05)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: lead.id === selContact?.id ? '#F2F8F2' : 'transparent' }}>
+              <div key={lead.id} onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)} style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'deal' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.05)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: lead.id === selContact?.id ? '#F2F8F2' : 'transparent' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                   <span style={{ width: 30, height: 30, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{lead.profile_name?.charAt(0)}</span>
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
+                  <TemperatureTag temp={lead.temperature} override={lead.temperature_override} />
                 </span>
                 {(formDef?.fields || []).map(f => (
                   <span key={f.key} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(lead.attributes || {})[f.key] || '-'}</span>
                 ))}
                 <span><span style={leadChip(lead.lead_status)}>{lead.lead_status}</span></span>
+                {pipeline === 'deal' && (
+                  <span style={{ fontWeight: 800, color: lead.deal_value_cr ? 'var(--brand-primary)' : 'rgba(27,76,94,.3)' }}>{formatCr(lead.deal_value_cr)}</span>
+                )}
                 <span style={{ fontWeight: 700, color: scoreColor(lead.lead_score) }}>{lead.lead_score}</span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.lastContacted}</span>
               </div>
@@ -516,21 +658,21 @@ export default function CRM() {
 
           {/* Contact detail panel */}
           {selContact && (
-            <ContactPanel contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} />
+            <ContactPanel contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
           )}
         </div>
       )}
 
       {/* Contact panel for kanban view */}
       {view === 'kanban' && selContact && (
-        <ContactPanel contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} />
+        <ContactPanel contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
       )}
 
       {/* Add Lead drawer */}
       {showAddLead && (
         <AddLeadDrawer
           formDef={formDef}
-          stages={stages}
+          stages={cfg.lead}
           onClose={() => setShowAddLead(false)}
           onSave={handleAddLead}
         />

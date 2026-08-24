@@ -14,6 +14,9 @@ import { useIsMobile } from '../useIsMobile';
 import ContactNotes from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
 import LeadCustomFields from '../components/LeadCustomFields';
+import TemperatureTag from '../components/TemperatureTag';
+import PipelineMover from '../components/PipelineMover';
+import { formatCr, pipelineOf, leadChip } from '../pipeline';
 import LeadAnswersEditable from '../components/LeadAnswersEditable';
 
 function IconPanelClose() {
@@ -45,14 +48,6 @@ function IconFilter({ size = 16 }) {
   );
 }
 
-const LEAD_STATUS_STYLE = {
-  Hot: { bg: '#FDE7E0', fg: '#C7503B' }, Warm: { bg: '#FFF1DC', fg: '#B6743A' },
-  Cold: { bg: '#E4EFFB', fg: '#3F6FA8' }, New: { bg: 'rgba(27,76,94,.08)', fg: 'rgba(27,76,94,.6)' },
-};
-function leadChip(status) {
-  const c = LEAD_STATUS_STYLE[status] || LEAD_STATUS_STYLE.New;
-  return { background: c.bg, color: c.fg, fontSize: 12, fontWeight: 700, padding: '4px 11px', borderRadius: 999 };
-}
 function fmtTimer(secs) {
   const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
   const p = n => String(n).padStart(2, '0');
@@ -244,6 +239,14 @@ export default function Inbox({ channel = 'whatsapp' }) {
   const contact = selConv?.contact;
   const windowOpen = windowSecs > 0;
 
+  // Stage, tag and deal value can all change from inside the thread. Patch the
+  // conversation's contact in place so the list row and the header agree with
+  // the panel without a refetch.
+  function patchContact(id, patch) {
+    setConvos(prev => prev.map(c =>
+      c.contact?.id === id ? { ...c, contact: { ...c.contact, ...patch } } : c));
+  }
+
   function selectConv(id) {
     setSelConvId(id);
     if (isMobile) { setMobilePane('thread'); setContactPanelOpen(false); }
@@ -431,6 +434,8 @@ export default function Inbox({ channel = 'whatsapp' }) {
           <div style={{ fontSize: isMobile ? 13 : 12, color: 'rgba(27,76,94,.6)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.preview}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7 }}>
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: conv.status === 'closed' ? 'rgba(27,76,94,.08)' : '#EAF6E4', color: conv.status === 'closed' ? 'rgba(27,76,94,.55)' : '#3B6B45' }}>{conv.status === 'closed' ? 'Closed' : 'Open'}</span>
+            {/* Which lead is worth answering first, without opening the thread. */}
+            <TemperatureTag temp={conv.contact?.temperature} override={conv.contact?.temperature_override} />
             {conv.unread_count > 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-accent-soft)' }} />}
           </div>
         </div>
@@ -629,7 +634,14 @@ export default function Inbox({ channel = 'whatsapp' }) {
     <>
       <div style={{ padding: '22px 20px 16px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: contact.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 11px' }}>{contact.profile_name?.charAt(0)}</div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</span>
+          <TemperatureTag
+            temp={contact.temperature} override={contact.temperature_override}
+            contactId={contact.id} editable size="md"
+            onChange={(t, o) => patchContact(contact.id, { temperature: t, temperature_override: o })}
+          />
+        </div>
         <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '-' ? contact.jobTitle + ' · ' : ''}{contact.company !== '-' ? contact.company : ''}</div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
           {[{ Icon: IconMail, color: 'var(--brand-primary)' }, { Icon: IconPhone, color: 'var(--brand-primary)' }, { Icon: IconWhatsApp, color: '#3B6B45' }, { Icon: IconZap, color: '#B6743A' }].map(({ Icon, color }, i) => (
@@ -642,10 +654,29 @@ export default function Inbox({ channel = 'whatsapp' }) {
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 2 }}>{contact.lead_score}</div>
           </div>
           <div style={{ flex: 1, background: '#F2F8F2', border: '1px solid rgba(27,76,94,.10)', borderRadius: 10, padding: '9px 10px' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>LEAD STATUS</div>
-            <div style={{ marginTop: 5 }}><span style={leadChip(contact.lead_status)}>{contact.lead_status}</span></div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>
+              {pipelineOf(contact.lead_status) === 'deal' ? 'DEAL VALUE' : 'LEAD STATUS'}
+            </div>
+            {pipelineOf(contact.lead_status) === 'deal'
+              ? <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 3 }}>{formatCr(contact.deal_value_cr, { dash: 'Not set' })}</div>
+              : <div style={{ marginTop: 5 }}><span style={leadChip(contact.lead_status)}>{contact.lead_status}</span></div>}
           </div>
         </div>
+      </div>
+
+      {/* Re-file the lead without leaving the chat. Mid-conversation is exactly
+          when the stage changes, so the control belongs here and not only on
+          the CRM board. */}
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
+        <PipelineMover
+          contactId={contact.id}
+          stage={contact.lead_status}
+          dealValue={contact.deal_value_cr}
+          dealValueIsManual={contact.deal_value_is_manual}
+          compact
+          onMoved={(s, p) => patchContact(contact.id, { lead_status: s, pipeline: p })}
+          onValueChange={(v, m) => patchContact(contact.id, { deal_value_cr: v, deal_value_is_manual: m })}
+        />
       </div>
       <div style={{ padding: '16px 20px 24px' }}>
         <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.04em', color: 'var(--brand-primary)', marginBottom: 12 }}>CONTACT DETAILS</div>
@@ -794,7 +825,10 @@ export default function Inbox({ channel = 'whatsapp' }) {
                   </button>
                   <div style={{ width: 36, height: 36, borderRadius: '50%', background: contact?.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>{contact?.profile_name?.charAt(0)}</div>
                   <div style={{ flex: 1, minWidth: 0 }} onClick={() => setContactPanelOpen(true)}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</span>
+                      <TemperatureTag temp={contact?.temperature} override={contact?.temperature_override} />
+                    </div>
                     <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {selConv?.lastSeen ? `last seen ${relativeTime(selConv.lastSeen)}` : `${contact?.company !== '-' ? contact?.company + ' · ' : ''}WhatsApp`}
                     </div>
@@ -891,7 +925,10 @@ export default function Inbox({ channel = 'whatsapp' }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                   <div style={{ width: 34, height: 34, borderRadius: '50%', background: contact?.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>{contact?.profile_name?.charAt(0)}</div>
                   <div>
-                    <div style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact?.profile_name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                      <span style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</span>
+                      <TemperatureTag temp={contact?.temperature} override={contact?.temperature_override} />
+                    </div>
                     <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)' }}>
                       {contact?.company !== '-' ? contact?.company + ' · ' : ''}WhatsApp
                       {selConv?.lastSeen && <> · last seen {relativeTime(selConv.lastSeen)}</>}

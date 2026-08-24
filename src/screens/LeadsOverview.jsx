@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { getLeadsOverview } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
 import { IconSearch, IconRefresh } from '../icons';
+import TemperatureTag from '../components/TemperatureTag';
+import { leadChip, formatCr } from '../pipeline';
 
 // Brand palette (matches the rest of the app).
 const FOREST = 'var(--brand-primary)';
@@ -49,7 +51,7 @@ export default function LeadsOverview() {
     const query = q.trim().toLowerCase();
     return rows.filter(r => {
       if (filter !== 'all' && r.source !== filter) return false;
-      if (query && !(`${r.name} ${r.phone}`.toLowerCase().includes(query))) return false;
+      if (query && !(`${r.name} ${r.phone} ${r.temperature} ${r.lead_status}`.toLowerCase().includes(query))) return false;
       return true;
     });
   }, [rows, filter, q]);
@@ -60,7 +62,7 @@ export default function LeadsOverview() {
     return c;
   }, [rows]);
 
-  const cols = `2.2fr 1.1fr 1.6fr 1.1fr .9fr`;
+  const cols = `2.2fr 1.1fr 1.5fr 1.1fr 1.1fr .9fr`;
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: 'var(--app-bg)' }}>
@@ -103,7 +105,7 @@ export default function LeadsOverview() {
             <div style={{ minWidth: 680 }}>
               {/* Header row */}
               <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 12, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
-                <span>LEAD</span><span>SOURCE</span><span>FUNNEL</span><span>TYPE</span><span>CREATED</span>
+                <span>LEAD</span><span>SOURCE</span><span>FUNNEL</span><span>TYPE</span><span>STAGE</span><span>CREATED</span>
               </div>
 
               {rows === null ? (
@@ -113,12 +115,21 @@ export default function LeadsOverview() {
               ) : visible.map(r => (
                 <div key={r.id} style={{ display: 'grid', gridTemplateColumns: cols, gap: 12, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.05)', fontSize: 12.5, color: 'rgba(27,76,94,.7)' }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, color: FOREST, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ fontWeight: 700, color: FOREST, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                      <TemperatureTag temp={r.temperature} />
+                    </div>
                     <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)' }}>{r.phone}</div>
                   </div>
                   <div><Badge map={SOURCE_BADGE} k={r.source} /></div>
                   <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.funnel}>{r.funnel}</div>
                   <div><Badge map={TYPE_BADGE} k={r.type} /></div>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={leadChip(r.lead_status)}>{r.lead_status}</span>
+                    {r.pipeline === 'deal' && r.deal_value_cr
+                      ? <div style={{ fontSize: 11, fontWeight: 800, color: FOREST, marginTop: 3 }}>{formatCr(r.deal_value_cr)}</div>
+                      : null}
+                  </div>
                   <div style={{ color: 'rgba(27,76,94,.55)', whiteSpace: 'nowrap' }}>{r.created_rel}</div>
                 </div>
               ))}
