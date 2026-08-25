@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  IconHome, IconInbox, IconZap, IconDb, IconPeople, IconWhatsApp,
+  IconHome, IconZap, IconDb, IconPeople, IconWhatsApp,
   IconTemplate, IconSettings, IconLogs, IconHelp, IconTarget, IconSend,
   IconInstagram, IconCalendar, IconFunnel, IconMeta, IconReport
 } from '../icons';
@@ -13,7 +13,7 @@ import { getUnreadCount } from '../liveData';
 // Flows moved back into the More sheet to make room.
 const MAIN = [
   { key: 'home',     label: 'Home',      Icon: IconHome },
-  { key: 'inbox',    label: 'WA Inbox',  Icon: IconInbox,      channel: 'whatsapp' },
+  { key: 'inbox',    label: 'WA Inbox',  Icon: IconWhatsApp,   channel: 'whatsapp' },
   { key: 'ig-inbox', label: 'IG Inbox',  Icon: IconInstagram,  channel: 'instagram' },
   { key: 'crm',      label: 'CRM',       Icon: IconDb },
 ];
