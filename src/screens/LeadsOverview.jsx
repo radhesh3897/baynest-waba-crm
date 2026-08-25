@@ -99,8 +99,43 @@ export default function LeadsOverview() {
           </div>
         </div>
 
-        {/* Table */}
-        <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden' }}>
+        {/* Phone: cards. Six columns inside 375px forces a 680px table and
+            clips the lead name to a few characters. */}
+        {isMobile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {rows === null ? (
+              <div style={{ padding: '40px 0', textAlign: 'center', color: 'rgba(27,76,94,.5)', fontSize: 14 }}>Loading leads…</div>
+            ) : visible.length === 0 ? (
+              <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '26px 16px', textAlign: 'center', color: 'rgba(27,76,94,.55)', fontSize: 14 }}>No leads match this view.</div>
+            ) : visible.map(r => (
+              <div key={r.id} style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '13px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: FOREST, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                    <span style={{ display: 'block', fontSize: 12, color: 'rgba(27,76,94,.45)' }}>{r.phone}</span>
+                  </span>
+                  <TemperatureTag temp={r.temperature} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginTop: 10 }}>
+                  <span style={leadChip(r.lead_status)}>{r.lead_status}</span>
+                  <Badge map={TYPE_BADGE} k={r.type} />
+                  <Badge map={SOURCE_BADGE} k={r.source} />
+                  {r.pipeline === 'deal' && r.deal_value_cr
+                    ? <span style={{ fontSize: 12.5, fontWeight: 800, color: FOREST }}>{formatCr(r.deal_value_cr)}</span>
+                    : null}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(27,76,94,.07)' }}>
+                  <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.4)', flexShrink: 0 }}>Funnel</span>
+                  <span style={{ fontSize: 12, color: 'rgba(27,76,94,.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }} title={r.funnel}>{r.funnel}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 11.5, color: 'rgba(27,76,94,.45)', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.created_rel}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Desktop table */}
+        <div style={{ display: isMobile ? 'none' : 'block', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
             <div style={{ minWidth: 680 }}>
               {/* Header row */}

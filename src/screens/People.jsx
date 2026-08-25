@@ -116,8 +116,51 @@ export default function People({ onOpenChat }) {
           </div>
         </header>
 
-        <div style={{ padding: isMobile ? '0 16px 28px' : '0 28px 36px', overflowX: 'auto' }}>
-          <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden', minWidth: isMobile ? 680 : 'auto' }}>
+        {/* Phone: one card per lead. A six-column table only fits by forcing the
+            page 680px wide and squeezing the name down to a couple of letters,
+            which is not a table anyone can read on a phone. */}
+        {isMobile && (
+          <div style={{ padding: '0 16px 28px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {loading && <div style={{ fontSize: 13, color: 'rgba(27,76,94,.5)' }}>Loading people…</div>}
+            {!loading && visibleContacts.length === 0 && (
+              <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '22px 16px', fontSize: 13, color: 'rgba(27,76,94,.55)', lineHeight: 1.6 }}>
+                No leads yet{formDef ? ' for this form' : ''}. New Meta leads land here automatically once your n8n workflow is live.
+              </div>
+            )}
+            {visibleContacts.map(p => (
+              <button key={p.id} onClick={() => setSelId(p.id === selId ? null : p.id)}
+                style={{ textAlign: 'left', width: '100%', background: p.id === selId ? '#F2F8F2' : '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '13px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 36, height: 36, borderRadius: '50%', background: p.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{p.profile_name.charAt(0)}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profile_name}</span>
+                    <span style={{ display: 'block', fontSize: 12, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.phone}</span>
+                  </span>
+                  <TemperatureTag temp={p.temperature} override={p.temperature_override} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                  <span style={leadChip(p.lead_status)}>{p.lead_status}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)' }}>{p.lead_score}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{p.source}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 11.5, color: 'rgba(27,76,94,.45)', whiteSpace: 'nowrap' }}>{p.received}</span>
+                </div>
+                {formDef && formDef.fields.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(27,76,94,.07)' }}>
+                    {formDef.fields.map(f => (
+                      <span key={f.key} style={{ fontSize: 11.5, color: 'rgba(27,76,94,.6)' }}>
+                        <span style={{ color: 'rgba(27,76,94,.4)' }}>{f.label}: </span>
+                        {(p.attributes || {})[f.key] || '-'}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div style={{ padding: isMobile ? '0 16px 28px' : '0 28px 36px', overflowX: 'auto', display: isMobile ? 'none' : 'block' }}>
+          <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden' }}>
             {/* Header row */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
               <span>NAME</span>

@@ -151,7 +151,7 @@ export default function AccountSettings() {
                     <input value={s} onChange={e => board.ed.setStage(i, e.target.value)} placeholder="Stage name" style={{ ...inputStyle, flex: 1 }} />
                     <button onClick={() => board.ed.moveStage(i, -1)} disabled={i === 0} title="Move up" style={{ ...arrowBtn, opacity: i === 0 ? 0.35 : 1 }}>↑</button>
                     <button onClick={() => board.ed.moveStage(i, 1)} disabled={i === board.list.length - 1} title="Move down" style={{ ...arrowBtn, opacity: i === board.list.length - 1 ? 0.35 : 1 }}>↓</button>
-                    <button onClick={() => board.ed.removeStage(i)} title="Remove stage" style={{ width: 34, height: 34, flexShrink: 0, border: 'none', background: '#FDECEA', borderRadius: 8, cursor: 'pointer', color: '#C7503B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
+                    <button onClick={() => board.ed.removeStage(i)} title="Remove stage" style={{ width: 38, height: 38, flexShrink: 0, border: 'none', background: '#FDECEA', borderRadius: 8, cursor: 'pointer', color: '#C7503B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
                   </div>
                 ))}
               </div>
@@ -180,7 +180,7 @@ export default function AccountSettings() {
                 <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.email || ''}</div>
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)', background: 'rgba(27,76,94,.07)', padding: '3px 10px', borderRadius: 999 }}>{m.role || 'Member'}</span>
-              <button onClick={() => handleRemoveMember(m.id)} title="Remove" style={{ width: 30, height: 30, border: 'none', background: 'transparent', cursor: 'pointer', color: 'rgba(199,80,59,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
+              <button onClick={() => handleRemoveMember(m.id)} title="Remove" style={{ width: 38, height: 38, border: 'none', background: 'transparent', cursor: 'pointer', color: 'rgba(199,80,59,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
             </div>
           ))}
           <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
@@ -243,4 +243,4 @@ export default function AccountSettings() {
   );
 }
 
-const arrowBtn = { width: 30, height: 34, flexShrink: 0, border: '1px solid rgba(27,76,94,.16)', background: '#fff', borderRadius: 8, cursor: 'pointer', color: 'var(--brand-primary)', fontSize: 14, fontWeight: 700 };
+const arrowBtn = { width: 38, height: 38, flexShrink: 0, border: '1px solid rgba(27,76,94,.16)', background: '#fff', borderRadius: 8, cursor: 'pointer', color: 'var(--brand-primary)', fontSize: 14, fontWeight: 700 };

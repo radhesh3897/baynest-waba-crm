@@ -1,3 +1,4 @@
+import { useIsMobile } from '../useIsMobile';
 import { useState, useEffect, useRef } from 'react';
 import { getTemplatesLive, syncTemplatesFromMeta, createTemplateLive, getSettings, getMediaHandle, deleteTemplateLive } from '../liveData';
 import { IconSearch, IconPlus, IconDots, IconChevDown, IconX } from '../icons';
@@ -406,6 +407,7 @@ function TemplateBuilder({ onClose, onCreated, initial }) {
 }
 
 export default function Templates() {
+  const isMobile = useIsMobile();
   const [templates, setTemplates] = useState([]);
   const [search, setSearch] = useState('');
   const [syncing, setSyncing] = useState(false);
@@ -454,20 +456,20 @@ export default function Templates() {
 
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
-      <header style={{ padding: '22px 30px 18px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+      <header style={{ padding: isMobile ? '18px 16px 14px' : '22px 30px 18px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.45)' }}>CAMPAIGN</div>
           <h1 style={{ margin: '5px 0 0', fontSize: 23, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>WhatsApp Templates</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: isMobile ? '1 1 100%' : 'none' }}>
           {number && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'var(--brand-primary)', fontWeight: 600, background: '#fff' }}>
               <span style={{ width: 7, height: 7, borderRadius: 2, background: '#3B6B45' }} />{number}
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'rgba(27,76,94,.45)', background: '#fff' }}>
-            <span style={{ width: 14, height: 14, display: 'flex' }}><IconSearch size={14} /></span>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search templates" style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--brand-primary)', width: 150, fontFamily: 'inherit' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'rgba(27,76,94,.45)', background: '#fff', flex: isMobile ? '1 1 160px' : 'none', minWidth: 0 }}>
+            <span style={{ width: 14, height: 14, display: 'flex', flexShrink: 0 }}><IconSearch size={14} /></span>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search templates" style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--brand-primary)', width: '100%', minWidth: 0, fontFamily: 'inherit' }} />
           </div>
           <button onClick={handleSync} disabled={syncing} style={{ background: '#fff', border: '1px solid rgba(27,76,94,.16)', color: 'var(--brand-primary)', fontSize: 13, fontWeight: 700, padding: '9px 15px', borderRadius: 10, cursor: syncing ? 'default' : 'pointer', opacity: syncing ? 0.6 : 1 }}>{syncing ? 'Syncing…' : 'Sync with Meta'}</button>
           <button onClick={() => setBuilder({ initial: null })} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
@@ -497,7 +499,7 @@ export default function Templates() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                   <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--brand-primary)', wordBreak: 'break-all', lineHeight: 1.3 }}>{t.name}</span>
                   <span style={{ position: 'relative', flexShrink: 0 }}>
-                    <button onClick={() => setMenuFor(menuFor === t.id ? null : t.id)} style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', cursor: 'pointer', border: 'none', background: menuFor === t.id ? '#F2F6F3' : 'transparent' }}><IconDots size={15} /></button>
+                    <button onClick={() => setMenuFor(menuFor === t.id ? null : t.id)} style={{ width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', cursor: 'pointer', border: 'none', background: menuFor === t.id ? '#F2F6F3' : 'transparent' }}><IconDots size={15} /></button>
                     {menuFor === t.id && (
                       <>
                         <div onClick={() => setMenuFor(null)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
