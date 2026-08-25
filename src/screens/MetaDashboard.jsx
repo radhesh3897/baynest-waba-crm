@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { IconRefresh, IconFacebook } from '../icons';
+import { IconRefresh, IconMeta } from '../icons';
 import { CLIENT } from '../config/client.js';
 import { useIsMobile } from '../useIsMobile';
 import { getMetaAdsInsights } from '../liveData';
@@ -61,8 +61,8 @@ export default function MetaDashboard() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 11, background: '#fff', border: '1px solid rgba(27,76,94,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1877F2' }}>
-              <IconFacebook size={22} />
+            <div style={{ width: 40, height: 40, borderRadius: 11, background: 'rgba(27,76,94,.07)', border: '1px solid rgba(27,76,94,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: FOREST, flexShrink: 0 }}>
+              <IconMeta size={23} />
             </div>
             <div>
               <div style={{ fontSize: isMobile ? 19 : 22, fontWeight: 800, letterSpacing: '-.3px', color: FOREST }}>Meta Dashboard</div>

@@ -110,8 +110,19 @@ export function IconFunnel({ size = 18 }) {
 // Meta's mark drawn as a single stroked path in currentColor, so it picks up
 // the sidebar's own colours instead of dropping a blue brand asset into a
 // muted teal palette.
+// Meta's mark is a lemniscate: two loops meeting at a peak in the centre, with
+// the outer edge sweeping around both. Drawn as one closed centreline and
+// stroked, which gives the ribbon its even weight and keeps it legible down to
+// 16px. No fill and no background — `currentColor` means it picks up whatever
+// the surface around it uses, so it reads in the app's teal rather than
+// Facebook blue.
 export function IconMeta({ size = 18 }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 14.2c0-3.6 1.8-7.4 4.2-7.4 1.4 0 2.4 1 3.6 2.9 1.1 1.7 1.8 2.9 1.8 2.9s.9-1.5 1.9-3c1.2-1.8 2.2-2.8 3.6-2.8 2.5 0 4 3.5 4 7.1 0 2.3-.9 3.9-2.7 3.9-1.6 0-2.6-1-4-3.3-.6-1-1.3-2.2-1.9-3.3-.7 1.2-1.4 2.4-2 3.4-1.4 2.3-2.4 3.2-3.9 3.2-1.9 0-2.9-1.6-2.9-3.6Z"/></svg>;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.15" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 9.9C10.4 6.9 8.9 5.7 7.1 5.7 4.1 5.7 2.3 9.8 2.3 13.9c0 2.5 1.1 4.2 3 4.2 2 0 3.5-2.1 6.7-8.2 3.2 6.1 4.7 8.2 6.7 8.2 1.9 0 3-1.7 3-4.2 0-4.1-1.8-8.2-4.8-8.2-1.8 0-3.3 1.2-4.9 4.2Z" />
+    </svg>
+  );
 }
 
 export function IconMegaphone({ size = 18 }) {

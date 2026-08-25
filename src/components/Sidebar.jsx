@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconTarget, IconSend, IconBuilding, IconInstagram , IconCalendar, IconFunnel, IconMeta, IconReport} from '../icons';
+import { IconHome, IconInbox, IconZap, IconWhatsApp, IconTemplate, IconPeople, IconSettings, IconLogs, IconHelp, IconDb, IconTarget, IconSend, IconBuilding, IconInstagram , IconCalendar, IconFunnel, IconMeta, IconReport, IconChevDown } from '../icons';
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
 import { CLIENT } from '../config/client.js';

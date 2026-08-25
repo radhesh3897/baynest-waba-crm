@@ -1,7 +1,7 @@
 import { useIsMobile } from '../useIsMobile';
 import { useState, useEffect, useRef } from 'react';
 import { getTemplatesLive, syncTemplatesFromMeta, createTemplateLive, getSettings, getMediaHandle, deleteTemplateLive } from '../liveData';
-import { IconSearch, IconPlus, IconDots, IconChevDown, IconX } from '../icons';
+import { IconSearch, IconPlus, IconDots, IconX } from '../icons';
 import { CLIENT } from '../config/client.js';
 
 const CAT_STYLE = {

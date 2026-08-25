@@ -1,13 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getFormsLive, getPeopleLive, updateLeadStatusLive, addLeadLive, getStageConfig } from '../liveData';
-import { IconPlus, IconSearch, IconChevDown, IconX, IconMail, IconPhone, IconWhatsApp, IconZap, IconEdit } from '../icons';
+import { IconPlus, IconSearch, IconChevDown, IconX } from '../icons';
 import { useIsMobile } from '../useIsMobile';
-import ContactNotes from '../components/ContactNotes';
-import LeadCustomFields from '../components/LeadCustomFields';
-import LeadAnswersEditable from '../components/LeadAnswersEditable';
-import LeadProperties from '../components/LeadProperties';
 import TemperatureTag from '../components/TemperatureTag';
-import PipelineMover from '../components/PipelineMover';
 import LeadDetailModal from '../components/LeadDetailModal';
 import {
   LEAD_STAGES, DEAL_STAGES, PIPELINES, DEAD_STAGES, WON_STAGES,
