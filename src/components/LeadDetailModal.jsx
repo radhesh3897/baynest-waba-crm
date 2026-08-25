@@ -81,9 +81,6 @@ export default function LeadDetailModal({ contact: given, contactId, onClose, on
   return shell(
     <>
       <div style={{ padding: '4px 20px 18px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: view.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 10px' }}>
-          {view.profile_name?.charAt(0)}
-        </div>
         {/* Name and tag travel together, here as everywhere else. This is the
             one place the tag is editable — Manish has the lead open and can
             see the answers the automatic call was made from. */}

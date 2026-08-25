@@ -70,9 +70,6 @@ function KanbanCard({ lead, formDef, onDragStart, onClick, showValue = false }) 
       style={{ background: '#fff', border: '1px solid rgba(27,76,94,.11)', borderRadius: 11, padding: '11px 12px', cursor: 'grab', boxShadow: '0 1px 3px rgba(14,58,53,.07)', marginBottom: 8 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-          {lead.profile_name?.charAt(0)}
-        </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
@@ -604,7 +601,6 @@ export default function CRM({ onOpenChat }) {
                   <div key={lead.id} style={{ background: lead.id === selContact?.id ? '#F2F8F2' : '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '12px 13px' }}>
                     <button onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      <span style={{ width: 36, height: 36, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{lead.profile_name?.charAt(0)}</span>
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
                         <span style={{ display: 'block', fontSize: 12, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -664,7 +660,6 @@ export default function CRM({ onOpenChat }) {
             {leads.map(lead => (
               <div key={lead.id} onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)} style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'deal' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.05)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: lead.id === selContact?.id ? '#F2F8F2' : 'transparent' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{lead.profile_name?.charAt(0)}</span>
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
                   <TemperatureTag temp={lead.temperature} override={lead.temperature_override} />
                 </span>

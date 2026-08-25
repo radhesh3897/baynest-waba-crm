@@ -439,9 +439,6 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
         whileHover={{ backgroundColor: active ? '#F2F8F2' : 'rgba(27,76,94,.05)' }}
         onClick={() => selectConv(conv.id)}
         style={{ display: 'flex', gap: 11, padding: isMobile ? '13px 16px' : '12px 14px', cursor: 'pointer', borderLeft: active ? '3px solid var(--brand-accent-soft)' : '3px solid transparent', background: active ? '#F2F8F2' : 'transparent', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
-        <div style={{ width: isMobile ? 46 : 38, height: isMobile ? 46 : 38, borderRadius: '50%', background: conv.contact?.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? 18 : 15, fontWeight: 700, flexShrink: 0 }}>
-          {conv.contact?.profile_name?.charAt(0) || '?'}
-        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <span style={{ fontSize: isMobile ? 15 : 13.5, fontWeight: conv.unread_count > 0 ? 800 : 600, color: 'var(--brand-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: '1 1 auto', minWidth: 0 }}>{conv.contact?.profile_name}</span>
@@ -649,7 +646,6 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
   const contactDetail = contact ? (
     <>
       <div style={{ padding: '22px 20px 16px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
-        <div style={{ width: 64, height: 64, borderRadius: '50%', background: contact.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 11px' }}>{contact.profile_name?.charAt(0)}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</span>
           <TemperatureTag
@@ -839,7 +835,6 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
                   <button onClick={() => setMobilePane('list')} style={{ width: 36, height: 36, borderRadius: 9, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brand-primary)', flexShrink: 0 }}>
                     <IconBack size={22} />
                   </button>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: contact?.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>{contact?.profile_name?.charAt(0)}</div>
                   <div style={{ flex: 1, minWidth: 0 }} onClick={() => setContactPanelOpen(true)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
                       <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</span>
@@ -939,7 +934,6 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
             <>
               <div style={{ background: '#fff', borderBottom: '1px solid rgba(27,76,94,.10)', padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: contact?.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>{contact?.profile_name?.charAt(0)}</div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
                       <span style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</span>

@@ -214,7 +214,6 @@ export default function Home({ onNav, onOpenChat }) {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenLeadId(r.id); } }}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(27,76,94,.06)', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-                  <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 800, flexShrink: 0 }}>{(r.name || '?').charAt(0).toUpperCase()}</span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                       <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
@@ -402,7 +401,6 @@ export default function Home({ onNav, onOpenChat }) {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenLeadId(r.id); } }}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(27,76,94,.06)', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{(r.name || '?').charAt(0).toUpperCase()}</span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
                     <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>{r.source}</div>

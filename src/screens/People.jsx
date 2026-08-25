@@ -131,7 +131,6 @@ export default function People({ onOpenChat }) {
               <button key={p.id} onClick={() => setSelId(p.id === selId ? null : p.id)}
                 style={{ textAlign: 'left', width: '100%', background: p.id === selId ? '#F2F8F2' : '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '13px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ width: 36, height: 36, borderRadius: '50%', background: p.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{p.profile_name.charAt(0)}</span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profile_name}</span>
                     <span style={{ display: 'block', fontSize: 12, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.phone}</span>
@@ -181,7 +180,6 @@ export default function People({ onOpenChat }) {
             {visibleContacts.map(p => (
               <div key={p.id} onClick={() => setSelId(p.id === selId ? null : p.id)} style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 10, padding: '12px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.06)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: p.id === selId ? '#F2F8F2' : 'transparent' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: p.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{p.profile_name.charAt(0)}</span>
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profile_name}</span>
                   <TemperatureTag temp={p.temperature} override={p.temperature_override} />
                 </span>
@@ -212,9 +210,6 @@ export default function People({ onOpenChat }) {
             </button>
           </div>
           <div style={{ padding: '6px 18px 16px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
-            <div style={{ width: 60, height: 60, borderRadius: '50%', background: sel.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, margin: '0 auto 10px' }}>
-              {sel.profile_name.charAt(0)}
-            </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{sel.profile_name}</span>
               <TemperatureTag
