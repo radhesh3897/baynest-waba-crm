@@ -4,7 +4,6 @@ import { IconPlus, IconSearch, IconChevDown, IconX } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import TemperatureTag from '../components/TemperatureTag';
 import LeadDetailModal from '../components/LeadDetailModal';
-import CrmMetrics from '../components/CrmMetrics';
 import {
   LEAD_STAGES, DEAL_STAGES, PIPELINES, DEAD_STAGES, WON_STAGES,
   pipelineOf, formatCr, sumDealValue, openDealValue, TEMPERATURES, tempStyle, leadChip, STAGE_CHIP,
@@ -582,15 +581,11 @@ export default function CRM({ onOpenChat }) {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads…" style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--brand-primary)', width: '100%', fontFamily: 'inherit' }} />
           </div>
 
-          {/* Phone: pipeline health first, then a card per lead with the stage
-              editable in place. The board is not available here, so changing a
-              stage has to be possible from the list itself. */}
+          {/* Phone: a card per lead with the stage editable in place. The board
+              is not available here, so changing a stage has to be possible from
+              the list itself. */}
           {isMobile && (
             <>
-              <div style={{ marginBottom: 14 }}>
-                <CrmMetrics pipeline={pipeline} leadStages={cfg.lead} dealStages={cfg.deal} />
-              </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {leads.length === 0 && (
                   <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '24px 16px', textAlign: 'center', fontSize: 13, color: 'rgba(27,76,94,.5)' }}>

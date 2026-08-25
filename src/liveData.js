@@ -844,15 +844,6 @@ export async function getContactLive(id) {
   };
 }
 
-// Speed-to-lead and stage distribution for the mobile CRM panel. Reported as a
-// median: the live spread has a 102-hour straggler that drags the mean to 293
-// minutes against a median of 0.9, so an average would describe nobody.
-export async function getCrmMetrics() {
-  const { data, error } = await supabase.rpc('crm_metrics');
-  if (error) { console.error('getCrmMetrics', error); return null; }
-  return data;
-}
-
 export async function getSettings() {
   const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).maybeSingle();
   if (error) { console.error('getSettings', error); return null; }
