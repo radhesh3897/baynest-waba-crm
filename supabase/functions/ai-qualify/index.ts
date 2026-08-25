@@ -1,6 +1,6 @@
 // ai-qualify — the AI lead-qualification brain. Given the conversation so far,
 // returns the next message to send (or the closing line once the script ends).
-// Backed by Claude Haiku 4.5. The web playground, the WhatsApp webhook and the
+// Backed by OpenAI gpt-5-nano. The web playground, the WhatsApp webhook and the
 // catch-up job all share this one brain, so the script lives here only.
 //
 // POST { messages: [{role:"user"|"assistant", content}], name?: string }
@@ -96,10 +96,17 @@ const CLIENT = {
 //  Do not edit below this line unless you are changing the tool for EVERY client.
 // ============================================================================
 
-const CLAUDE_KEY  = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+// OpenAI, at the client's request. OPENAI_API_KEY is the correct name; the
+// ANTHROPIC_API_KEY fallback exists only because the key was first pasted there
+// and rotating a secret is a dashboard trip. Prefer the correct one.
+const MODEL_KEY   = Deno.env.get("OPENAI_API_KEY") ?? Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const MODEL      = Deno.env.get("QUALIFY_MODEL") ?? "claude-haiku-4-5";
+// gpt-5-nano is the cheapest text model OpenAI sells. It is also the weakest at
+// following a long prescriptive script, so if the persona starts re-asking
+// answered questions or overrunning the 200-character cap, move up a tier with
+// the QUALIFY_MODEL secret (gpt-4o-mini, then gpt-5.4-nano) — no redeploy.
+const MODEL      = Deno.env.get("QUALIFY_MODEL") ?? "gpt-5-nano";
 // Public project keys accepted as a bearer — gates casual abuse of the paid
 // model without a login. The env anon key covers the browser playground; the
 // service-role key lets our own edge functions (whatsapp-webhook, catch-up)
@@ -247,9 +254,9 @@ On a new line right after that, add the token [[QUALIFIED]].${earlyStopBlock}
 
 The lead's name is: ${name}.`;
 }
-// Claude blips occasionally: a 429 when we burst, a 529 when it is overloaded, a
+// The API blips occasionally: a 429 when we burst, a 5xx when it is overloaded, a
 // stray 5xx. Without a retry, one blip means the lead gets NO reply at all. That
-// is not hypothetical: a live lead typed "Yes", Claude returned 502, and nothing
+// is not hypothetical: a live lead typed "Yes", the model returned 502, and nothing
 // was sent until the catch-up cron rescued them almost three minutes later.
 // Two quick retries turn that three minute silence into a two second pause.
 // Only transient statuses are retried; a 400 or a 401 is our bug or our key, and
@@ -257,32 +264,32 @@ The lead's name is: ${name}.`;
 const TRANSIENT = new Set([408, 409, 425, 429, 500, 502, 503, 504, 529]);
 const BACKOFF_MS = [600, 1600];
 
-async function callClaude(payload: unknown): Promise<Response> {
+async function callModel(payload: unknown): Promise<Response> {
   for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
     const isLast = attempt === BACKOFF_MS.length;
     if (attempt > 0) await new Promise((r) => setTimeout(r, BACKOFF_MS[attempt - 1]));
     let res: Response;
     try {
-      res = await fetch("https://api.anthropic.com/v1/messages", {
+      res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": CLAUDE_KEY, "anthropic-version": "2023-06-01" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${MODEL_KEY}` },
         body: JSON.stringify(payload),
       });
     } catch (e) {
       // A network-level failure is transient too. Out of attempts, let it throw.
-      console.warn(`claude fetch threw on attempt ${attempt + 1}`, e);
+      console.warn(`openai fetch threw on attempt ${attempt + 1}`, e);
       if (isLast) throw e;
       continue;
     }
     // Hand back anything we are done with, INCLUDING a final failure: the caller
-    // reads the body to surface Claude's own error message.
+    // reads the body to surface the provider's own error message.
     if (res.ok || !TRANSIENT.has(res.status) || isLast) return res;
-    console.warn(`claude ${res.status} on attempt ${attempt + 1}/${BACKOFF_MS.length + 1}, retrying`);
+    console.warn(`openai ${res.status} on attempt ${attempt + 1}/${BACKOFF_MS.length + 1}, retrying`);
     // Only discard a response we are actually retrying past.
     await res.body?.cancel().catch(() => {});
   }
   // Unreachable: the loop always returns or throws on its last pass.
-  throw new Error("claude retry loop fell through");
+  throw new Error("openai retry loop fell through");
 }
 
 serve(async (req: Request) => {
@@ -291,7 +298,7 @@ serve(async (req: Request) => {
 
   const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
   if (!ALLOWED.has(token)) return json({ error: "Unauthorized" }, 401);
-  if (!CLAUDE_KEY) return json({ error: "ANTHROPIC_API_KEY not configured" }, 500);
+  if (!MODEL_KEY) return json({ error: "OPENAI_API_KEY not configured" }, 500);
 
   const body = await req.json().catch(() => ({}));
   const name = firstNameOf(String(body.name ?? "there")).slice(0, 60);
@@ -306,15 +313,41 @@ serve(async (req: Request) => {
   // messages, seed the arrival so the model opens with the greeting + Q1.
   if (msgs.length === 0) msgs = [{ role: "user", content: "Hi" }];
 
-  const res = await callClaude({ model: MODEL, max_tokens: 300, system: await systemPrompt(name, known), messages: msgs });
+  // The reasoning models (gpt-5*, o-series) spend max_completion_tokens on
+  // thinking BEFORE any visible text: at 300 the budget was consumed entirely
+  // and the reply came back empty with finish_reason "length". Reading two
+  // sentences off a fixed script needs no deliberation, so turn it down and
+  // leave headroom. The older models reject the parameter outright rather than
+  // ignoring it, so only send it where it exists.
+  const reasoning = /^(gpt-5|o[1-9])/.test(MODEL) ? { reasoning_effort: "minimal" } : {};
+  const res = await callModel({
+    model: MODEL,
+    max_completion_tokens: 900,
+    ...reasoning,
+    messages: [{ role: "system", content: await systemPrompt(name, known) }, ...msgs],
+  });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    console.error("claude error", res.status, data);
-    return json({ error: (data?.error?.message as string) || `Claude API ${res.status}` }, 502);
+    console.error("openai error", res.status, data);
+    return json({ error: (data?.error?.message as string) || `OpenAI API ${res.status}` }, 502);
   }
 
-  let reply = ((data?.content as Record<string, unknown>[]) ?? [])
-    .filter((b) => b?.type === "text").map((b) => String(b.text ?? "")).join("").trim();
+  const choice = ((data?.choices as Record<string, unknown>[]) ?? [])[0];
+  const message = choice?.message as Record<string, unknown> | undefined;
+  let reply = String(message?.content ?? "").trim();
+
+  // An empty completion is a 200, so it used to slip through as a blank WhatsApp
+  // reply. Say why instead. On the reasoning models this is almost always the
+  // budget being spent on reasoning tokens before any visible text is emitted.
+  if (!reply) {
+    const usage = (data?.usage ?? {}) as Record<string, unknown>;
+    console.error("empty completion", { finish: choice?.finish_reason, usage });
+    return json({
+      error: "The model returned no text.",
+      finish_reason: choice?.finish_reason ?? null,
+      usage,
+    }, 502);
+  }
 
   // Three ways the script can end, and they are NOT the same to us:
   //   qualified - a real prospect. Caller fires the Meta conversion event.
