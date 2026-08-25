@@ -8,6 +8,7 @@ import LeadAnswersEditable from '../components/LeadAnswersEditable';
 import LeadProperties from '../components/LeadProperties';
 import TemperatureTag from '../components/TemperatureTag';
 import PipelineMover from '../components/PipelineMover';
+import LeadDetailModal from '../components/LeadDetailModal';
 import {
   LEAD_STAGES, DEAL_STAGES, PIPELINES, DEAD_STAGES, WON_STAGES,
   pipelineOf, formatCr, sumDealValue, openDealValue, TEMPERATURES, tempStyle, leadChip,
@@ -53,95 +54,6 @@ function scoreColor(score) {
   if (score >= 75) return 'var(--brand-accent-soft)';
   if (score >= 50) return 'var(--brand-primary)';
   return 'rgba(27,76,94,.4)';
-}
-
-// ── Contact detail pop-up (centered modal) ────────────────────────────────────
-function ContactPanel({ contact, formDef, onClose, onUpdate }) {
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(480px,96vw)', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(14,58,53,.3)' }}>
-        <div style={{ padding: '16px 20px 0', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
-            <IconX size={15} />
-          </button>
-        </div>
-        <div style={{ padding: '4px 20px 18px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: contact.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 10px' }}>
-            {contact.profile_name?.charAt(0)}
-          </div>
-          {/* Name and tag travel together, here as everywhere else. This is the
-              one place the tag is editable — Manish has the lead open and can
-              see the answers the automatic call was made from. */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</span>
-            <TemperatureTag
-              temp={contact.temperature} override={contact.temperature_override}
-              contactId={contact.id} editable size="md"
-              onChange={(t, o) => onUpdate?.(contact.id, { temperature: t, temperature_override: o })}
-            />
-          </div>
-          <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '-' ? `${contact.jobTitle} · ` : ''}{contact.company !== '-' ? contact.company : ''}</div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 13 }}>
-            <a href={`https://wa.me/${String(contact.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" title="Open WhatsApp chat"
-              style={{ width: 42, height: 42, borderRadius: 12, border: '1px solid rgba(46,158,79,.3)', background: '#EAF6E4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B6B45', textDecoration: 'none' }}>
-              <IconWhatsApp size={20} />
-            </a>
-          </div>
-        </div>
-        {/* Move between boards. First thing under the header because on a phone
-            this is the reason Manish opened the lead at all. */}
-        <div style={{ padding: '16px 20px 4px' }}>
-          <PipelineMover
-            contactId={contact.id}
-            stage={contact.lead_status}
-            dealValue={contact.deal_value_cr}
-            dealValueIsManual={contact.deal_value_is_manual}
-            onMoved={(s, p) => onUpdate?.(contact.id, { lead_status: s, pipeline: p })}
-            onValueChange={(v, m) => onUpdate?.(contact.id, { deal_value_cr: v, deal_value_is_manual: m })}
-          />
-        </div>
-
-        <div style={{ padding: '16px 20px 6px', borderTop: '1px solid rgba(27,76,94,.08)', marginTop: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'var(--brand-primary)', marginBottom: 10 }}>CONTACT DETAILS</div>
-          {[
-            { label: 'Phone',   value: contact.phone },
-            { label: 'Email',   value: contact.email },
-            { label: 'Source',  value: contact.source },
-          ].map(f => (
-            <FieldRow key={f.label} label={f.label} value={f.value} />
-          ))}
-        </div>
-        <div style={{ padding: '8px 20px 24px' }}>
-          <LeadAnswersEditable contactId={contact.id} attributes={contact.attributes} />
-          {/* Same tags and custom fields the Inbox panel edits, so whatever the
-              team captures mid-chat is here when the lead is opened from CRM. */}
-          {/* Which projects they are chasing — this is what sets the deal value
-              above, so it belongs on the same screen as it. */}
-          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 4 }}>
-            <LeadProperties contactId={contact.id} lead={contact} />
-          </div>
-          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
-            <LeadCustomFields contactId={contact.id} />
-          </div>
-          <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
-            <ContactNotes contactId={contact.id} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FieldRow({ label, value }) {
-  return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'rgba(27,76,94,.45)', marginBottom: 3 }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(27,76,94,.13)', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, color: 'var(--brand-primary)', fontWeight: 500 }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || '-'}</span>
-        <span style={{ color: 'rgba(27,76,94,.3)', flexShrink: 0, marginLeft: 6, display: 'flex' }}><IconEdit size={12} /></span>
-      </div>
-    </div>
-  );
 }
 
 // ── Kanban card ───────────────────────────────────────────────────────────────
@@ -658,14 +570,14 @@ export default function CRM() {
 
           {/* Contact detail panel */}
           {selContact && (
-            <ContactPanel contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
+            <LeadDetailModal contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
           )}
         </div>
       )}
 
       {/* Contact panel for kanban view */}
       {view === 'kanban' && selContact && (
-        <ContactPanel contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
+        <LeadDetailModal contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
       )}
 
       {/* Add Lead drawer */}

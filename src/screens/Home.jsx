@@ -8,6 +8,7 @@ import {
   IconTemplate, IconSend, IconDb, IconCalendar,
 } from '../icons';
 import TemperatureTag from '../components/TemperatureTag';
+import LeadDetailModal from '../components/LeadDetailModal';
 import { leadChip, formatCr } from '../pipeline';
 
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
@@ -129,6 +130,8 @@ export default function Home({ onNav }) {
   const [qual, setQual] = useState(null);
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState('');
+  // Recent Leads only carries an id; the modal loads the rest itself.
+  const [openLeadId, setOpenLeadId] = useState(null);
 
   async function load() {
     const [s, q] = await Promise.all([getHomeStatsLive(), getQualificationStats()]);
@@ -207,7 +210,9 @@ export default function Home({ onNav }) {
           {stats.recent.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)', padding: '12px 0' }}>No leads yet.</div>}
           {stats.recent.map(r => {
             return (
-              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
+              <div key={r.id} onClick={() => setOpenLeadId(r.id)} role="button" tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenLeadId(r.id); } }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', borderBottom: '1px solid rgba(27,76,94,.06)', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
                   <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 800, flexShrink: 0 }}>{(r.name || '?').charAt(0).toUpperCase()}</span>
                   <div style={{ minWidth: 0 }}>
@@ -223,6 +228,9 @@ export default function Home({ onNav }) {
             );
           })}
         </div>
+        {openLeadId && (
+          <LeadDetailModal contactId={openLeadId} onClose={() => setOpenLeadId(null)} onUpdate={load} />
+        )}
       </div>
     );
   }
@@ -390,7 +398,9 @@ export default function Home({ onNav }) {
           {stats.recent.length === 0 && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)' }}>No leads yet.</div>}
           {stats.recent.map(r => {
             return (
-              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(27,76,94,.06)' }}>
+              <div key={r.id} onClick={() => setOpenLeadId(r.id)} role="button" tabIndex={0}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenLeadId(r.id); } }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(27,76,94,.06)', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
                   <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--brand-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{(r.name || '?').charAt(0).toUpperCase()}</span>
                   <div style={{ minWidth: 0 }}>
@@ -400,12 +410,15 @@ export default function Home({ onNav }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                   <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)' }}>{r.received}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: st.fg, background: st.bg, padding: '3px 10px', borderRadius: 999 }}>{r.status}</span>
+                  <span style={leadChip(r.status)}>{r.status}</span>
                 </div>
               </div>
             );
           })}
         </div>
+        {openLeadId && (
+          <LeadDetailModal contactId={openLeadId} onClose={() => setOpenLeadId(null)} onUpdate={load} />
+        )}
 
       </div>
     </div>

@@ -821,6 +821,28 @@ export async function getHomeStatsLive() {
   };
 }
 
+// One contact, fully mapped. Screens that only hold a lead id — the dashboard's
+// Recent Leads list, a notification tap — use this to open the detail popup
+// without loading the whole contact table.
+export async function getContactLive(id) {
+  if (!id) return null;
+  const { data, error } = await supabase
+    .from('contacts').select('*').eq('id', id).maybeSingle();
+  if (error) { console.error('getContactLive', error); return null; }
+  const c = mapContact(data);
+  if (!c) return null;
+  // ContactPanel expects the CRM-list shape, which carries a couple of fields
+  // mapContact does not: an avatar colour and the '-' placeholders.
+  return {
+    ...c,
+    phone: c.wa_id || c.phone || '',
+    company: c.company || '-',
+    jobTitle: c.jobTitle || '-',
+    lastContacted: relativeTime(data.last_inbound_at || data.created_at),
+    received: exactTime(data.created_at),
+  };
+}
+
 export async function getSettings() {
   const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).maybeSingle();
   if (error) { console.error('getSettings', error); return null; }
