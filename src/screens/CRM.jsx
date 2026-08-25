@@ -4,9 +4,10 @@ import { IconPlus, IconSearch, IconChevDown, IconX } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import TemperatureTag from '../components/TemperatureTag';
 import LeadDetailModal from '../components/LeadDetailModal';
+import CrmMetrics from '../components/CrmMetrics';
 import {
   LEAD_STAGES, DEAL_STAGES, PIPELINES, DEAD_STAGES, WON_STAGES,
-  pipelineOf, formatCr, sumDealValue, openDealValue, TEMPERATURES, tempStyle, leadChip,
+  pipelineOf, formatCr, sumDealValue, openDealValue, TEMPERATURES, tempStyle, leadChip, STAGE_CHIP,
 } from '../pipeline';
 
 // ── Pipeline stages ──────────────────────────────────────────────────────────
@@ -44,6 +45,8 @@ const STAGE_STYLE = {
 function stageStyle(stage) {
   return STAGE_STYLE[stage] || { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.45)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' };
 }
+
+const SELECT_ARROW = `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2315514B' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`;
 
 function scoreColor(score) {
   if (score >= 75) return 'var(--brand-accent-soft)';
@@ -260,6 +263,9 @@ export default function CRM({ onOpenChat }) {
   const [loading, setLoading] = useState(true);
   const [formId, setFormId] = useState('');            // '' = all leads
   const [view, setView] = useState('kanban');
+  const [stageFilter, setStageFilter] = useState('all');
+  // Phones never get the board: no drag target, and six columns off-screen.
+  const effectiveView = isMobile ? 'list' : view;
   const [search, setSearch] = useState('');
   const [dragId, setDragId] = useState(null);
   const [dragOver, setDragOver] = useState(null);
@@ -291,6 +297,7 @@ export default function CRM({ onOpenChat }) {
   const matching = useMemo(() => allLeads.filter(l => {
     if (formId && l.form_uuid !== formId) return false;
     if (tempFilter !== 'all' && l.temperature !== tempFilter) return false;
+    if (stageFilter !== 'all' && l.lead_status !== stageFilter) return false;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       if (!(l.profile_name || '').toLowerCase().includes(q) &&
@@ -298,12 +305,25 @@ export default function CRM({ onOpenChat }) {
           !(l.phone || '').toLowerCase().includes(q)) return false;
     }
     return true;
-  }), [allLeads, formId, search, tempFilter]);
+  }), [allLeads, formId, search, tempFilter, stageFilter]);
 
   const counts = useMemo(() => ({
     lead: matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === 'lead').length,
     deal: matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === 'deal').length,
   }), [matching, cfg.deal]);
+
+  // Per-stage counts for the filter pills. Derived before the stage filter is
+  // applied, otherwise every pill would show the count of itself.
+  const stageCounts = useMemo(() => {
+    const base = allLeads.filter(l => {
+      if (formId && l.form_uuid !== formId) return false;
+      if (tempFilter !== 'all' && l.temperature !== tempFilter) return false;
+      return pipelineOf(l.lead_status, cfg.deal) === pipeline;
+    });
+    const out = { all: base.length };
+    stages.forEach(st => { out[st] = base.filter(l => l.lead_status === st).length; });
+    return out;
+  }, [allLeads, formId, tempFilter, pipeline, cfg.deal, stages]);
 
   const leads = useMemo(
     () => matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === pipeline),
@@ -326,6 +346,15 @@ export default function CRM({ onOpenChat }) {
     setShowFormDropdown(false);
   }
 
+  // Stage change from the list. `lead_status` is authoritative and the DB
+  // derives the board from it, so this is the same write the kanban drag makes.
+  function changeStage(id, stage) {
+    const lead = allLeads.find(l => l.id === id);
+    if (!lead || lead.lead_status === stage) return;
+    updateLeadStatusLive(id, stage);
+    patchLead(id, { lead_status: stage, pipeline: pipelineOf(stage, cfg.deal) });
+  }
+
   function handleDrop(stage) {
     const lead = allLeads.find(l => l.id === dragId);
     if (lead && lead.lead_status !== stage) {
@@ -341,7 +370,7 @@ export default function CRM({ onOpenChat }) {
   const byStage = stage => leads.filter(l => l.lead_status === stage);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative', overflowY: isMobile ? 'auto' : 'visible' }}>
 
       {/* Header */}
       <header style={{ padding: isMobile ? '16px 16px 0' : '20px 28px 0', flexShrink: 0 }}>
@@ -357,7 +386,7 @@ export default function CRM({ onOpenChat }) {
             {PIPELINES.map(p => {
               const on = pipeline === p.key;
               return (
-                <button key={p.key} onClick={() => { setPipeline(p.key); setSelContact(null); }}
+                <button key={p.key} onClick={() => { setPipeline(p.key); setStageFilter('all'); setSelContact(null); }}
                   style={{
                     flex: isMobile ? 1 : 'none', padding: '7px 16px', borderRadius: 9, border: 'none',
                     cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.3, textAlign: 'center',
@@ -397,8 +426,8 @@ export default function CRM({ onOpenChat }) {
               )}
             </div>
 
-            {/* View toggle */}
-            <div style={{ display: 'flex', gap: 2, background: '#fff', border: '1px solid rgba(27,76,94,.14)', borderRadius: 10, padding: 3 }}>
+            {/* View toggle — desktop only; a phone has just the list */}
+            <div style={{ display: isMobile ? 'none' : 'flex', gap: 2, background: '#fff', border: '1px solid rgba(27,76,94,.14)', borderRadius: 10, padding: 3 }}>
               {[{ key: 'kanban', label: 'Kanban' }, { key: 'list', label: 'List' }].map(v => (
                 <button key={v.key} onClick={() => setView(v.key)} style={{ padding: '7px 15px', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, border: 'none', fontWeight: view === v.key ? 700 : 500, background: view === v.key ? 'var(--brand-primary)' : 'transparent', color: view === v.key ? '#EAF6E4' : 'rgba(27,76,94,.65)' }}>
                   {v.label}
@@ -434,7 +463,7 @@ export default function CRM({ onOpenChat }) {
             );
           })}
 
-          <span style={{ flex: 1 }} />
+          <span style={{ flex: isMobile ? 'none' : 1 }} />
 
           {pipeline === 'deal' && (
             <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 7, fontSize: 12, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>
@@ -445,8 +474,33 @@ export default function CRM({ onOpenChat }) {
           )}
         </div>
 
-        {/* Form field pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 14, borderBottom: '1px solid rgba(27,76,94,.09)', flexWrap: 'wrap' }}>
+        {/* Stage filter. The board itself is the desktop filter; on a phone the
+            list is all there is, so the stages need to be reachable here. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, paddingBottom: 12, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {[{ key: 'all', label: pipeline === 'deal' ? 'All deals' : 'All leads' },
+            ...stages.map(st => ({ key: st, label: st }))].map(f => {
+            const on = stageFilter === f.key;
+            const n = stageCounts[f.key] ?? 0;
+            const tone = f.key === 'all' ? null : (STAGE_CHIP[f.key] || {});
+            return (
+              <button key={f.key} onClick={() => setStageFilter(f.key)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+                fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 999,
+                cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                border: '1px solid ' + (on ? 'var(--brand-primary)' : 'rgba(27,76,94,.16)'),
+                background: on ? 'var(--brand-primary)' : '#fff',
+                color: on ? '#EAF6E4' : (n === 0 ? 'rgba(27,76,94,.38)' : 'rgba(27,76,94,.72)'),
+              }}>
+                {tone && <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                  background: on ? '#EAF6E4' : (tone.bg && tone.bg.startsWith('var') ? 'var(--brand-primary)' : (tone.fg || 'rgba(27,76,94,.4)')) }} />}
+                {f.label} <span style={{ opacity: .62 }}>{n}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Form field pills — desktop only; the board switch already carries the count */}
+        <div style={{ display: isMobile ? 'none' : 'flex', alignItems: 'center', gap: 8, paddingBottom: 14, borderBottom: '1px solid rgba(27,76,94,.09)', flexWrap: 'wrap' }}>
           {formDef ? (
             <>
               <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600, marginRight: 4 }}>Form fields:</span>
@@ -468,7 +522,7 @@ export default function CRM({ onOpenChat }) {
       )}
 
       {/* ── KANBAN VIEW ── */}
-      {!loading && view === 'kanban' && (
+      {!loading && effectiveView === 'kanban' && (
         <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', padding: isMobile ? '14px 16px 18px' : '18px 28px 24px' }}>
           <div style={{ display: 'flex', gap: 12, height: '100%', minWidth: stages.length * 230 }}>
             {stages.map(stage => {
@@ -522,8 +576,8 @@ export default function CRM({ onOpenChat }) {
       )}
 
       {/* ── LIST VIEW ── */}
-      {!loading && view === 'list' && (
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: isMobile ? '14px 16px 24px' : '16px 28px 32px', position: 'relative' }}>
+      {!loading && effectiveView === 'list' && (
+        <div style={{ flex: isMobile ? 'none' : 1, overflowY: isMobile ? 'visible' : 'auto', overflowX: isMobile ? 'visible' : 'auto', padding: isMobile ? '14px 16px 28px' : '16px 28px 32px', position: 'relative' }}>
 
           {/* Search bar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '9px 14px', background: '#fff', marginBottom: 14, maxWidth: 340 }}>
@@ -531,7 +585,71 @@ export default function CRM({ onOpenChat }) {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads…" style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: 'var(--brand-primary)', width: '100%', fontFamily: 'inherit' }} />
           </div>
 
-          <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden', minWidth: isMobile ? 620 : 'auto' }}>
+          {/* Phone: pipeline health first, then a card per lead with the stage
+              editable in place. The board is not available here, so changing a
+              stage has to be possible from the list itself. */}
+          {isMobile && (
+            <>
+              <div style={{ marginBottom: 14 }}>
+                <CrmMetrics pipeline={pipeline} leadStages={cfg.lead} dealStages={cfg.deal} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {leads.length === 0 && (
+                  <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '24px 16px', textAlign: 'center', fontSize: 13, color: 'rgba(27,76,94,.5)' }}>
+                    No {pipeline === 'deal' ? 'deals' : 'leads'} match this view.
+                  </div>
+                )}
+                {leads.map(lead => (
+                  <div key={lead.id} style={{ background: lead.id === selContact?.id ? '#F2F8F2' : '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '12px 13px' }}>
+                    <button onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <span style={{ width: 36, height: 36, borderRadius: '50%', background: lead.color || 'var(--brand-muted)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 }}>{lead.profile_name?.charAt(0)}</span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
+                        <span style={{ display: 'block', fontSize: 12, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {lead.company !== '-' ? lead.company : lead.phone}
+                        </span>
+                      </span>
+                      <TemperatureTag temp={lead.temperature} override={lead.temperature_override} />
+                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11 }}>
+                      {/* Stage, changeable right here. Moving it onto a deal
+                          stage crosses the lead to the other board, which is
+                          why the row can vanish from the current filter. */}
+                      <select
+                        value={lead.lead_status}
+                        onChange={e => changeStage(lead.id, e.target.value)}
+                        aria-label={`Stage for ${lead.profile_name}`}
+                        style={{
+                          ...leadChip(lead.lead_status), flex: 1, minWidth: 0, fontSize: 12.5,
+                          padding: '8px 26px 8px 12px', border: 'none', borderRadius: 999,
+                          fontFamily: 'inherit', cursor: 'pointer', appearance: 'none',
+                          backgroundImage: SELECT_ARROW, backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 10px center',
+                        }}>
+                        <optgroup label="Leads — before the call">
+                          {cfg.lead.map(st => <option key={st} value={st}>{st}</option>)}
+                        </optgroup>
+                        <optgroup label="Deals — after the call">
+                          {cfg.deal.map(st => <option key={st} value={st}>{st}</option>)}
+                        </optgroup>
+                      </select>
+                      {pipeline === 'deal' && (
+                        <span style={{ fontSize: 13.5, fontWeight: 800, color: lead.deal_value_cr ? 'var(--brand-primary)' : 'rgba(27,76,94,.3)', flexShrink: 0 }}>
+                          {formatCr(lead.deal_value_cr, { dash: '—' })}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 12.5, fontWeight: 800, color: scoreColor(lead.lead_score), flexShrink: 0, minWidth: 20, textAlign: 'right' }}>{lead.lead_score}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div style={{ display: isMobile ? 'none' : 'block', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden' }}>
             {/* Dynamic column headers */}
             <div style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'deal' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
               <span>NAME</span>
@@ -553,7 +671,18 @@ export default function CRM({ onOpenChat }) {
                 {(formDef?.fields || []).map(f => (
                   <span key={f.key} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(lead.attributes || {})[f.key] || '-'}</span>
                 ))}
-                <span><span style={leadChip(lead.lead_status)}>{lead.lead_status}</span></span>
+                <span onClick={e => e.stopPropagation()}>
+                  <select value={lead.lead_status} onChange={e => changeStage(lead.id, e.target.value)}
+                    aria-label={`Stage for ${lead.profile_name}`}
+                    style={{ ...leadChip(lead.lead_status), maxWidth: '100%', fontSize: 11.5, padding: '4px 24px 4px 11px', border: 'none', borderRadius: 999, fontFamily: 'inherit', cursor: 'pointer', appearance: 'none', backgroundImage: SELECT_ARROW, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 9px center' }}>
+                    <optgroup label="Leads — before the call">
+                      {cfg.lead.map(st => <option key={st} value={st}>{st}</option>)}
+                    </optgroup>
+                    <optgroup label="Deals — after the call">
+                      {cfg.deal.map(st => <option key={st} value={st}>{st}</option>)}
+                    </optgroup>
+                  </select>
+                </span>
                 {pipeline === 'deal' && (
                   <span style={{ fontWeight: 800, color: lead.deal_value_cr ? 'var(--brand-primary)' : 'rgba(27,76,94,.3)' }}>{formatCr(lead.deal_value_cr)}</span>
                 )}
@@ -571,7 +700,7 @@ export default function CRM({ onOpenChat }) {
       )}
 
       {/* Contact panel for kanban view */}
-      {view === 'kanban' && selContact && (
+      {effectiveView === 'kanban' && selContact && (
         <LeadDetailModal contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} onOpenChat={onOpenChat} />
       )}
 
