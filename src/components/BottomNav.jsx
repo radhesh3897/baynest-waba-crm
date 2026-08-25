@@ -8,17 +8,19 @@ import {
 import { signOut } from '../supabaseClient';
 import { getUnreadCount } from '../liveData';
 
-// Primary tabs always visible on the bar.
+// Primary tabs always visible on the bar. Both inboxes sit here: they are what
+// the team opens all day, whereas a flow is built once and then left alone, so
+// Flows moved back into the More sheet to make room.
 const MAIN = [
-  { key: 'home',       label: 'Home',  Icon: IconHome },
-  { key: 'inbox',      label: 'Inbox', Icon: IconInbox },
-  { key: 'automation', label: 'Flows', Icon: IconZap },
-  { key: 'crm',        label: 'CRM',   Icon: IconDb },
+  { key: 'home',     label: 'Home',      Icon: IconHome },
+  { key: 'inbox',    label: 'WA Inbox',  Icon: IconInbox,      channel: 'whatsapp' },
+  { key: 'ig-inbox', label: 'IG Inbox',  Icon: IconInstagram,  channel: 'instagram' },
+  { key: 'crm',      label: 'CRM',       Icon: IconDb },
 ];
 // Everything else lives behind the "More" sheet.
 const MORE = [
   { key: 'visits', label: 'Visits', Icon: IconCalendar },
-  { key: 'ig-inbox', label: 'Instagram Inbox', Icon: IconInstagram },
+  { key: 'automation', label: 'Flows', Icon: IconZap },
   { key: 'leads-overview', label: 'Leads Overview', Icon: IconFunnel },
   { key: 'ads',       label: 'Ads Dashboard',    Icon: IconMeta },
   { key: 'reports',   label: 'Reports',          Icon: IconReport },
@@ -60,12 +62,15 @@ function Tab({ label, Icon, active, badge, onClick }) {
 }
 
 export default function BottomNav({ screen, onNav }) {
-  const [unread, setUnread] = useState(0);
+  const [unread, setUnread] = useState({ whatsapp: 0, instagram: 0 });
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    const refresh = () => getUnreadCount().then(n => { if (alive) setUnread(n); });
+    const refresh = () => Promise.all([
+      getUnreadCount('whatsapp'),
+      getUnreadCount('instagram'),
+    ]).then(([whatsapp, instagram]) => { if (alive) setUnread({ whatsapp, instagram }); });
     refresh();
     const t = setInterval(refresh, 20000);
     return () => { alive = false; clearInterval(t); };
@@ -125,7 +130,7 @@ export default function BottomNav({ screen, onNav }) {
         {MAIN.map(item => (
           <Tab key={item.key} label={item.label} Icon={item.Icon}
             active={screen === item.key}
-            badge={item.key === 'inbox' ? unread : 0}
+            badge={item.channel ? unread[item.channel] : 0}
             onClick={() => go(item.key)} />
         ))}
         <Tab label="More" Icon={IconMore} active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)} />
