@@ -14,7 +14,7 @@ import PipelineMover from './PipelineMover';
 // bare `contactId` and loads it (the dashboard's Recent Leads only holds an id).
 // Same panel either way, so a lead opened from Home behaves exactly like one
 // opened from the board.
-export default function LeadDetailModal({ contact: given, contactId, onClose, onUpdate }) {
+export default function LeadDetailModal({ contact: given, contactId, onClose, onUpdate, onOpenChat }) {
   const [fetched, setFetched] = useState(null);
   const [loading, setLoading] = useState(!given);
 
@@ -98,10 +98,24 @@ export default function LeadDetailModal({ contact: given, contactId, onClose, on
         <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{view.jobTitle !== '-' ? `${view.jobTitle} · ` : ''}{view.company !== '-' ? view.company : ''}</div>
         {view.phone && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 13 }}>
-            <a href={`https://wa.me/${String(view.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" title="Open WhatsApp chat"
-              style={{ width: 42, height: 42, borderRadius: 12, border: '1px solid rgba(46,158,79,.3)', background: '#EAF6E4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B6B45', textDecoration: 'none' }}>
-              <IconWhatsApp size={20} />
-            </a>
+            {/* A thread we already hold opens in our own Inbox — that is where
+                the team replies, and where the history and templates live.
+                Roughly half of all leads have never messaged us, though, and
+                there is no thread to open for them: those get WhatsApp itself,
+                which is the only way to start the conversation. */}
+            {onOpenChat && view.wa_conversation_id ? (
+              <button type="button" title="Open this chat in the Inbox"
+                onClick={() => { onOpenChat(view.id); onClose?.(); }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 42, padding: '0 16px', borderRadius: 12, border: '1px solid rgba(46,158,79,.3)', background: '#EAF6E4', color: '#3B6B45', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                <IconWhatsApp size={19} /> Open chat
+              </button>
+            ) : (
+              <a href={`https://wa.me/${String(view.phone || '').replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer"
+                title="No chat in the inbox yet — this opens WhatsApp to start one"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 42, padding: '0 16px', borderRadius: 12, border: '1px solid rgba(27,76,94,.18)', background: '#fff', color: 'rgba(27,76,94,.7)', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                <IconWhatsApp size={19} /> Start on WhatsApp
+              </a>
+            )}
           </div>
         )}
       </div>

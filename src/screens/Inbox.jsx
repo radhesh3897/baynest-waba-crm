@@ -133,7 +133,7 @@ const EMOJIS = ['😀', '😁', '😂', '🤣', '🙂', '😊', '😍', '😎', 
 // One component, two inboxes. `channel` scopes it to WhatsApp or Instagram;
 // the differences between them (templates, media, what happens when the 24h
 // window closes) are handled inline rather than by forking the screen.
-export default function Inbox({ channel = 'whatsapp' }) {
+export default function Inbox({ channel = 'whatsapp', openContactId = null, onOpenedContact }) {
   const isIg = channel === 'instagram';
   const isMobile = useIsMobile();
   const [convos, setConvos] = useState([]);
@@ -197,6 +197,22 @@ export default function Inbox({ channel = 'whatsapp' }) {
     getTemplatesLive().then(t => setPickerTemplates(t || []));
     getFlowRepliedContactIds().then(setFlowIds);
   }, []);
+
+  // Someone asked for one lead's chat (the "Open chat" button on a lead).
+  // Select that thread once the list has loaded, and on a phone jump straight
+  // past the conversation list into the thread itself.
+  useEffect(() => {
+    if (!openContactId || !convos.length) return;
+    const match = convos.find(c => c.contact_id === openContactId || c.contact?.id === openContactId);
+    if (match) {
+      setSelConvId(match.id);
+      if (isMobile) { setMobilePane('thread'); setContactPanelOpen(false); }
+    }
+    // Clear the request either way — a lead with no thread yet should not keep
+    // re-firing this on every poll.
+    onOpenedContact?.(!!match);
+    // eslint-disable-next-line
+  }, [openContactId, convos.length]);
 
   useEffect(() => {
     const unsub = subscribeMessages(payload => {

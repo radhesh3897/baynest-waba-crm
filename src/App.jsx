@@ -36,6 +36,12 @@ export default function App() {
     return ROOT_SCREENS.includes(next) ? [next] : [...s, next];
   });
   const goBack = () => setNavStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+  // Opening a lead's chat from anywhere: jump to the Inbox and tell it which
+  // thread to select. Held here because the Inbox and the screens that link
+  // into it are siblings, and the tool replies from its own inbox rather than
+  // handing the conversation off to the WhatsApp app.
+  const [chatContactId, setChatContactId] = useState(null);
+  const openChat = (contactId) => { setChatContactId(contactId); navigate('inbox'); };
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const isMobile = useIsMobile();
@@ -70,13 +76,13 @@ export default function App() {
   if (!session) return <Login />;
 
   function renderMain() {
-    if (screen === 'home')       return <Home onNav={navigate} />;
-    if (screen === 'inbox')      return <Inbox channel="whatsapp" />;
+    if (screen === 'home')       return <Home onNav={navigate} onOpenChat={openChat} />;
+    if (screen === 'inbox')      return <Inbox channel="whatsapp" openContactId={chatContactId} onOpenedContact={() => setChatContactId(null)} />;
     if (screen === 'ig-inbox')   return <Inbox key="ig" channel="instagram" />;
     if (screen === 'automation') return <Automation />;
     if (screen === 'templates')  return <Templates />;
-    if (screen === 'crm')        return <CRM />;
-    if (screen === 'people')     return <People />;
+    if (screen === 'crm')        return <CRM onOpenChat={openChat} />;
+    if (screen === 'people')     return <People onOpenChat={openChat} />;
     if (screen === 'properties') return <Properties />;
     if (screen === 'visits')     return <Visits />;
     if (screen === 'ads')        return <MetaDashboard />;

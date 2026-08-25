@@ -827,7 +827,7 @@ export async function getHomeStatsLive() {
 export async function getContactLive(id) {
   if (!id) return null;
   const { data, error } = await supabase
-    .from('contacts').select('*').eq('id', id).maybeSingle();
+    .from('contacts').select('*, conversations(id, channel)').eq('id', id).maybeSingle();
   if (error) { console.error('getContactLive', error); return null; }
   const c = mapContact(data);
   if (!c) return null;
@@ -840,6 +840,7 @@ export async function getContactLive(id) {
     jobTitle: c.jobTitle || '-',
     lastContacted: relativeTime(data.last_inbound_at || data.created_at),
     received: exactTime(data.created_at),
+    wa_conversation_id: (data.conversations || []).find(v => v.channel === 'whatsapp')?.id || null,
   };
 }
 
@@ -953,7 +954,7 @@ export async function getFormsLive() {
 export async function getPeopleLive() {
   const { data, error } = await supabase
     .from('contacts')
-    .select('*, fb_forms(id, name)')
+    .select('*, fb_forms(id, name), conversations(id, channel)')
     .order('created_at', { ascending: false });
   if (error) { console.error('getPeopleLive', error); return []; }
   return data.map(c => {
@@ -982,6 +983,7 @@ export async function getPeopleLive() {
       received: exactTime(c.created_at),
       form_uuid: c.form_id,
       formName: c.fb_forms?.name || null,
+      wa_conversation_id: (c.conversations || []).find(v => v.channel === 'whatsapp')?.id || null,
     };
   });
 }

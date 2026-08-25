@@ -124,7 +124,7 @@ function PipelineSummary({ stats, onNav }) {
   );
 }
 
-export default function Home({ onNav }) {
+export default function Home({ onNav, onOpenChat }) {
   const isMobile = useIsMobile();
   const [stats, setStats] = useState(null);
   const [qual, setQual] = useState(null);
@@ -229,7 +229,7 @@ export default function Home({ onNav }) {
           })}
         </div>
         {openLeadId && (
-          <LeadDetailModal contactId={openLeadId} onClose={() => setOpenLeadId(null)} onUpdate={load} />
+          <LeadDetailModal contactId={openLeadId} onClose={() => setOpenLeadId(null)} onUpdate={load} onOpenChat={onOpenChat} />
         )}
       </div>
     );
@@ -417,7 +417,7 @@ export default function Home({ onNav }) {
           })}
         </div>
         {openLeadId && (
-          <LeadDetailModal contactId={openLeadId} onClose={() => setOpenLeadId(null)} onUpdate={load} />
+          <LeadDetailModal contactId={openLeadId} onClose={() => setOpenLeadId(null)} onUpdate={load} onOpenChat={onOpenChat} />
         )}
 
       </div>

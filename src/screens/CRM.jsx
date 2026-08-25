@@ -258,7 +258,7 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
 }
 
 // ── Main CRM screen ───────────────────────────────────────────────────────────
-export default function CRM() {
+export default function CRM({ onOpenChat }) {
   const isMobile = useIsMobile();
   const [forms, setForms] = useState([]);
   const [allLeads, setAllLeads] = useState([]);
@@ -570,14 +570,14 @@ export default function CRM() {
 
           {/* Contact detail panel */}
           {selContact && (
-            <LeadDetailModal contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
+            <LeadDetailModal contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} onOpenChat={onOpenChat} />
           )}
         </div>
       )}
 
       {/* Contact panel for kanban view */}
       {view === 'kanban' && selContact && (
-        <LeadDetailModal contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} />
+        <LeadDetailModal contact={selContact} formDef={formDef} onClose={() => setSelContact(null)} onUpdate={patchLead} onOpenChat={onOpenChat} />
       )}
 
       {/* Add Lead drawer */}

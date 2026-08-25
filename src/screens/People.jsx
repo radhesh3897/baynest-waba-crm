@@ -9,7 +9,7 @@ import PipelineMover from '../components/PipelineMover';
 import { leadChip, formatCr, pipelineOf } from '../pipeline';
 
 
-export default function People() {
+export default function People({ onOpenChat }) {
   const isMobile = useIsMobile();
   const [contacts, setContacts] = useState([]);
   const [forms, setForms] = useState([]);
