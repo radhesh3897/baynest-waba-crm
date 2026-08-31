@@ -81,12 +81,19 @@ function mapContact(c) {
 // ─── Conversations ────────────────────────────────────────────────────────────
 // `channel` scopes the list to one inbox ('whatsapp' | 'instagram'); omit it to
 // get every thread.
-export async function getConversationsLive(channel) {
+// `scope` splits the WhatsApp threads in two without touching `channel`:
+//   'campaign' — started by a blast (conversations.campaign_id is set)
+//   'direct'   — everything else, i.e. the ordinary WhatsApp inbox
+// A campaign reply still arrives over WhatsApp, so the channel must stay
+// 'whatsapp' or the 24-hour window and the template picker stop working.
+export async function getConversationsLive(channel, scope) {
   let query = supabase
     .from('conversations')
-    .select('id, contact_id, channel, last_message_at, window_expires_at, unread_count, status, contacts(*)')
+    .select('id, contact_id, channel, last_message_at, window_expires_at, unread_count, status, campaign_id, campaigns(id, name), contacts(*)')
     .order('last_message_at', { ascending: false, nullsFirst: false });
   if (channel) query = query.eq('channel', channel);
+  if (scope === 'campaign') query = query.not('campaign_id', 'is', null);
+  else if (scope === 'direct') query = query.is('campaign_id', null);
   const { data, error } = await query;
 
   if (error) {
@@ -545,6 +552,73 @@ export async function createCampaign({ name, template_name, template_language, v
   return { ok: true, id: camp.id, count: recipients.length };
 }
 
+// Campaign from an uploaded list. Unlike the filtered path this does not touch
+// `contacts` at all: the CSV is the audience. Each row carries its own template
+// variables, so one blast can say something different to every recipient.
+export async function createCampaignFromCsv({ name, template_name, template_language, rows, csv_columns, header_image, maxRetries = 3 }) {
+  if (!Array.isArray(rows) || rows.length === 0) return { ok: false, error: 'No rows in that file.' };
+
+  const { data: camp, error: ce } = await supabase.from('campaigns')
+    .insert({
+      name, template_name, template_language: template_language || 'en',
+      variables: [], filters: {}, source: 'csv',
+      csv_columns: csv_columns || null,
+      header_image: header_image || null, status: 'sending',
+    })
+    .select('id').single();
+  if (ce) return { ok: false, error: ce.message };
+
+  // Match an uploaded number to an existing lead where we have one, so the
+  // reply lands on that lead's record rather than creating a duplicate.
+  const phones = rows.map(r => r.phone);
+  const known = {};
+  for (let i = 0; i < phones.length; i += 300) {
+    const { data } = await supabase.from('contacts').select('id, wa_id').in('wa_id', phones.slice(i, i + 300));
+    (data || []).forEach(c => { known[c.wa_id] = c.id; });
+  }
+
+  // Anyone not already in the CRM is created, otherwise the campaign could not
+  // record a conversation against them and the reply would have nowhere to go.
+  const unknown = rows.filter(r => !known[r.phone]);
+  for (let i = 0; i < unknown.length; i += 200) {
+    const batch = unknown.slice(i, i + 200).map(r => ({
+      wa_id: r.phone,
+      profile_name: r.name || r.phone,
+      email: r.email || null,
+      source: 'Campaign CSV',
+      lead_status: 'New',
+    }));
+    const { data, error } = await supabase.from('contacts')
+      .upsert(batch, { onConflict: 'wa_id', ignoreDuplicates: false })
+      .select('id, wa_id');
+    if (error) return { ok: false, error: error.message };
+    (data || []).forEach(c => { known[c.wa_id] = c.id; });
+  }
+
+  const recipients = rows
+    .filter(r => known[r.phone])
+    .map(r => ({
+      campaign_id: camp.id,
+      contact_id: known[r.phone],
+      wa_id: r.phone,
+      first_name: firstNameOf(r.name) || null,
+      full_name: r.name || null,
+      email: r.email || null,
+      variables: r.variables || [],
+      status: 'queued',
+      max_attempts: Math.max(1, (Number(maxRetries) || 0) + 1),
+      next_attempt_at: new Date().toISOString(),
+    }));
+
+  if (recipients.length === 0) return { ok: false, error: 'Could not prepare any recipients from that file.' };
+
+  for (let i = 0; i < recipients.length; i += 500) {
+    const { error } = await supabase.from('campaign_recipients').insert(recipients.slice(i, i + 500));
+    if (error) return { ok: false, error: error.message };
+  }
+  return { ok: true, id: camp.id, count: recipients.length };
+}
+
 // True per-recipient status uses the message's delivery status (updated by the
 // webhook), not just the send-time result — so 131049-type failures count.
 async function msgStatusMap(recs) {
@@ -770,9 +844,11 @@ export async function addLeadLive(d) {
 }
 
 // Count of conversations with unread inbound messages (for the Inbox nav badge).
-export async function getUnreadCount(channel) {
+export async function getUnreadCount(channel, scope) {
   let q = supabase.from('conversations').select('*', { count: 'exact', head: true }).gt('unread_count', 0);
   if (channel) q = q.eq('channel', channel);
+  if (scope === 'campaign') q = q.not('campaign_id', 'is', null);
+  else if (scope === 'direct') q = q.is('campaign_id', null);
   const { count } = await q;
   return count || 0;
 }

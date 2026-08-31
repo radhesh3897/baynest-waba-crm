@@ -71,11 +71,20 @@ serve(async (req: Request) => {
 
     try {
       // Ensure a conversation exists (leads who never messaged won't have one).
+      // Stamp it with the campaign either way: that stamp is the ONLY thing
+      // that separates the campaign inbox from the WhatsApp one, since the
+      // channel has to stay 'whatsapp' for sending and the 24-hour window.
       let convId: string;
-      const { data: conv } = await db.from("conversations").select("id").eq("contact_id", r.contact_id).eq("channel", "whatsapp").maybeSingle();
-      if (conv) convId = conv.id;
-      else {
-        const { data: nc, error: ce } = await db.from("conversations").insert({ contact_id: r.contact_id, channel: "whatsapp", status: "open" }).select("id").single();
+      const { data: conv } = await db.from("conversations").select("id, campaign_id").eq("contact_id", r.contact_id).eq("channel", "whatsapp").maybeSingle();
+      if (conv) {
+        convId = conv.id;
+        // Latest campaign wins, so a re-targeted lead shows under the blast
+        // that actually prompted the reply.
+        await db.from("conversations").update({ campaign_id: r.campaign_id }).eq("id", conv.id);
+      } else {
+        const { data: nc, error: ce } = await db.from("conversations")
+          .insert({ contact_id: r.contact_id, channel: "whatsapp", status: "open", campaign_id: r.campaign_id })
+          .select("id").single();
         if (ce || !nc) throw new Error("conversation create failed");
         convId = nc.id;
       }
@@ -85,9 +94,18 @@ serve(async (req: Request) => {
       if (camp.header_image) {
         components.push({ type: "header", parameters: [{ type: "image", image: { link: String(camp.header_image) } }] });
       }
-      const vars = (camp.variables as string[]) ?? [];
+      // A CSV campaign carries its own values per row; a filtered one shares a
+      // single array across the whole blast with {{first_name}} substituted.
+      const rowVars = Array.isArray(r.variables) ? (r.variables as string[]) : null;
+      const vars = rowVars ?? ((camp.variables as string[]) ?? []);
       if (vars.length) {
-        components.push({ type: "body", parameters: vars.map((v) => ({ type: "text", text: v === "{{first_name}}" ? (r.first_name || "there") : String(v) })) });
+        components.push({
+          type: "body",
+          parameters: vars.map((v) => ({
+            type: "text",
+            text: v === "{{first_name}}" ? (r.first_name || "there") : String(v ?? ""),
+          })),
+        });
       }
 
       const payload = {

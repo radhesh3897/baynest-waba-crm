@@ -132,8 +132,11 @@ const EMOJIS = ['😀', '😁', '😂', '🤣', '🙂', '😊', '😍', '😎', 
 // One component, two inboxes. `channel` scopes it to WhatsApp or Instagram;
 // the differences between them (templates, media, what happens when the 24h
 // window closes) are handled inline rather than by forking the screen.
-export default function Inbox({ channel = 'whatsapp', openContactId = null, onOpenedContact }) {
+export default function Inbox({ channel = 'whatsapp', scope = null, openContactId = null, onOpenedContact }) {
   const isIg = channel === 'instagram';
+  const isCampaign = scope === 'campaign';
+  const inboxTitle = isIg ? 'Instagram Inbox' : isCampaign ? 'Campaign Inbox' : 'WhatsApp Inbox';
+  const inboxTitleShort = isIg ? 'Instagram' : isCampaign ? 'Campaign' : 'Inbox';
   const isMobile = useIsMobile();
   const [convos, setConvos] = useState([]);
   const [selConvId, setSelConvId] = useState(null);
@@ -183,7 +186,7 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
   }
 
   async function reloadConvos() {
-    const data = await getConversationsLive(channel);
+    const data = await getConversationsLive(channel, scope);
     setConvos(data);
     setLoading(false);
     // On mobile we keep the list visible until the user taps a conversation;
@@ -802,7 +805,7 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#fff' }}>
             <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(27,76,94,.08)', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-primary)' }}>{isIg ? 'Instagram Inbox' : 'Inbox'} <span style={{ fontSize: 14, color: 'rgba(27,76,94,.45)', fontWeight: 700 }}>({visibleConvos.length})</span></span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--brand-primary)' }}>{inboxTitle} <span style={{ fontSize: 14, color: 'rgba(27,76,94,.45)', fontWeight: 700 }}>({visibleConvos.length})</span></span>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setMobileFiltersOpen(true)} style={{ height: 36, padding: '0 13px', borderRadius: 9, border: '1px solid rgba(27,76,94,.14)', background: (inboxFilter !== 'all' || convStatus !== 'open' || readStatus !== '' || durFrom || durTo) ? '#EAF6E4' : '#fff', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--brand-primary)', fontSize: 12.5, fontWeight: 700 }}>
                     <IconFilter size={15} /> Filter
@@ -900,7 +903,7 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
         {/* ── Left filter pane ── */}
         <div style={{ width: 216, flexShrink: 0, background: '#fff', borderRight: '1px solid rgba(27,76,94,.10)', overflowY: 'auto', padding: '16px 12px' }}>
           <div style={{ padding: '0 4px 12px' }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{isIg ? 'Instagram' : 'Inbox'}</span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{inboxTitleShort}</span>
           </div>
           {filtersInner}
         </div>

@@ -25,7 +25,7 @@ import { IconBack } from './icons';
 const STUBS = ['logs', 'help'];
 // Bottom-tab roots reset the nav stack; everything else is a pushed sub-screen
 // (so mobile gets a Back button to return).
-const ROOT_SCREENS = ['home', 'inbox', 'automation', 'crm', 'ig-inbox'];
+const ROOT_SCREENS = ['home', 'inbox', 'automation', 'crm', 'ig-inbox', 'campaign-inbox'];
 
 export default function App() {
   const [navStack, setNavStack] = useState(['home']);
@@ -77,7 +77,10 @@ export default function App() {
 
   function renderMain() {
     if (screen === 'home')       return <Home onNav={navigate} onOpenChat={openChat} />;
-    if (screen === 'inbox')      return <Inbox channel="whatsapp" openContactId={chatContactId} onOpenedContact={() => setChatContactId(null)} />;
+    if (screen === 'inbox')      return <Inbox channel="whatsapp" scope="direct" openContactId={chatContactId} onOpenedContact={() => setChatContactId(null)} />;
+    // Campaign replies arrive over WhatsApp too — the split is the campaign
+    // stamp on the conversation, not the channel.
+    if (screen === 'campaign-inbox') return <Inbox key="camp" channel="whatsapp" scope="campaign" />;
     if (screen === 'ig-inbox')   return <Inbox key="ig" channel="instagram" />;
     if (screen === 'automation') return <Automation />;
     if (screen === 'templates')  return <Templates />;

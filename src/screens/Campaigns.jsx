@@ -5,7 +5,9 @@ import { IconPlus, IconX, IconRefresh, IconClip } from '../icons';
 import {
   getCampaigns, getCampaign, createCampaign, pauseCampaign, retryCampaignFailed, previewAudience,
   getTemplatesLive, templateVars, uploadHeaderImage, QUALIFICATIONS, QUALIFICATION_LABELS,
+  createCampaignFromCsv,
 } from '../liveData';
+import { parseCsv, downloadSampleCsv, SAMPLE_HEADERS } from '../csv';
 import { LEAD_STAGES, DEAL_STAGES, TEMPERATURES, tempStyle } from '../pipeline';
 
 const FOREST = 'var(--brand-primary)';
@@ -216,6 +218,12 @@ function Builder({ onClose, onDone, isMobile }) {
   const [segment, setSegment] = useState('all'); // 'all' | 'new' | 'old' (imported)
   const [count, setCount] = useState(null);
   const [maxRetries, setMaxRetries] = useState(3);
+  // 'filter' targets the CRM; 'csv' targets an uploaded list and ignores the
+  // filters entirely — the file IS the audience.
+  const [audienceSource, setAudienceSource] = useState('filter');
+  const [csv, setCsv] = useState(null);       // parseCsv result
+  const [csvName, setCsvName] = useState('');
+  const csvInputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -243,13 +251,31 @@ function Builder({ onClose, onDone, isMobile }) {
 
   async function preview() { setCount('…'); setCount(await previewAudience(filters())); }
 
+  async function onCsvFile(e) {
+    const f = e.target.files?.[0]; e.target.value = '';
+    if (!f) return;
+    setErr('');
+    const text = await f.text();
+    const parsed = parseCsv(text);
+    if (!parsed.ok) { setCsv(null); setCsvName(''); setErr(parsed.error); return; }
+    setCsv(parsed); setCsvName(f.name);
+  }
+
   async function submit() {
     setErr('');
     if (!name.trim()) return setErr('Give the campaign a name.');
     if (!tpl) return setErr('Pick a template.');
     if (needsImage && !headerImage.trim()) return setErr('This template has an image header. Add a header image URL.');
+    if (audienceSource === 'csv' && !csv) return setErr('Upload a CSV, or switch back to filtering your leads.');
+
     setBusy(true);
-    const res = await createCampaign({ name: name.trim(), template_name: tpl.name, template_language: tpl.language, variables: vars, filters: filters(), header_image: needsImage ? headerImage.trim() : null, maxRetries });
+    const common = {
+      name: name.trim(), template_name: tpl.name, template_language: tpl.language,
+      header_image: needsImage ? headerImage.trim() : null, maxRetries,
+    };
+    const res = audienceSource === 'csv'
+      ? await createCampaignFromCsv({ ...common, rows: csv.rows, csv_columns: csv.variableColumns })
+      : await createCampaign({ ...common, variables: vars, filters: filters() });
     setBusy(false);
     if (res.ok) { alert(`Campaign started, sending to ${res.count} people. It sends in batches; check the campaign for live progress.`); onDone(); }
     else setErr(res.error || 'Failed to create campaign.');
@@ -294,6 +320,92 @@ function Builder({ onClose, onDone, isMobile }) {
       <div style={{ height: 1, background: 'rgba(27,76,94,.1)', margin: '16px 0' }} />
       <div style={{ fontSize: 13, fontWeight: 800, color: FOREST, marginBottom: 12 }}>Audience</div>
 
+      {/* Two ways to build a list, and they are mutually exclusive: a CSV IS
+          the audience, so the CRM filters below do not apply to it. */}
+      <div style={{ display: 'flex', gap: 3, background: '#F2F6F3', border: '1px solid rgba(27,76,94,.12)', borderRadius: 10, padding: 3, marginBottom: 16 }}>
+        {[{ k: 'filter', t: 'My leads', s: 'Filter the CRM' }, { k: 'csv', t: 'Upload a CSV', s: 'Use your own list' }].map((o) => {
+          const on = audienceSource === o.k;
+          return (
+            <button key={o.k} type="button" onClick={() => { setAudienceSource(o.k); setErr(''); }}
+              style={{ flex: 1, padding: '9px 6px', minHeight: 44, borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontFamily: 'inherit', lineHeight: 1.25, background: on ? FOREST : 'transparent', color: on ? '#fff' : 'rgba(27,76,94,.65)' }}>
+              <span style={{ display: 'block', fontSize: 12.5, fontWeight: on ? 800 : 600 }}>{o.t}</span>
+              <span style={{ display: 'block', fontSize: 9.5, fontWeight: 600, opacity: on ? .75 : .55 }}>{o.s}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {audienceSource === 'csv' && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>Contact list</label>
+            <button type="button" onClick={() => downloadSampleCsv()}
+              style={{ background: 'transparent', border: 'none', color: 'var(--brand-muted)', fontFamily: 'inherit',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '8px 6px', margin: '-8px -6px', minHeight: 38 }}>
+              Download sample CSV
+            </button>
+          </div>
+
+          <input ref={csvInputRef} type="file" accept=".csv,text/csv" onChange={onCsvFile} style={{ display: 'none' }} />
+          <button type="button" onClick={() => csvInputRef.current?.click()}
+            style={{ width: '100%', minHeight: 52, border: '1.5px dashed rgba(27,76,94,.28)', borderRadius: 11,
+              background: csv ? '#F2F8F2' : '#fff', color: FOREST, fontFamily: 'inherit', fontSize: 13.5,
+              fontWeight: 700, cursor: 'pointer', padding: '12px 14px' }}>
+            {csv ? 'Replace ' + csvName : 'Choose a CSV file'}
+          </button>
+
+          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.5)', lineHeight: 1.5, marginTop: 8 }}>
+            Needs a phone column. Columns named {SAMPLE_HEADERS.slice(3).join(', ')} become your template variables, in order.
+            A 10-digit number is treated as Indian and gets +91.
+          </div>
+
+          {csv && (
+            <div style={{ marginTop: 12, border: '1px solid rgba(27,76,94,.12)', borderRadius: 11, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', padding: '11px 13px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
+                <strong style={{ fontSize: 15, fontWeight: 800, color: FOREST }}>{csv.rows.length}</strong>
+                <span style={{ fontSize: 12.5, color: 'rgba(27,76,94,.6)' }}>contacts</span>
+                <span style={{ color: 'rgba(27,76,94,.25)' }}>|</span>
+                <strong style={{ fontSize: 15, fontWeight: 800, color: FOREST }}>{csv.variableCount}</strong>
+                <span style={{ fontSize: 12.5, color: 'rgba(27,76,94,.6)' }}>
+                  {csv.variableCount === 1 ? 'variable' : 'variables'} found
+                </span>
+              </div>
+
+              <div style={{ padding: '11px 13px', fontSize: 11.5, color: 'rgba(27,76,94,.6)', lineHeight: 1.6 }}>
+                <div>Phone from <strong style={{ color: FOREST }}>{csv.mapped.phone}</strong>
+                  {csv.mapped.name && <> · name from <strong style={{ color: FOREST }}>{csv.mapped.name}</strong></>}
+                  {csv.mapped.email && <> · email from <strong style={{ color: FOREST }}>{csv.mapped.email}</strong></>}
+                </div>
+                {csv.variableColumns.map((c, i) => (
+                  <div key={c}>{'{{' + (i + 1) + '}}'} from <strong style={{ color: FOREST }}>{c}</strong>
+                    <span style={{ color: 'rgba(27,76,94,.42)' }}> e.g. {csv.rows[0].variables[i] || '-'}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* The template decides how many variables it needs; the file
+                  decides how many it has. A mismatch is rejected by Meta at
+                  send time, so say so here instead. */}
+              {tpl && csv.variableCount !== vars.length && (
+                <div style={{ padding: '10px 13px', fontSize: 11.5, lineHeight: 1.5, background: '#FFF1DC', color: '#8A5E22', borderTop: '1px solid rgba(27,76,94,.08)' }}>
+                  This template takes <strong>{vars.length}</strong> {vars.length === 1 ? 'variable' : 'variables'} but the file has <strong>{csv.variableCount}</strong>.
+                  {csv.variableCount > vars.length ? ' The extra columns will be ignored.' : ' The missing ones will send empty.'}
+                </div>
+              )}
+
+              {csv.skipped.length > 0 && (
+                <div style={{ padding: '10px 13px', fontSize: 11.5, lineHeight: 1.5, background: '#FDECEA', color: '#A23B2A', borderTop: '1px solid rgba(27,76,94,.08)' }}>
+                  <strong>{csv.skipped.length} {csv.skipped.length === 1 ? 'row' : 'rows'} skipped.</strong> {csv.skipped.slice(0, 3).join(' | ')}
+                  {csv.skipped.length > 3 && ' and ' + (csv.skipped.length - 3) + ' more'}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {audienceSource === 'filter' && (<>
       <label style={labelStyle}>Lead age</label>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
         {[{ k: 'all', l: 'All leads' }, { k: 'new', l: 'New leads' }, { k: 'old', l: 'Old / imported leads' }].map((o) => (
@@ -335,13 +447,15 @@ function Builder({ onClose, onDone, isMobile }) {
         {DEAL_STAGES.map((s) => <Chip key={s} on={statuses.includes(s)} onClick={() => toggle(statuses, setStatuses, s)}>{s}</Chip>)}
       </div>
 
+      </>)}
+
       <label style={labelStyle}>Retries on failure</label>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
         {[1, 2, 3].map((n) => <Chip key={n} on={maxRetries === n} onClick={() => setMaxRetries(n)}>{n} {n === 1 ? 'retry' : 'retries'}</Chip>)}
       </div>
       <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginBottom: 16, lineHeight: 1.5 }}>How many extra attempts to make for anyone who fails (e.g. Meta rate-caps), spread over ~24h.</div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: audienceSource === 'csv' ? 'none' : 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <button onClick={preview} style={{ background: '#fff', border: '1px solid rgba(27,76,94,.18)', color: FOREST, fontSize: 12.5, fontWeight: 700, padding: '9px 14px', borderRadius: 9, cursor: 'pointer' }}>Preview recipients</button>
         {count !== null && <span style={{ fontSize: 13, fontWeight: 700, color: FOREST }}>{count} {count === 1 ? 'person' : 'people'}{(!dateFrom && !dateTo && !quals.length && !statuses.length && !temps.length) ? ' (everyone)' : ''}</span>}
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  IconHome, IconZap, IconDb, IconPeople, IconWhatsApp,
+  IconHome, IconZap, IconDb, IconPeople, IconWhatsApp, IconMegaphone,
   IconTemplate, IconSettings, IconLogs, IconHelp, IconTarget, IconSend,
   IconInstagram, IconCalendar, IconFunnel, IconMeta, IconReport
 } from '../icons';
@@ -12,10 +12,11 @@ import { getUnreadCount } from '../liveData';
 // the team opens all day, whereas a flow is built once and then left alone, so
 // Flows moved back into the More sheet to make room.
 const MAIN = [
-  { key: 'home',     label: 'Home',      Icon: IconHome },
-  { key: 'inbox',    label: 'WA Inbox',  Icon: IconWhatsApp,   channel: 'whatsapp' },
-  { key: 'ig-inbox', label: 'IG Inbox',  Icon: IconInstagram,  channel: 'instagram' },
-  { key: 'crm',      label: 'CRM',       Icon: IconDb },
+  { key: 'home',           label: 'Home',     Icon: IconHome },
+  { key: 'inbox',          label: 'WA',       Icon: IconWhatsApp,  channel: 'whatsapp', scope: 'direct' },
+  { key: 'ig-inbox',       label: 'IG',       Icon: IconInstagram, channel: 'instagram' },
+  { key: 'campaign-inbox', label: 'Campaign', Icon: IconMegaphone, channel: 'whatsapp', scope: 'campaign' },
+  { key: 'crm',            label: 'CRM',      Icon: IconDb },
 ];
 // Everything else lives behind the "More" sheet.
 const MORE = [
@@ -62,15 +63,16 @@ function Tab({ label, Icon, active, badge, onClick }) {
 }
 
 export default function BottomNav({ screen, onNav }) {
-  const [unread, setUnread] = useState({ whatsapp: 0, instagram: 0 });
+  const [unread, setUnread] = useState({ inbox: 0, 'ig-inbox': 0, 'campaign-inbox': 0 });
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
     const refresh = () => Promise.all([
-      getUnreadCount('whatsapp'),
+      getUnreadCount('whatsapp', 'direct'),
       getUnreadCount('instagram'),
-    ]).then(([whatsapp, instagram]) => { if (alive) setUnread({ whatsapp, instagram }); });
+      getUnreadCount('whatsapp', 'campaign'),
+    ]).then(([a, b, c]) => { if (alive) setUnread({ inbox: a, 'ig-inbox': b, 'campaign-inbox': c }); });
     refresh();
     const t = setInterval(refresh, 20000);
     return () => { alive = false; clearInterval(t); };
@@ -130,7 +132,7 @@ export default function BottomNav({ screen, onNav }) {
         {MAIN.map(item => (
           <Tab key={item.key} label={item.label} Icon={item.Icon}
             active={screen === item.key}
-            badge={item.channel ? unread[item.channel] : 0}
+            badge={unread[item.key] || 0}
             onClick={() => go(item.key)} />
         ))}
         <Tab label="More" Icon={IconMore} active={moreActive || moreOpen} onClick={() => setMoreOpen(o => !o)} />
