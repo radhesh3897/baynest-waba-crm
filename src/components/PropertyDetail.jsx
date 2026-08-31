@@ -127,7 +127,7 @@ export default function PropertyDetail({ property, onClose, onSaved, onTagsChang
             <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.45)' }}>{isNew ? 'ADD PROPERTY' : 'EDIT PROPERTY'}</div>
             <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 2 }}>{form.name || 'New project'}</div>
           </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(27,76,94,.06)', cursor: 'pointer', color: 'rgba(27,76,94,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={15} /></button>
+          <button onClick={onClose} style={{ width: 44, height: 44, borderRadius: 8, border: 'none', background: 'rgba(27,76,94,.06)', cursor: 'pointer', color: 'rgba(27,76,94,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={19} /></button>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 14px' : '20px 22px' }}>

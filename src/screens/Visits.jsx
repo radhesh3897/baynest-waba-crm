@@ -98,7 +98,7 @@ function ScheduleDrawer({ onClose, onSaved, isMobile }) {
         style={{ background: '#fff', width: isMobile ? '100%' : 460, height: '100%', overflowY: 'auto', padding: isMobile ? '18px 16px 40px' : '22px 26px 40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: 'var(--brand-primary)' }}>Schedule a visit</h2>
-          <button onClick={onClose} aria-label="Close" style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', color: 'rgba(27,76,94,.55)' }}><IconX size={14} /></button>
+          <button onClick={onClose} aria-label="Close" style={{ width: 44, height: 44, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', color: 'rgba(27,76,94,.55)' }}><IconX size={19} /></button>
         </div>
 
         <label style={label}>Lead</label>

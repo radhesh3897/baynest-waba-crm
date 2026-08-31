@@ -734,7 +734,7 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{tplToFill ? 'Fill in the details' : 'Choose a template'}</span>
-              <button onClick={closeTemplatePicker} disabled={sendingTpl} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: sendingTpl ? 'default' : 'pointer', opacity: sendingTpl ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}><IconX size={15} /></button>
+              <button onClick={closeTemplatePicker} disabled={sendingTpl} style={{ width: 44, height: 44, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: sendingTpl ? 'default' : 'pointer', opacity: sendingTpl ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}><IconX size={19} /></button>
             </div>
             {sendError && <div style={{ background: '#FDE7E0', color: '#C7503B', fontSize: 12.5, fontWeight: 600, padding: '9px 12px', borderRadius: 9, marginBottom: 14 }}>{sendError}</div>}
 
@@ -881,8 +881,11 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
               style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.4)', zIndex: 250, display: 'flex', justifyContent: 'flex-end' }}>
               <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', stiffness: 360, damping: 34 }}
                 onClick={e => e.stopPropagation()} style={{ width: 'min(360px,90vw)', height: '100%', background: '#fff', overflowY: 'auto' }}>
-                <div style={{ padding: '12px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button onClick={() => setContactPanelOpen(false)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}><IconX size={16} /></button>
+                {/* Sticky: the panel scrolls, so an in-flow close button ends up
+                    off screen exactly like the lead popup's used to. */}
+                <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#fff', borderBottom: '1px solid rgba(27,76,94,.07)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(27,76,94,.55)' }}>Lead details</span>
+                  <button onClick={() => setContactPanelOpen(false)} aria-label="Close" style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.7)' }}><IconX size={19} /></button>
                 </div>
                 {contactDetail}
               </motion.div>

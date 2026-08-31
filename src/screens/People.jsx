@@ -200,13 +200,15 @@ export default function People({ onOpenChat }) {
       {/* Slide-in contact panel */}
       {sel && (
         <div className="fade-up" style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: isMobile ? 'min(330px,92vw)' : 320, background: '#fff', borderLeft: '1px solid rgba(27,76,94,.12)', boxShadow: '-8px 0 24px rgba(14,58,53,.1)', overflowY: 'auto', zIndex: 20 }}>
-          <div style={{ padding: '14px 18px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* Sticky: this panel scrolls, and a close button that scrolls out of
+              reach is the whole complaint — bigger alone does not fix it. */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#fff', borderBottom: '1px solid rgba(27,76,94,.07)', padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button onClick={handleDelete} disabled={deleting} title="Delete this lead" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, padding: '0 12px', borderRadius: 8, border: '1px solid rgba(199,80,59,.28)', background: '#FDECEA', cursor: deleting ? 'default' : 'pointer', color: '#C7503B', fontSize: 12.5, fontWeight: 700, opacity: deleting ? 0.6 : 1 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/></svg>
               {deleting ? 'Deleting…' : 'Delete'}
             </button>
-            <button onClick={() => setSelId(null)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
-              <IconX size={15} />
+            <button onClick={() => setSelId(null)} style={{ width: 44, height: 44, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
+              <IconX size={19} />
             </button>
           </div>
           <div style={{ padding: '6px 18px 16px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
@@ -285,7 +287,7 @@ export default function People({ onOpenChat }) {
           <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: '#fff', borderRadius: 16, width: 'min(440px,94vw)', padding: '22px 24px 24px', boxShadow: '0 24px 60px rgba(14,58,53,.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>Add Contact</span>
-              <button onClick={() => setShowAdd(false)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}><IconX size={15} /></button>
+              <button onClick={() => setShowAdd(false)} style={{ width: 44, height: 44, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}><IconX size={19} /></button>
             </div>
             {addErr && <div style={{ background: '#FDECEA', color: '#C7503B', fontSize: 12.5, fontWeight: 600, padding: '9px 11px', borderRadius: 8, marginBottom: 14 }}>{addErr}</div>}
             {[

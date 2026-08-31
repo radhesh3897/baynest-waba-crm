@@ -151,8 +151,8 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>Add Lead</div>
             {formDef && <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', marginTop: 2 }}>{formDef.name}</div>}
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
-            <IconX size={14} />
+          <button onClick={onClose} style={{ width: 44, height: 44, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
+            <IconX size={19} />
           </button>
         </div>
 
