@@ -499,7 +499,7 @@ export default function Templates() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                   <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--brand-primary)', wordBreak: 'break-all', lineHeight: 1.3 }}>{t.name}</span>
                   <span style={{ position: 'relative', flexShrink: 0 }}>
-                    <button onClick={() => setMenuFor(menuFor === t.id ? null : t.id)} style={{ width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', cursor: 'pointer', border: 'none', background: menuFor === t.id ? '#F2F6F3' : 'transparent' }}><IconDots size={15} /></button>
+                    <button onClick={() => setMenuFor(menuFor === t.id ? null : t.id)} style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.5)', cursor: 'pointer', border: 'none', background: menuFor === t.id ? '#F2F6F3' : 'transparent' }}><IconDots size={15} /></button>
                     {menuFor === t.id && (
                       <>
                         <div onClick={() => setMenuFor(null)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />

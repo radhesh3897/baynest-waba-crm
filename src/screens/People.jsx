@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPeopleLive, getFormsLive, syncFormsFromMeta, deletePersonLive, addContactLive } from '../liveData';
-import { IconSearch, IconPlus, IconX, IconMail, IconPhone, IconWhatsApp, IconZap, IconEdit, IconChevDown, IconRefresh } from '../icons';
+import { IconSearch, IconPlus, IconX, IconEdit, IconChevDown, IconRefresh } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
@@ -219,13 +219,6 @@ export default function People({ onOpenChat }) {
               />
             </div>
             <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{sel.jobTitle !== '-' ? `${sel.jobTitle} · ` : ''}{sel.company !== '-' ? sel.company : ''}</div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 7, marginTop: 13 }}>
-              {[{ Icon: IconMail }, { Icon: IconPhone }, { Icon: IconWhatsApp }, { Icon: IconZap }].map(({ Icon }, i) => (
-                <span key={i} style={{ width: 34, height: 34, borderRadius: 9, border: '1px solid rgba(27,76,94,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(27,76,94,.6)' }}>
-                  <Icon size={15} />
-                </span>
-              ))}
-            </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <div style={{ flex: 1, background: '#F2F8F2', border: '1px solid rgba(27,76,94,.10)', borderRadius: 10, padding: '8px 10px' }}>
                 <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>LEAD SCORE</div>

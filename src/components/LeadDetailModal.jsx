@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { IconX, IconWhatsApp, IconEdit } from '../icons';
 import { getContactLive } from '../liveData';
+import { useIsMobile } from '../useIsMobile';
 import ContactNotes from './ContactNotes';
 import LeadCustomFields from './LeadCustomFields';
 import LeadAnswersEditable from './LeadAnswersEditable';
@@ -15,6 +16,7 @@ import PipelineMover from './PipelineMover';
 // Same panel either way, so a lead opened from Home behaves exactly like one
 // opened from the board.
 export default function LeadDetailModal({ contact: given, contactId, onClose, onUpdate, onOpenChat }) {
+  const isMobile = useIsMobile();
   const [fetched, setFetched] = useState(null);
   const [loading, setLoading] = useState(!given);
 
@@ -52,15 +54,57 @@ export default function LeadDetailModal({ contact: given, contactId, onClose, on
     onUpdate?.(cid, p);
   }
 
+  // Closing this was the single biggest complaint on iOS, for three reasons at
+  // once: the button was 30px (Apple's floor is 44), it sat in the top-right
+  // corner which is the furthest point from a thumb, and it lived INSIDE the
+  // scroll area — so once you read down the panel it was gone and you had to
+  // scroll all the way back up. The header is sticky now, the target is 44px,
+  // and on a phone there is a full-width Close bar pinned at the bottom where
+  // the thumb already is.
   const shell = (children) => (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div className="fade-up" onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, width: 'min(480px,96vw)', maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(14,58,53,.3)' }}>
-        <div style={{ padding: '16px 20px 0', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,76,94,.55)' }}>
-            <IconX size={15} />
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(14,58,53,.45)', zIndex: 200, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center', padding: isMobile ? 0 : 16 }}>
+      <div className="fade-up" onClick={e => e.stopPropagation()} style={{
+        background: '#fff', display: 'flex', flexDirection: 'column',
+        borderRadius: isMobile ? '18px 18px 0 0' : 16,
+        width: isMobile ? '100%' : 'min(480px,96vw)',
+        maxHeight: isMobile ? '92vh' : '88vh',
+        boxShadow: '0 24px 60px rgba(14,58,53,.3)',
+      }}>
+        {/* Sticky so it never scrolls out of reach */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 3, flexShrink: 0, background: '#fff',
+          borderTopLeftRadius: 'inherit', borderTopRightRadius: 'inherit',
+          borderBottom: '1px solid rgba(27,76,94,.08)',
+          display: 'flex', alignItems: 'center', gap: 10, padding: isMobile ? '10px 10px 10px 16px' : '12px 12px 12px 20px',
+        }}>
+          {isMobile && <span aria-hidden="true" style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)', width: 38, height: 4, borderRadius: 999, background: 'rgba(27,76,94,.16)' }} />}
+          <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: isMobile ? 6 : 0 }}>
+            Lead details
+          </span>
+          <button onClick={onClose} aria-label="Close" style={{
+            width: 44, height: 44, flexShrink: 0, borderRadius: 12, border: 'none',
+            background: '#F2F6F3', cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: 'rgba(27,76,94,.7)', marginTop: isMobile ? 6 : 0,
+          }}>
+            <IconX size={19} />
           </button>
         </div>
-        {children}
+
+        <div style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', flex: 1, minHeight: 0 }}>
+          {children}
+        </div>
+
+        {/* Thumb-reachable close on a phone. The sheet is nearly full height, so
+            there is barely any backdrop left to tap. */}
+        {isMobile && (
+          <div style={{ flexShrink: 0, padding: '10px 16px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid rgba(27,76,94,.08)', background: '#fff' }}>
+            <button onClick={onClose} style={{
+              width: '100%', minHeight: 48, borderRadius: 12, border: '1px solid rgba(27,76,94,.16)',
+              background: '#F2F6F3', color: 'var(--brand-primary)', fontFamily: 'inherit',
+              fontSize: 15, fontWeight: 700, cursor: 'pointer',
+            }}>Close</button>
+          </div>
+        )}
       </div>
     </div>
   );

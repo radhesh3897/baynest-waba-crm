@@ -169,7 +169,7 @@ export default function Visits() {
     load(scope);
   }
 
-  const pill = (active) => ({ padding: '7px 15px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', background: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.06)', color: active ? '#fff' : 'rgba(27,76,94,.7)' });
+  const pill = (active) => ({ padding: '9px 15px', minHeight: 38, borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', background: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.06)', color: active ? '#fff' : 'rgba(27,76,94,.7)' });
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: isMobile ? '18px 14px 32px' : '26px 30px 40px' }}>

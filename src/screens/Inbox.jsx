@@ -7,8 +7,7 @@ import {
 } from '../liveData';
 import {
   IconSearch, IconRefresh, IconSmile, IconClip, IconSend, IconClock,
-  IconTemplate, IconMail, IconPhone, IconWhatsApp, IconZap,
-  IconChevDown, IconCalendar, IconInbox, IconFlow, TickIcon, IconX,
+  IconTemplate, IconChevDown, IconCalendar, IconInbox, IconFlow, TickIcon, IconX,
 } from '../icons';
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes from '../components/ContactNotes';
@@ -655,11 +654,6 @@ export default function Inbox({ channel = 'whatsapp', openContactId = null, onOp
           />
         </div>
         <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '-' ? contact.jobTitle + ' · ' : ''}{contact.company !== '-' ? contact.company : ''}</div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
-          {[{ Icon: IconMail, color: 'var(--brand-primary)' }, { Icon: IconPhone, color: 'var(--brand-primary)' }, { Icon: IconWhatsApp, color: '#3B6B45' }, { Icon: IconZap, color: '#B6743A' }].map(({ Icon, color }, i) => (
-            <span key={i} style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid rgba(27,76,94,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><span style={{ width: 16, height: 16, color, display: 'flex' }}><Icon size={16} /></span></span>
-          ))}
-        </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
           <div style={{ flex: 1, background: '#F2F8F2', border: '1px solid rgba(27,76,94,.10)', borderRadius: 10, padding: '9px 10px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>LEAD SCORE</div>

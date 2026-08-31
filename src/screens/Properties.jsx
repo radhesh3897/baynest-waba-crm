@@ -200,7 +200,7 @@ export default function Properties() {
     return true;
   });
 
-  const pill = (active) => ({ padding: '6px 13px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', background: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.06)', color: active ? '#fff' : 'rgba(27,76,94,.7)' });
+  const pill = (active) => ({ padding: '9px 14px', minHeight: 38, borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', border: 'none', background: active ? 'var(--brand-primary)' : 'rgba(27,76,94,.06)', color: active ? '#fff' : 'rgba(27,76,94,.7)' });
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: isMobile ? '18px 14px 32px' : '26px 30px 40px' }}>
@@ -226,7 +226,7 @@ export default function Properties() {
           {statuses.map(s => <button key={s} style={pill(status === s)} onClick={() => setStatus(s)}>{s === 'All' ? 'All status' : s}</button>)}
         </div>
         <select value={area} onChange={e => setArea(e.target.value)}
-          style={{ border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '8px 12px', fontSize: 13, color: 'var(--brand-primary)', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
+          style={{ border: '1px solid rgba(27,76,94,.16)', borderRadius: 10, padding: '10px 12px', minHeight: 38, fontSize: 13, color: 'var(--brand-primary)', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
           {areas.map(a => <option key={a} value={a}>{a === 'All' ? 'All areas' : a}</option>)}
         </select>
 

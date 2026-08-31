@@ -448,7 +448,7 @@ export default function CRM({ onOpenChat }) {
             return (
               <button key={f.key} onClick={() => setTempFilter(f.key)} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
-                padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+                padding: '9px 13px', minHeight: 38, borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                 border: '1px solid ' + (on ? 'var(--brand-primary)' : 'rgba(27,76,94,.16)'),
                 background: on ? 'var(--brand-primary)' : '#fff',
                 color: on ? '#EAF6E4' : 'rgba(27,76,94,.7)',
@@ -481,7 +481,7 @@ export default function CRM({ onOpenChat }) {
             return (
               <button key={f.key} onClick={() => setStageFilter(f.key)} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-                fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 999,
+                fontSize: 12, fontWeight: 700, padding: '9px 13px', minHeight: 38, borderRadius: 999,
                 cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
                 border: '1px solid ' + (on ? 'var(--brand-primary)' : 'rgba(27,76,94,.16)'),
                 background: on ? 'var(--brand-primary)' : '#fff',
@@ -615,7 +615,7 @@ export default function CRM({ onOpenChat }) {
                         aria-label={`Stage for ${lead.profile_name}`}
                         style={{
                           ...leadChip(lead.lead_status), flex: 1, minWidth: 0, fontSize: 12.5,
-                          padding: '8px 26px 8px 12px', border: 'none', borderRadius: 999,
+                          padding: '10px 26px 10px 13px', minHeight: 40, border: 'none', borderRadius: 999,
                           fontFamily: 'inherit', cursor: 'pointer', appearance: 'none',
                           backgroundImage: SELECT_ARROW, backgroundRepeat: 'no-repeat',
                           backgroundPosition: 'right 10px center',

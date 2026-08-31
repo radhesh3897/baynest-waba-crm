@@ -86,7 +86,7 @@ function PipelineSummary({ stats, onNav }) {
     <div style={{ ...CARD, padding: '15px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
         <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>PIPELINE</span>
-        <button onClick={() => onNav?.('crm')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700, color: 'var(--brand-muted)', padding: 0 }}>
+        <button onClick={() => onNav?.('crm')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: 'var(--brand-muted)', padding: '9px 10px', margin: '-9px -10px', minHeight: 36 }}>
           Open CRM →
         </button>
       </div>
@@ -189,7 +189,7 @@ export default function Home({ onNav, onOpenChat }) {
             <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{me || CLIENT.tagline}</div>
           </div>
           <button onClick={() => { setLoading(true); load(); }}
-            style={{ background: 'transparent', border: '1px solid rgba(27,76,94,.16)', color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, padding: '7px 12px', borderRadius: 999, cursor: 'pointer', flexShrink: 0 }}>
+            style={{ background: 'transparent', border: '1px solid rgba(27,76,94,.16)', color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, padding: '9px 14px', minHeight: 38, borderRadius: 999, cursor: 'pointer', flexShrink: 0 }}>
             Refresh
           </button>
         </div>
