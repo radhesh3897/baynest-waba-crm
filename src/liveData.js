@@ -1069,25 +1069,69 @@ export async function getPeopleLive() {
 // SOURCE (ctwa | instant_form | unknown), a human FUNNEL name, and its TYPE
 // (qualification). Reads the stored `source_type`, falling back to deriving it
 // for any row not yet backfilled. No writes.
+// Where every lead actually came from.
+//
+// The signals overlap — a lead can carry a form id AND a CTWA click id AND be
+// in a campaign — so this is a precedence order, most specific first. A lead
+// that replied to a blast is a campaign lead even though it originally arrived
+// from an ad, because that is the thing you acted on last.
+export const LEAD_SOURCES_META = {
+  campaign_csv:  { label: 'Campaign · CSV',  bg: '#EFE7FB', fg: '#6D3AC2' },
+  campaign:      { label: 'Campaign',        bg: '#EFE7FB', fg: '#6D3AC2' },
+  instagram:     { label: 'Instagram',       bg: '#FDE7F3', fg: '#B23A77' },
+  ctwa:          { label: 'WhatsApp Ad',     bg: '#E4F5E9', fg: '#1E7D3E' },
+  instant_form:  { label: 'Instant Form',    bg: '#E7EEFB', fg: '#2456C7' },
+  manual:        { label: 'Added by hand',   bg: 'rgba(27,76,94,.10)', fg: 'rgba(27,76,94,.7)' },
+  unknown:       { label: 'Unknown',         bg: 'rgba(27,76,94,.07)', fg: 'rgba(27,76,94,.55)' },
+};
+
+function deriveSource(c) {
+  const attrs = c.attributes || {};
+  // Most recent campaign this lead was sent, if any.
+  const camps = (c.campaign_recipients || [])
+    .filter(r => r.campaigns)
+    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+  const camp = camps[0]?.campaigns;
+
+  if (camp) {
+    return {
+      kind: camp.source === 'csv' ? 'campaign_csv' : 'campaign',
+      detail: camp.name || 'Campaign',
+      campaign: camp.name || null,
+    };
+  }
+  if (c.ig_id || c.source_type === 'instagram') {
+    return { kind: 'instagram', detail: c.ig_username ? '@' + c.ig_username : 'Instagram DM', campaign: null };
+  }
+  if (c.ctwa_clid) {
+    return { kind: 'ctwa', detail: attrs.ctwa_headline || attrs.ctwa_source_id || attrs.ctwa_ad_id || 'Click-to-WhatsApp ad', campaign: null };
+  }
+  if (c.form_id || attrs.meta_lead_id) {
+    return { kind: 'instant_form', detail: c.fb_forms?.name || attrs.form_name || attrs.campaign_name || 'Meta lead form', campaign: null };
+  }
+  if ((c.source || '').toLowerCase() === 'manual') {
+    return { kind: 'manual', detail: 'Added by hand', campaign: null };
+  }
+  return { kind: 'unknown', detail: c.source || 'Not recorded', campaign: null };
+}
+
 export async function getLeadsOverview() {
   const { data, error } = await supabase
     .from('contacts')
-    .select('id, profile_name, wa_id, source_type, ctwa_clid, form_id, qualification, created_at, attributes, temperature, lead_status, pipeline, deal_value_cr, fb_forms(name)')
+    .select('id, profile_name, wa_id, ig_id, ig_username, source, source_type, ctwa_clid, form_id, qualification, created_at, attributes, temperature, lead_status, pipeline, deal_value_cr, fb_forms(name), campaign_recipients(created_at, campaigns(name, source))')
     .order('created_at', { ascending: false });
   if (error) { console.error('getLeadsOverview', error); return []; }
   return (data || []).map(c => {
-    const attrs = c.attributes || {};
-    const source = c.source_type
-      || (c.ctwa_clid ? 'ctwa' : ((attrs.meta_lead_id || c.form_id) ? 'instant_form' : 'unknown'));
-    let funnel = '-';
-    if (source === 'ctwa') funnel = attrs.ctwa_headline || attrs.ctwa_source_id || attrs.ctwa_ad_id || 'CTWA ad';
-    else if (source === 'instant_form') funnel = c.fb_forms?.name || attrs.form_name || attrs.campaign_name || '-';
+    const src = deriveSource(c);
     return {
       id: c.id,
-      name: c.profile_name || c.wa_id || 'Unknown',
-      phone: c.wa_id || '',
-      source,                       // 'ctwa' | 'instant_form' | 'unknown'
-      funnel,
+      name: c.profile_name || c.wa_id || (c.ig_username ? '@' + c.ig_username : 'Unknown'),
+      phone: c.wa_id || (c.ig_username ? '@' + c.ig_username : ''),
+      source: src.kind,             // 'campaign_csv' | 'instagram' | 'ctwa' | ...
+      sourceLabel: LEAD_SOURCES_META[src.kind].label,
+      sourceDetail: src.detail,     // campaign name, form name, ad headline, @handle
+      campaign: src.campaign,
+      funnel: src.detail,
       type: c.qualification || 'Intake',
       temperature: c.temperature || 'cold',
       lead_status: c.lead_status || 'New',

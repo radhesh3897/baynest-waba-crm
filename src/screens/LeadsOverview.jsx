@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getLeadsOverview } from '../liveData';
+import { getLeadsOverview, LEAD_SOURCES_META } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
 import { IconSearch, IconRefresh } from '../icons';
 import TemperatureTag from '../components/TemperatureTag';
@@ -8,12 +8,9 @@ import { leadChip, formatCr } from '../pipeline';
 // Brand palette (matches the rest of the app).
 const FOREST = 'var(--brand-primary)';
 
-// SOURCE badge: instant_form = blue, ctwa = purple, unknown = muted.
-const SOURCE_BADGE = {
-  instant_form: { label: 'Instant Form', bg: '#E7EEFB', fg: '#2456C7' },
-  ctwa:         { label: 'CTWA',         bg: '#EFE7FB', fg: '#6D3AC2' },
-  unknown:      { label: 'Unknown',      bg: 'rgba(27,76,94,.07)', fg: 'rgba(27,76,94,.55)' },
-};
+// Every source the deriver can return, coloured by family: campaign purple,
+// Instagram pink, WhatsApp-ad green, lead form blue, everything else muted.
+const SOURCE_BADGE = LEAD_SOURCES_META;
 // TYPE badge: Qualified green, Intake gray, NotQualified amber, Junk red.
 const TYPE_BADGE = {
   Qualified:    { label: 'Qualified',      bg: '#E4F5E9', fg: '#1E7D3E' },
@@ -24,8 +21,13 @@ const TYPE_BADGE = {
 
 const FILTERS = [
   { key: 'all',          label: 'All' },
+  { key: 'campaign_csv', label: 'Campaign · CSV' },
+  { key: 'campaign',     label: 'Campaign' },
+  { key: 'instagram',    label: 'Instagram' },
+  { key: 'ctwa',         label: 'WhatsApp Ad' },
   { key: 'instant_form', label: 'Instant Form' },
-  { key: 'ctwa',         label: 'CTWA' },
+  { key: 'manual',       label: 'By hand' },
+  { key: 'unknown',      label: 'Unknown' },
 ];
 
 function Badge({ map, k }) {
@@ -51,14 +53,15 @@ export default function LeadsOverview() {
     const query = q.trim().toLowerCase();
     return rows.filter(r => {
       if (filter !== 'all' && r.source !== filter) return false;
-      if (query && !(`${r.name} ${r.phone} ${r.temperature} ${r.lead_status}`.toLowerCase().includes(query))) return false;
+      if (query && !(`${r.name} ${r.phone} ${r.temperature} ${r.lead_status} ${r.sourceLabel} ${r.sourceDetail}`.toLowerCase().includes(query))) return false;
       return true;
     });
   }, [rows, filter, q]);
 
   const counts = useMemo(() => {
-    const c = { all: rows?.length || 0, instant_form: 0, ctwa: 0 };
-    (rows || []).forEach(r => { if (r.source === 'instant_form') c.instant_form++; else if (r.source === 'ctwa') c.ctwa++; });
+    const c = { all: rows?.length || 0 };
+    FILTERS.forEach(f => { if (f.key !== 'all') c[f.key] = 0; });
+    (rows || []).forEach(r => { if (c[r.source] !== undefined) c[r.source]++; });
     return c;
   }, [rows]);
 
@@ -73,7 +76,7 @@ export default function LeadsOverview() {
           <div>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.12em', color: 'rgba(27,76,94,.45)' }}>READ-ONLY</div>
             <h1 style={{ margin: '5px 0 0', fontSize: isMobile ? 20 : 22, fontWeight: 800, color: FOREST }}>Leads Overview</h1>
-            <div style={{ fontSize: 13, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>Every lead, tagged by source, funnel and type.</div>
+            <div style={{ fontSize: 13, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>Every lead and exactly where it came from.</div>
           </div>
           <button onClick={load} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid rgba(27,76,94,.18)', color: FOREST, fontSize: 13, fontWeight: 700, padding: '9px 14px', borderRadius: 10, cursor: 'pointer' }}>
             <IconRefresh size={14} /> Refresh
@@ -87,7 +90,7 @@ export default function LeadsOverview() {
               const on = filter === f.key;
               const n = counts[f.key] ?? 0;
               return (
-                <button key={f.key} onClick={() => setFilter(f.key)} style={{ fontSize: 12.5, fontWeight: 700, padding: '8px 13px', borderRadius: 999, cursor: 'pointer', border: '1px solid ' + (on ? FOREST : 'rgba(27,76,94,.16)'), background: on ? FOREST : '#fff', color: on ? '#fff' : 'rgba(27,76,94,.7)' }}>
+                <button key={f.key} onClick={() => setFilter(f.key)} style={{ fontSize: 12.5, fontWeight: 700, padding: '9px 13px', minHeight: 38, borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap', border: '1px solid ' + (on ? FOREST : 'rgba(27,76,94,.16)'), background: on ? FOREST : '#fff', color: on ? '#fff' : (n === 0 ? 'rgba(27,76,94,.38)' : 'rgba(27,76,94,.7)') }}>
                   {f.label} <span style={{ opacity: 0.6 }}>· {n}</span>
                 </button>
               );
@@ -125,8 +128,8 @@ export default function LeadsOverview() {
                     : null}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 9, paddingTop: 9, borderTop: '1px solid rgba(27,76,94,.07)' }}>
-                  <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.4)', flexShrink: 0 }}>Funnel</span>
-                  <span style={{ fontSize: 12, color: 'rgba(27,76,94,.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }} title={r.funnel}>{r.funnel}</span>
+                  <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.4)', flexShrink: 0 }}>{r.campaign ? 'Campaign' : 'Came from'}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(27,76,94,.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }} title={r.sourceDetail}>{r.sourceDetail}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 11.5, color: 'rgba(27,76,94,.45)', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.created_rel}</span>
                 </div>
               </div>
@@ -140,7 +143,7 @@ export default function LeadsOverview() {
             <div style={{ minWidth: 680 }}>
               {/* Header row */}
               <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 12, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
-                <span>LEAD</span><span>SOURCE</span><span>FUNNEL</span><span>TYPE</span><span>STAGE</span><span>CREATED</span>
+                <span>LEAD</span><span>SOURCE</span><span>CAMPAIGN / DETAIL</span><span>TYPE</span><span>STAGE</span><span>CREATED</span>
               </div>
 
               {rows === null ? (
@@ -157,7 +160,7 @@ export default function LeadsOverview() {
                     <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)' }}>{r.phone}</div>
                   </div>
                   <div><Badge map={SOURCE_BADGE} k={r.source} /></div>
-                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.funnel}>{r.funnel}</div>
+                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.sourceDetail}>{r.sourceDetail}</div>
                   <div><Badge map={TYPE_BADGE} k={r.type} /></div>
                   <div style={{ minWidth: 0 }}>
                     <span style={leadChip(r.lead_status)}>{r.lead_status}</span>
