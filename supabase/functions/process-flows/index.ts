@@ -112,10 +112,15 @@ serve(async (req: Request) => {
       // the tapped reply exactly like WhatsApp buttons (btn-N handles).
       if (t === "igButtons") {
         const replies = (node.data.buttons as string[]) ?? [];
+        const igLinks = ((node.data.links as Record<string, unknown>[]) ?? [])
+          .filter((l) => l && String(l.url ?? "").trim() && String(l.title ?? "").trim())
+          .slice(0, 3)
+          .map((l) => ({ title: String(l.title).slice(0, 20), url: String(l.url).trim() }));
         if (reachable && channel === "instagram" && node.data.text) {
           await igSend(db, run.contact_id, run.flow_id, {
             text: String(node.data.text),
             quick_replies: replies,
+            ...(igLinks.length ? { buttons: igLinks } : {}),
           });
           sent++;
         }
@@ -134,9 +139,16 @@ serve(async (req: Request) => {
         const attrs = (contact?.attributes as Record<string, unknown>) ?? {};
         const commentId = String(attrs.last_comment_id ?? "");
         if (commentId && node.data.text) {
+          // `links` are web_url buttons (e.g. a booking page); `buttons` are
+          // quick replies, which are text-only and cannot open anything.
+          const links = ((node.data.links as Record<string, unknown>[]) ?? [])
+            .filter((l) => l && String(l.url ?? "").trim() && String(l.title ?? "").trim())
+            .slice(0, 3)
+            .map((l) => ({ title: String(l.title).slice(0, 20), url: String(l.url).trim() }));
           await igSend(db, run.contact_id, run.flow_id, {
             text: String(node.data.text),
             quick_replies: (node.data.buttons as string[]) ?? [],
+            ...(links.length ? { buttons: links } : {}),
             private_reply_to: commentId,
           });
           sent++;
@@ -285,7 +297,15 @@ async function igSend(
   _db: ReturnType<typeof createClient>,
   contactId: string,
   flowId: string | null,
-  msg: { text: string; quick_replies?: string[]; private_reply_to?: string },
+  msg: {
+    text: string;
+    quick_replies?: string[];
+    private_reply_to?: string;
+    // Real tappable link buttons (Instagram button template, web_url). Quick
+    // replies cannot carry a URL — they only send text back — so anything that
+    // has to open a link needs these.
+    buttons?: { title: string; url: string }[];
+  },
 ) {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/instagram-send`, {

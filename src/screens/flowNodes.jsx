@@ -57,12 +57,20 @@ const labelStyle = { fontSize: 10, fontWeight: 700, letterSpacing: '.04em', colo
 const TRIGGER_LABELS = {
   new_lead: 'New Lead (FB form)', inbound: 'Inbound Message', keyword: 'Keyword', manual: 'Manual',
   ig_message: 'Instagram DM', ig_keyword: 'Instagram Keyword', ig_comment: 'Instagram Comment',
+  ig_comment_keyword: 'Instagram Comment Keyword',
   ig_story_reply: 'Instagram Story Reply', ig_story_mention: 'Instagram Story Mention',
   ig_ad_referral: 'Instagram Ad → DM',
 };
+
+// Grouped so the Instagram set reads as one family in the picker.
+const TRIGGER_GROUPS = [
+  { label: 'WhatsApp & leads', keys: ['new_lead', 'inbound', 'keyword', 'manual'] },
+  { label: 'Instagram', keys: ['ig_message', 'ig_keyword', 'ig_comment', 'ig_comment_keyword', 'ig_story_reply', 'ig_story_mention', 'ig_ad_referral'] },
+];
 const TRIGGER_ICONS  = {
   new_lead: IconFacebook, inbound: IconInbox, keyword: IconBranch, manual: IconFlow,
   ig_message: IconInstagram, ig_keyword: IconInstagram, ig_comment: IconInstagram,
+  ig_comment_keyword: IconInstagram,
   ig_story_reply: IconInstagram, ig_story_mention: IconInstagram, ig_ad_referral: IconInstagram,
 };
 
@@ -73,13 +81,25 @@ export function TriggerNode({ id, data }) {
   const Icon = TRIGGER_ICONS[data.trigger] || IconFlow;
   return (
     <Shell nodeId={id} icon={Icon} title="Trigger" headerDark>
-      <div style={{ fontSize: 13, fontWeight: 800, color: FOREST }}>{TRIGGER_LABELS[data.trigger] || data.trigger}</div>
-      <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>Flow starts here</div>
+      <span style={labelStyle}>WHAT STARTS THIS FLOW</span>
+      <select className="nodrag" value={data.trigger || 'new_lead'}
+        onChange={e => updateNodeData(id, { trigger: e.target.value })} style={selectStyle}>
+        {TRIGGER_GROUPS.map(g => (
+          <optgroup key={g.label} label={g.label}>
+            {g.keys.map(k => <option key={k} value={k}>{TRIGGER_LABELS[k]}</option>)}
+          </optgroup>
+        ))}
+      </select>
       {KEYWORD_TRIGGERS.has(data.trigger) && (
         <div style={{ marginTop: 9 }}>
           <span style={labelStyle}>KEYWORD (MATCHED ANYWHERE IN THE TEXT)</span>
-          <input className="nodrag" value={data.keyword || ''} placeholder="e.g. price"
+          <input className="nodrag" value={data.keyword || ''} placeholder="e.g. consult"
             onChange={e => updateNodeData(id, { keyword: e.target.value })} style={selectStyle} />
+          <div style={{ fontSize: 9.5, lineHeight: 1.4, marginTop: 5, color: (data.keyword || '').trim() ? 'rgba(27,76,94,.45)' : '#B6743A' }}>
+            {(data.keyword || '').trim()
+              ? 'Case does not matter, so "Consult" and "consult" both match.'
+              : 'Leave this empty and the flow fires on EVERY message or comment.'}
+          </div>
         </div>
       )}
       <Handle type="source" position={Position.Right} id="out" style={handleStyle} />
@@ -211,6 +231,47 @@ export function IgButtonsNode({ id, data }) {
 
 // The one way to open a NEW Instagram thread: reply privately to someone who
 // commented. Meta allows it for 7 days after the comment, once per comment.
+// Up to three tappable link buttons on an Instagram DM. These are NOT quick
+// replies: a quick reply sends text back, whereas these open a URL, which is
+// what a booking or payment link needs. Instagram caps the title at 20 chars.
+function LinkButtonsEditor({ id, links }) {
+  const { updateNodeData } = useReactFlow();
+  const set = (next) => updateNodeData(id, { links: next });
+  const rows = Array.isArray(links) ? links : [];
+  return (
+    <div style={{ marginTop: 9 }}>
+      <span style={labelStyle}>LINK BUTTONS (OPEN A URL)</span>
+      {rows.map((l, i) => (
+        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 7, padding: 7, border: '1px solid rgba(27,76,94,.12)', borderRadius: 8 }}>
+          <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+            <input className="nodrag" value={l.title || ''} maxLength={20}
+              onChange={e => set(rows.map((x, j) => j === i ? { ...x, title: e.target.value } : x))}
+              placeholder="Button text" style={{ ...selectStyle, marginBottom: 0 }} />
+            <button className="nodrag" title="Remove button"
+              onClick={() => set(rows.filter((_, j) => j !== i))}
+              style={{ width: 26, height: 26, flexShrink: 0, border: 'none', borderRadius: 6, background: '#FDECEA', color: '#C7503B', cursor: 'pointer', fontWeight: 800, lineHeight: 1 }}>×</button>
+          </div>
+          <input className="nodrag" value={l.url || ''}
+            onChange={e => set(rows.map((x, j) => j === i ? { ...x, url: e.target.value } : x))}
+            placeholder="https://topmate.io/..." style={{ ...selectStyle, marginBottom: 0, fontSize: 11 }} />
+          {l.title && l.title.length >= 20 && (
+            <span style={{ fontSize: 9.5, color: '#B6743A' }}>Instagram cuts button text at 20 characters.</span>
+          )}
+        </div>
+      ))}
+      {rows.length < 3 && (
+        <button className="nodrag" onClick={() => set([...rows, { title: '', url: '' }])}
+          style={{ width: '100%', border: '1px dashed rgba(27,76,94,.3)', background: '#fff', borderRadius: 8, padding: '7px', fontSize: 11.5, fontWeight: 700, color: FOREST, cursor: 'pointer' }}>
+          + Add link button
+        </button>
+      )}
+      <div style={{ fontSize: 9.5, color: 'rgba(27,76,94,.45)', marginTop: 5, lineHeight: 1.4 }}>
+        Up to 3. Put the link here rather than in the message text.
+      </div>
+    </div>
+  );
+}
+
 export function IgPrivateReplyNode({ id, data }) {
   const { updateNodeData } = useReactFlow();
   return (
@@ -220,6 +281,7 @@ export function IgPrivateReplyNode({ id, data }) {
       <textarea className="nodrag" rows={3} value={data.text || ''} maxLength={1000}
         onChange={e => updateNodeData(id, { text: e.target.value })} placeholder="Thanks for commenting! Here are the details…"
         style={{ ...selectStyle, resize: 'none', lineHeight: 1.4 }} />
+      <LinkButtonsEditor id={id} links={data.links} />
       <div style={{ fontSize: 10, color: 'rgba(27,76,94,.5)', marginTop: 7, lineHeight: 1.45 }}>
         Works for 7 days after the comment, once per comment. Pair with an Instagram Comment trigger.
       </div>
@@ -355,7 +417,7 @@ export const PALETTE = [
     { type: 'sendTemplate', label: 'Send Template', Icon: IconWhatsApp, data: { templateName: '' } },
     { type: 'sendText', label: 'Send Text', Icon: IconTemplate, data: { text: '' } },
     { type: 'igButtons', label: 'Instagram Message', Icon: IconInstagram, data: { text: '', buttons: [] } },
-    { type: 'igPrivateReply', label: 'DM the Commenter', Icon: IconInstagram, data: { text: '' } },
+    { type: 'igPrivateReply', label: 'DM the Commenter', Icon: IconInstagram, data: { text: '', links: [] } },
   ]},
   { group: 'LOGIC', items: [
     { type: 'ifElse', label: 'If / else', Icon: IconBranch, data: { field: 'lead_status', value: '' } },
