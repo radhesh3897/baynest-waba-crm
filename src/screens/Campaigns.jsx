@@ -48,25 +48,41 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-// One recipient — click to expand a per-attempt timeline (from attempt_log).
+// One recipient. A failure gets an explicit (i) button rather than only an
+// expandable row: when a send fails the first question is always "who was that
+// meant for", and the answer has to be one tap away, not hidden behind knowing
+// the row is expandable.
 function RecipientRow({ r }) {
   const [open, setOpen] = useState(false);
   const d = DELIV[r.delivery] || DELIV.queued;
   const log = Array.isArray(r.attempt_log) ? r.attempt_log : [];
-  const canExpand = log.length > 0;
   const recovered = (r.attempts || 0) > 1 && r.delivery !== 'failed' && ['sent', 'delivered', 'read'].includes(r.delivery);
   const gaveUp = (r.attempts || 0) > 1 && r.delivery === 'failed';
   const delivered = ['sent', 'delivered', 'read'].includes(r.delivery);
+  const failed = r.delivery === 'failed';
+  const canExpand = log.length > 0 || failed;
   // Only show the raw attempt counter when it adds information — i.e. not for a
   // clean first-try success, and not when a recovered/gave-up phrase already says it.
   const showAttempts = (r.attempts || 0) > 0 && !recovered && !gaveUp && !(delivered && (r.attempts || 0) <= 1);
+
+  const displayName = r.full_name || r.first_name || null;
+
+  // What actually happened, in words rather than a status code.
+  const outcome = failed
+    ? (r.error || 'WhatsApp rejected this message.')
+    : r.delivery === 'read'      ? 'Delivered and read on WhatsApp.'
+    : r.delivery === 'delivered' ? 'Delivered to their phone.'
+    : r.delivery === 'sent'      ? 'Accepted by WhatsApp, waiting on delivery.'
+    : r.status === 'retry'       ? 'Failed once, queued to try again.'
+    : 'Queued, not sent yet.';
+
   return (
-    <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.08)', borderRadius: 9 }}>
-      <div onClick={() => canExpand && setOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '9px 12px', cursor: canExpand ? 'pointer' : 'default' }}>
-        <div style={{ minWidth: 0 }}>
+    <div style={{ background: '#fff', border: `1px solid ${failed ? 'rgba(199,80,59,.22)' : 'rgba(27,76,94,.08)'}`, borderRadius: 9 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '9px 12px' }}>
+        <div onClick={() => canExpand && setOpen((o) => !o)} style={{ minWidth: 0, flex: 1, cursor: canExpand ? 'pointer' : 'default' }}>
           <div style={{ fontSize: 12.5, fontWeight: 600, color: FOREST, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {canExpand && <span style={{ color: 'rgba(27,76,94,.4)', marginRight: 5 }}>{open ? '▾' : '▸'}</span>}
-            {r.first_name || r.wa_id}
+            {displayName || r.wa_id}
           </div>
           <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>
             {r.wa_id}
@@ -74,13 +90,39 @@ function RecipientRow({ r }) {
             {recovered ? <span style={{ color: '#2E7D44', fontWeight: 700 }}> · recovered on try {r.attempts}</span> : null}
             {gaveUp ? <span style={{ color: '#C7503B', fontWeight: 700 }}> · gave up after {r.attempts} tries</span> : null}
             {r.status === 'retry' && r.next_attempt_at ? ` · retry ${fromNow(r.next_attempt_at)}` : ''}
-            {r.error && !recovered ? ` · ${r.error}` : ''}
           </div>
         </div>
+
+        {failed && (
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Why this failed"
+            title="Why this failed"
+            style={{ width: 26, height: 26, flexShrink: 0, borderRadius: '50%', border: '1px solid rgba(199,80,59,.35)',
+              background: open ? '#C7503B' : '#FDECEA', color: open ? '#fff' : '#C7503B', cursor: 'pointer',
+              fontFamily: 'Georgia, serif', fontSize: 14, fontWeight: 700, fontStyle: 'italic', lineHeight: 1, padding: 0 }}>
+            i
+          </button>
+        )}
         <span style={{ fontSize: 11, fontWeight: 700, color: d.fg, background: d.bg, padding: '3px 10px', borderRadius: 999, flexShrink: 0 }}>{d.label}</span>
       </div>
-      {open && canExpand && (
-        <div style={{ borderTop: '1px solid rgba(27,76,94,.06)', padding: '8px 12px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+
+      {open && (
+        <div style={{ borderTop: '1px solid rgba(27,76,94,.06)', padding: '9px 12px 11px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div style={{ fontSize: 11.5, lineHeight: 1.5, color: failed ? '#A23B2A' : 'rgba(27,76,94,.65)' }}>
+            <strong style={{ color: failed ? '#A23B2A' : FOREST }}>{failed ? 'Why it failed: ' : 'Outcome: '}</strong>
+            {outcome}
+          </div>
+
+          {/* Who it was meant for — the first thing anyone asks about a failure. */}
+          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.6)', lineHeight: 1.55, background: '#F6FAF6', borderRadius: 7, padding: '7px 9px' }}>
+            <div>Intended for <strong style={{ color: FOREST }}>{displayName || 'an unnamed contact'}</strong> on <strong style={{ color: FOREST }}>{r.wa_id}</strong></div>
+            {r.email && <div>Email on file: {r.email}</div>}
+            {Array.isArray(r.variables) && r.variables.length > 0 && (
+              <div style={{ marginTop: 3 }}>
+                Values sent: {r.variables.map((v, i) => `{{${i + 1}}} ${v || '-'}`).join(' · ')}
+              </div>
+            )}
+          </div>
+
           {log.map((a, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 11, alignItems: 'baseline' }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: a.ok ? '#2E7D44' : '#C7503B', flexShrink: 0, marginTop: 3 }} />
@@ -91,6 +133,7 @@ function RecipientRow({ r }) {
               </span>
             </div>
           ))}
+
           {r.status === 'retry' && r.next_attempt_at && (
             <div style={{ display: 'flex', gap: 8, fontSize: 11, alignItems: 'baseline', opacity: 0.7 }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: '#B6743A', flexShrink: 0, marginTop: 3 }} />
@@ -274,7 +317,7 @@ function Builder({ onClose, onDone, isMobile }) {
       header_image: needsImage ? headerImage.trim() : null, maxRetries,
     };
     const res = audienceSource === 'csv'
-      ? await createCampaignFromCsv({ ...common, rows: csv.rows, csv_columns: csv.variableColumns })
+      ? await createCampaignFromCsv({ ...common, rows: csv.rows, csv_columns: csv.variableColumns, variable_count: vars.length })
       : await createCampaign({ ...common, variables: vars, filters: filters() });
     setBusy(false);
     if (res.ok) { alert(`Campaign started, sending to ${res.count} people. It sends in batches; check the campaign for live progress.`); onDone(); }
@@ -390,7 +433,9 @@ function Builder({ onClose, onDone, isMobile }) {
               {tpl && csv.variableCount !== vars.length && (
                 <div style={{ padding: '10px 13px', fontSize: 11.5, lineHeight: 1.5, background: '#FFF1DC', color: '#8A5E22', borderTop: '1px solid rgba(27,76,94,.08)' }}>
                   This template takes <strong>{vars.length}</strong> {vars.length === 1 ? 'variable' : 'variables'} but the file has <strong>{csv.variableCount}</strong>.
-                  {csv.variableCount > vars.length ? ' The extra columns will be ignored.' : ' The missing ones will send empty.'}
+                  {csv.variableCount > vars.length
+                    ? ' The extra columns are ignored — the campaign still sends.'
+                    : ' The missing ones send as “-” rather than blocking the campaign.'}
                 </div>
               )}
 

@@ -97,14 +97,24 @@ serve(async (req: Request) => {
       // A CSV campaign carries its own values per row; a filtered one shares a
       // single array across the whole blast with {{first_name}} substituted.
       const rowVars = Array.isArray(r.variables) ? (r.variables as string[]) : null;
-      const vars = rowVars ?? ((camp.variables as string[]) ?? []);
-      if (vars.length) {
+      const supplied = rowVars ?? ((camp.variables as string[]) ?? []);
+
+      // Meta rejects the message outright when the parameter count does not
+      // match the template exactly, so a three-column CSV against a
+      // four-variable template used to fail every single recipient. Pad or trim
+      // to what the template actually declares. Empty strings are rejected too,
+      // hence the placeholder rather than "".
+      const expected = Number(camp.variable_count ?? 0) || supplied.length;
+      const filled = Array.from({ length: expected }, (_, i) => {
+        const raw = supplied[i];
+        const val = raw === "{{first_name}}" ? (r.first_name || "there") : String(raw ?? "").trim();
+        return val === "" ? (i === 0 ? (r.first_name || "there") : "-") : val;
+      });
+
+      if (filled.length) {
         components.push({
           type: "body",
-          parameters: vars.map((v) => ({
-            type: "text",
-            text: v === "{{first_name}}" ? (r.first_name || "there") : String(v ?? ""),
-          })),
+          parameters: filled.map((text) => ({ type: "text", text })),
         });
       }
 

@@ -536,7 +536,7 @@ export async function createCampaign({ name, template_name, template_language, v
   if (audience.length === 0) return { ok: false, error: 'No people match those filters.' };
 
   const { data: camp, error: ce } = await supabase.from('campaigns')
-    .insert({ name, template_name, template_language: template_language || 'en', variables, filters, header_image: header_image || null, status: 'sending' })
+    .insert({ name, template_name, template_language: template_language || 'en', variables, filters, variable_count: (variables || []).length, header_image: header_image || null, status: 'sending' })
     .select('id').single();
   if (ce) return { ok: false, error: ce.message };
 
@@ -555,7 +555,7 @@ export async function createCampaign({ name, template_name, template_language, v
 // Campaign from an uploaded list. Unlike the filtered path this does not touch
 // `contacts` at all: the CSV is the audience. Each row carries its own template
 // variables, so one blast can say something different to every recipient.
-export async function createCampaignFromCsv({ name, template_name, template_language, rows, csv_columns, header_image, maxRetries = 3 }) {
+export async function createCampaignFromCsv({ name, template_name, template_language, rows, csv_columns, variable_count, header_image, maxRetries = 3 }) {
   if (!Array.isArray(rows) || rows.length === 0) return { ok: false, error: 'No rows in that file.' };
 
   const { data: camp, error: ce } = await supabase.from('campaigns')
@@ -563,6 +563,7 @@ export async function createCampaignFromCsv({ name, template_name, template_lang
       name, template_name, template_language: template_language || 'en',
       variables: [], filters: {}, source: 'csv',
       csv_columns: csv_columns || null,
+      variable_count: Number(variable_count) || 0,
       header_image: header_image || null, status: 'sending',
     })
     .select('id').single();
@@ -679,7 +680,7 @@ export async function getCampaign(id) {
   const { data: c } = await supabase.from('campaigns').select('*').eq('id', id).maybeSingle();
   if (!c) return null;
   const { data: recs } = await supabase.from('campaign_recipients')
-    .select('id, wa_id, first_name, status, attempts, max_attempts, next_attempt_at, last_attempt_at, error, wa_message_id, contact_id, attempt_log')
+    .select('id, wa_id, first_name, full_name, email, variables, status, attempts, max_attempts, next_attempt_at, last_attempt_at, error, wa_message_id, contact_id, attempt_log')
     .eq('campaign_id', id).order('created_at', { ascending: true });
   const map = await msgStatusMap(recs || []);
   const rows = (recs || []).map(r => {
