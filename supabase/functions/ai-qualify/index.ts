@@ -85,8 +85,16 @@ const CLIENT = {
   // conversion event fires, because this is not a prospect signal for Meta.
   earlyStops: [
     {
+      // Listed FIRST deliberately. The model was picking whichever early stop
+      // came first rather than the one that matched, so a chatbot was being
+      // told to keep the conversation respectful.
+      token: "BOT",
+      when: "the replies are coming from an automated system rather than a person — it asks you to reply with a keyword or a number, says it did not understand, repeats the same line, offers menu options, or calls itself a bot or assistant. This is about AUTOMATION ONLY and has nothing to do with rudeness",
+      message: "It looks like I've reached an automated line rather than a person. I'll stop here, and a Baynest advisor will follow up if needed.",
+    },
+    {
       token: "ABUSE",
-      when: "the lead uses cuss words or abusive language towards you or anyone else",
+      when: "the lead swears at you or is genuinely insulting. Use this ONLY for offensive language from a real person — never for an automated or confused reply",
       message: "I'd like to keep this conversation respectful, so I'll pause here. If you'd like to continue, a Baynest advisor will be happy to assist.",
     },
   ],
@@ -360,8 +368,11 @@ serve(async (req: Request) => {
   const buyLeads  = /\[\[\s*LEADS\s*\]\]/i.test(reply);
   // Abuse: stop, tag, hand to a human. Never a conversion signal for Meta.
   const abusive   = /\[\[\s*ABUSE\s*\]\]/i.test(reply);
-  reply = reply.replace(/\[\[\s*(QUALIFIED|LEADS|AFFILIATE|ABUSE)\s*\]\]/gi, "").trim();
+  const isBot     = /\[\[\s*BOT\s*\]\]/i.test(reply);
+  reply = reply.replace(/\[\[\s*(QUALIFIED|LEADS|AFFILIATE|ABUSE|BOT)\s*\]\]/gi, "").trim();
 
-  const outcome = abusive ? "abusive" : affiliate ? "affiliate" : buyLeads ? "buy_leads" : qualified ? "qualified" : null;
-  return json({ reply, done: qualified || buyLeads || affiliate || abusive, outcome });
+  const outcome = isBot ? "automated_sender" : abusive ? "abusive" : affiliate ? "affiliate" : buyLeads ? "buy_leads" : qualified ? "qualified" : null;
+  // Every early stop must set `done`, or the caller keeps the script running and
+  // the loop this was meant to break carries on regardless.
+  return json({ reply, done: qualified || buyLeads || affiliate || abusive || isBot, outcome });
 });

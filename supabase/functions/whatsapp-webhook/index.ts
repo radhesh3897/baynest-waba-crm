@@ -491,6 +491,85 @@ function knownAnswers(c: Record<string, unknown> | null): Record<string, unknown
 // engaged and is not already qualified. Stays active across their replies until
 // the script completes, then marks them Qualified (which fires the CRM pixel +
 // CTWA conversion events) and assigns the chat to the team owner.
+// ── Talking to another bot ──────────────────────────────────────────────────
+// Two automated systems will happily message each other until someone notices
+// the bill. These checks run BEFORE the model is called, so a detected loop
+// costs nothing rather than costing a reply to discover.
+
+// Phrases a human essentially never sends. Any one of these ends it outright.
+const BOT_MARKERS = [
+  "this is an automated", "automated message", "auto reply", "autoreply",
+  "do not reply to this", "please do not reply", "no reply", "noreply",
+  "invalid option", "invalid input", "invalid choice",
+  "main menu", "press 1", "press 2", "type 1 for", "type 2 for",
+  "reply with the number", "choose an option", "select an option",
+  "i am a bot", "im a bot", "virtual assistant", "powered by",
+];
+
+// Phrases a confused HUMAN might also send once. Only a repeat is conclusive:
+// a bot loops on them, a person does not.
+const SOFT_BOT_MARKERS = [
+  "reply hi", "reply with hi", "send hi", "didnt understand", "did not understand",
+  "couldnt understand", "could not understand", "didnt get that", "couldnt get you",
+  "please try again", "unable to process", "i didnt get",
+];
+
+// Punctuation is stripped so "couldn't" and "couldnt" match the same marker.
+const normaliseText = (t: string) =>
+  String(t ?? "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+
+// Hard ceiling on how many times the assistant speaks in one conversation. Even
+// if every heuristic misses, spend per conversation is bounded.
+const MAX_AI_REPLIES = 12;
+
+type LoopVerdict = { stop: boolean; reason?: string };
+
+function detectBotLoop(msgs: { direction?: string; body?: string | null }[]): LoopVerdict {
+  const inbound = msgs.filter((m) => m.direction === "in").map((m) => normaliseText(m.body ?? ""));
+  const outboundCount = msgs.filter((m) => m.direction === "out").length;
+
+  if (outboundCount >= MAX_AI_REPLIES) {
+    return { stop: true, reason: `hit the ${MAX_AI_REPLIES}-reply ceiling for one conversation` };
+  }
+
+  const recent = inbound.slice(-4);
+  const latest = recent[recent.length - 1] ?? "";
+  if (!latest) return { stop: false };
+
+  for (const m of BOT_MARKERS) {
+    if (latest.includes(m)) return { stop: true, reason: `automated-system phrase: "${m}"` };
+  }
+
+  // The same thing said twice is a loop, whatever the words are.
+  if (recent.filter((t) => t && t === latest).length >= 2) {
+    return { stop: true, reason: "the same message arrived more than once" };
+  }
+
+  // A soft marker repeated is conclusive; once is not.
+  for (const m of SOFT_BOT_MARKERS) {
+    if (latest.includes(m) && recent.filter((t) => t.includes(m)).length >= 2) {
+      return { stop: true, reason: `repeated fallback phrase: "${m}"` };
+    }
+  }
+  return { stop: false };
+}
+
+async function stopForAutomatedSender(
+  db: ReturnType<typeof createClient>,
+  contactId: string,
+  conversationId: string,
+  reason: string,
+) {
+  console.log(`[ai] stopping, looks automated (${reason}) contact=${contactId}`);
+  await db.from("contacts").update({ ai_status: "done" }).eq("id", contactId);
+  await db.rpc("tag_contact", { p_contact: contactId, p_tag: "automated-sender" }).catch(() => {});
+  // Hand to a human rather than silently dropping it: occasionally this is a
+  // real person whose phrasing tripped a guard, and they should not be stranded.
+  const { data: owner } = await db
+    .from("profiles").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle();
+  if (owner?.id) await db.from("conversations").update({ assigned_to: owner.id }).eq("id", conversationId);
+}
+
 async function maybeRunAiQualifier(
   db: ReturnType<typeof createClient>,
   contactId: string,
@@ -540,6 +619,13 @@ async function maybeRunAiQualifier(
     .limit(40);
   const history = buildHistory(msgs);
 
+  // Bail out of a bot-to-bot loop before spending anything on it.
+  const loop = detectBotLoop((msgs ?? []) as { direction?: string; body?: string | null }[]);
+  if (loop.stop) {
+    await stopForAutomatedSender(db, contactId, conversationId, loop.reason ?? "loop detected");
+    return true;
+  }
+
   // Ask the shared ai-qualify brain for the next message.
   const aiRes = await fetch(`${SUPABASE_URL}/functions/v1/ai-qualify`, {
     method: "POST",
@@ -574,7 +660,16 @@ async function maybeRunAiQualifier(
         .eq("id", contactId).eq("pipeline", "lead").catch(() => {});
     };
 
-    if (outcome === "abusive") {
+    if (outcome === "automated_sender") {
+      // The model spotted a bot the pre-call guards missed. Tag and stop —
+      // deliberately no Meta conversion event, because teaching the ad platform
+      // to find more chatbots is the opposite of useful.
+      await db.from("contacts").update({ ai_status: "done" }).eq("id", contactId);
+      await db.rpc("tag_contact", { p_contact: contactId, p_tag: "automated-sender" }).catch(() => {});
+      const { data: o } = await db
+        .from("profiles").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle();
+      if (o?.id) await db.from("conversations").update({ assigned_to: o.id }).eq("id", conversationId);
+    } else if (outcome === "abusive") {
       // Abusive lead: tag for review and assign to a human. Deliberately no Meta
       // event, because this is not a prospect signal worth optimising towards.
       await db.rpc("tag_contact", { p_contact: contactId, p_tag: "abusive" }).catch(() => {});
