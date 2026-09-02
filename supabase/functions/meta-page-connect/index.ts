@@ -286,6 +286,45 @@ serve(async (req: Request) => {
     return json({ ok: r.ok, probe: "test_lead", form_id: formId, response: j }, r.ok ? 200 : 502);
   }
 
+  // probe_app_review: can this app message the GENERAL PUBLIC, or only people
+  // with a role on it? Meta grants every permission at Standard Access first,
+  // which works fine in testing because the tester is an app admin -- and then
+  // silently reaches nobody else. Advanced Access is what App Review grants.
+  // The two look identical until a stranger comments.
+  if (body.probe_app_review === true) {
+    const out: Record<string, unknown> = {};
+    if (!APP_ID || !APP_SECRET) return json({ error: "META_APP_ID / META_APP_SECRET not set" }, 500);
+    const appToken = `${APP_ID}|${APP_SECRET}`;
+
+    // What the token itself carries. A scope missing here was never granted at all.
+    const dbg = await (await fetch(g(`debug_token?input_token=${WHATSAPP_TOKEN}&access_token=${appToken}`)))
+      .json().catch(() => ({})) as Record<string, unknown>;
+    const d = (dbg.data ?? {}) as Record<string, unknown>;
+    const scopes = (d.scopes as string[]) ?? [];
+    out.token = {
+      app_id: d.app_id, app_name: d.application, type: d.type,
+      valid: d.is_valid, expires_at: d.expires_at || "never", scopes,
+    };
+
+    // Permission-by-permission access level, straight from the app.
+    const perms = await (await fetch(g(`${APP_ID}/permissions?access_token=${appToken}`)))
+      .json().catch(() => ({})) as Record<string, unknown>;
+    out.app_permissions = perms;
+
+    const app = await (await fetch(g(`${APP_ID}?fields=name,category,link,app_type&access_token=${appToken}`)))
+      .json().catch(() => ({}));
+    out.app = app;
+
+    // The exact scopes an Instagram comment-to-DM automation needs.
+    const NEEDED = [
+      "instagram_basic", "instagram_manage_messages", "instagram_manage_comments",
+      "pages_manage_metadata", "pages_show_list", "pages_read_engagement", "business_management",
+    ];
+    out.required_for_comment_to_dm = NEEDED.map(n => ({ permission: n, on_token: scopes.includes(n) }));
+    out.missing_from_token = NEEDED.filter(n => !scopes.includes(n));
+    return json({ ok: true, probe: "app_review", ...out });
+  }
+
   // probe_waba: which WhatsApp Business Account is this tool actually bound to,
   // and what does Meta say about its billing readiness? A portfolio can hold
   // several WABAs with near-identical names, so paying on the wrong one looks
