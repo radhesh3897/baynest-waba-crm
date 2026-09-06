@@ -13,6 +13,7 @@ import { useIsMobile } from '../useIsMobile';
 import ContactNotes from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
 import LeadCustomFields from '../components/LeadCustomFields';
+import LeadReminders from '../components/LeadReminders';
 import TemperatureTag from '../components/TemperatureTag';
 import PipelineMover from '../components/PipelineMover';
 import { formatCr, pipelineOf, leadChip } from '../pipeline';
@@ -703,6 +704,8 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
         ))}
         <div style={{ marginTop: 6 }}><LeadAnswersEditable contactId={contact.id} attributes={contact.attributes} /></div>
         <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(27,76,94,.10)' }}>
+          <LeadReminders contact={contact} />
+          <div style={{ height: 18 }} />
           <LeadCustomFields contactId={contact.id} />
         </div>
         <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(27,76,94,.10)' }}>

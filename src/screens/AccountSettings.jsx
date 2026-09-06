@@ -6,6 +6,7 @@ import {
 import { useIsMobile } from '../useIsMobile';
 import { IconPlus, IconX, IconWhatsApp, IconDb, IconMail, IconZap, IconTemplate, IconPeople } from '../icons';
 import { enablePush, disablePush, pushStatus, pushSupported } from '../push';
+import CalendarSettings from '../components/CalendarSettings';
 
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22, marginBottom: 18 };
 const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 9, padding: '10px 12px', fontSize: 13, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit', background: '#fff' };
@@ -207,6 +208,13 @@ export default function AccountSettings() {
               <ConnRow Icon={IconDb} label="Database" value="Supabase · live" ok={true} />
             </div>
           )}
+        </div>
+
+        {/* ── GOOGLE CALENDAR ── */}
+        <div style={CARD}>
+          <SectionHead Icon={IconMail} title="Google Calendar"
+            sub="Reminders set on a lead become calendar events with an alert." />
+          <CalendarSettings />
         </div>
 
         {/* ── NOTIFICATIONS ── */}

@@ -39,7 +39,7 @@ create policy "campaign_recipients all (auth)" on public.campaign_recipients for
 -- Run the campaign sender every minute (batched; retries handled in the function).
 select cron.schedule('campaign-run', '* * * * *', $$
   select net.http_post(
-    url := 'https://rkmngnkgesteohigvsxe.supabase.co/functions/v1/campaign-run',
+    url := 'https://oeygcusojsznwuodbckz.supabase.co/functions/v1/campaign-run',
     headers := jsonb_build_object('Content-Type','application/json','x-cron-secret','<CRON_SECRET>'),
     body := '{}'::jsonb
   );

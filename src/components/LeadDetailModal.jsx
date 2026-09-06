@@ -6,6 +6,7 @@ import ContactNotes from './ContactNotes';
 import LeadCustomFields from './LeadCustomFields';
 import LeadAnswersEditable from './LeadAnswersEditable';
 import LeadProperties from './LeadProperties';
+import LeadReminders from './LeadReminders';
 import TemperatureTag from './TemperatureTag';
 import PipelineMover from './PipelineMover';
 
@@ -172,6 +173,10 @@ export default function LeadDetailModal({ contact: given, contactId, onClose, on
           onMoved={(s, p) => applyUpdate(view.id, { lead_status: s, pipeline: p })}
           onValueChange={(v, m) => applyUpdate(view.id, { deal_value_cr: v, deal_value_is_manual: m })}
         />
+      </div>
+
+      <div style={{ padding: '16px 20px 6px', borderTop: '1px solid rgba(27,76,94,.08)', marginTop: 12 }}>
+        <LeadReminders contact={view} />
       </div>
 
       <div style={{ padding: '16px 20px 6px', borderTop: '1px solid rgba(27,76,94,.08)', marginTop: 12 }}>

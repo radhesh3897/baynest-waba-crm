@@ -4,6 +4,7 @@ import { IconSearch, IconPlus, IconX, IconEdit, IconChevDown, IconRefresh } from
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
+import LeadReminders from '../components/LeadReminders';
 import TemperatureTag from '../components/TemperatureTag';
 import PipelineMover from '../components/PipelineMover';
 import { leadChip, formatCr, pipelineOf } from '../pipeline';
@@ -270,6 +271,8 @@ export default function People({ onOpenChat }) {
             ))}
             <div style={{ marginTop: 14 }}><LeadAnswers attributes={sel.attributes} /></div>
             <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>
+              <LeadReminders contact={sel} />
+              <div style={{ height: 18 }} />
               <LeadProperties contactId={sel.id} lead={sel} />
             </div>
             <div style={{ borderTop: '1px solid rgba(27,76,94,.08)', paddingTop: 16, marginTop: 16 }}>

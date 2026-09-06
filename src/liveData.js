@@ -1553,3 +1553,105 @@ export async function getAdsReport(opts = {}) {
 }
 
 export { msgTime, relativeTime };
+
+// ── Reminders ───────────────────────────────────────────────────────────────
+// A reminder is a CRM row first and a Google Calendar event second. The row is
+// written synchronously so the UI can show it immediately; the calendar mirror
+// is attempted right after and retried by cron if it fails. That ordering means
+// a Google outage costs you the notification, never the reminder itself.
+
+export const REMINDER_KINDS = [
+  { key: 'call',       label: 'Call',       icon: '📞' },
+  { key: 'meeting',    label: 'Meeting',    icon: '🤝' },
+  { key: 'site_visit', label: 'Site visit', icon: '🏠' },
+  { key: 'follow_up',  label: 'Follow up',  icon: '🔔' },
+];
+
+export async function getReminders(contactId) {
+  if (!contactId) return [];
+  const { data, error } = await supabase
+    .from('reminders').select('*')
+    .eq('contact_id', contactId)
+    .neq('status', 'cancelled')
+    .order('due_at', { ascending: true });
+  if (error) { console.error('getReminders', error); return []; }
+  return data || [];
+}
+
+// Everything still open, soonest first — powers the Home "coming up" list.
+export async function getUpcomingReminders(limit = 20) {
+  const { data, error } = await supabase
+    .from('reminders')
+    .select('*, contacts(id, name, phone, lead_status)')
+    .eq('status', 'open')
+    .order('due_at', { ascending: true })
+    .limit(limit);
+  if (error) { console.error('getUpcomingReminders', error); return []; }
+  return data || [];
+}
+
+// Fire-and-forget: the reminder is already saved, so a failed sync must not
+// surface as a failed save. The cron sweep picks up anything left pending.
+function pushToCalendar(reminderId) {
+  supabase.functions
+    .invoke('calendar-sync', { body: { reminder_id: reminderId } })
+    .catch(err => console.warn('calendar sync deferred to cron:', err?.message));
+}
+
+export async function createReminder({ contactId, conversationId, title, notes, kind = 'call',
+                                       dueAt, durationMin = 30, remindMinBefore = 10 }) {
+  const { data: session } = await supabase.auth.getUser();
+  const { data, error } = await supabase.from('reminders').insert({
+    contact_id: contactId,
+    conversation_id: conversationId || null,
+    title,
+    notes: notes || null,
+    kind,
+    due_at: new Date(dueAt).toISOString(),
+    duration_min: durationMin,
+    remind_min_before: remindMinBefore,
+    created_by: session?.user?.id || null,
+  }).select().single();
+  if (error) throw new Error(error.message);
+  pushToCalendar(data.id);
+  return data;
+}
+
+export async function updateReminder(id, patch) {
+  const body = { ...patch };
+  if (body.dueAt) { body.due_at = new Date(body.dueAt).toISOString(); delete body.dueAt; }
+  const { data, error } = await supabase.from('reminders').update(body).eq('id', id).select().single();
+  if (error) throw new Error(error.message);
+  // The touch trigger flips sync_status back to pending on a real change, so
+  // re-pushing here keeps the calendar in step without waiting for cron.
+  if (data.sync_status === 'pending') pushToCalendar(id);
+  return data;
+}
+
+export const completeReminder = (id) => updateReminder(id, { status: 'done' });
+export const cancelReminder   = (id) => updateReminder(id, { status: 'cancelled' });
+
+// ── Calendar connection ─────────────────────────────────────────────────────
+export async function getCalendarStatus() {
+  const { data, error } = await supabase.rpc('google_calendar_status');
+  if (error) { console.error('getCalendarStatus', error); return null; }
+  return Array.isArray(data) ? (data[0] || null) : data;
+}
+
+export async function testCalendarConnection() {
+  const { data, error } = await supabase.functions.invoke('calendar-sync', { body: { action: 'test' } });
+  if (error) {
+    let detail = error.message;
+    try { const ctx = await error.context?.json?.(); if (ctx?.error) detail = ctx.error; } catch { /* keep message */ }
+    return { ok: false, error: detail };
+  }
+  return data;
+}
+
+// Goes through an RPC, not a table write: google_calendar_account has RLS on
+// and no policies (it can hold a private key), so the browser has no direct
+// access to it at all.
+export async function setCalendarTarget(calendarId) {
+  const { error } = await supabase.rpc('set_google_calendar_target', { p_calendar_id: calendarId });
+  if (error) throw new Error(error.message);
+}
