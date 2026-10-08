@@ -5,10 +5,10 @@ import { IconPlus, IconX, IconRefresh, IconClip } from '../icons';
 import {
   getCampaigns, getCampaign, createCampaign, pauseCampaign, retryCampaignFailed, previewAudience,
   getTemplatesLive, templateVars, uploadHeaderImage, QUALIFICATIONS, QUALIFICATION_LABELS,
-  createCampaignFromCsv,
+  createCampaignFromCsv, getStageConfig,
 } from '../liveData';
 import { parseCsv, downloadSampleCsv, SAMPLE_HEADERS } from '../csv';
-import { LEAD_STAGES, DEAL_STAGES, TEMPERATURES, tempStyle } from '../pipeline';
+import { PIPELINES, DEFAULT_SECTIONS, stageLabel } from '../pipeline';
 
 const FOREST = 'var(--brand-primary)';
 
@@ -246,6 +246,8 @@ function Chip({ on, onClick, children }) {
 }
 
 function Builder({ onClose, onDone, isMobile }) {
+  const [sections, setSections] = useState(DEFAULT_SECTIONS);
+  useEffect(() => { getStageConfig().then(setSections); }, []);
   const [name, setName] = useState('');
   const [templates, setTemplates] = useState([]);
   const [tpl, setTpl] = useState(null);      // selected template object
@@ -257,7 +259,6 @@ function Builder({ onClose, onDone, isMobile }) {
   const [dateTo, setDateTo] = useState('');
   const [quals, setQuals] = useState([]);
   const [statuses, setStatuses] = useState([]);
-  const [temps, setTemps] = useState([]);
   const [segment, setSegment] = useState('all'); // 'all' | 'new' | 'old' (imported)
   const [count, setCount] = useState(null);
   const [maxRetries, setMaxRetries] = useState(3);
@@ -272,7 +273,7 @@ function Builder({ onClose, onDone, isMobile }) {
 
   useEffect(() => { getTemplatesLive().then((t) => setTemplates((t || []).filter((x) => x.status === 'Approved'))); }, []);
 
-  const filters = () => ({ date_from: dateFrom || null, date_to: dateTo || null, qualifications: quals, lead_statuses: statuses, temperatures: temps, segment });
+  const filters = () => ({ date_from: dateFrom || null, date_to: dateTo || null, qualifications: quals, lead_statuses: statuses, segment });
 
   function selectTpl(name) {
     const t = templates.find((x) => x.name === name) || null;
@@ -468,29 +469,12 @@ function Builder({ onClose, onDone, isMobile }) {
         {QUALIFICATIONS.map((q) => <Chip key={q} on={quals.includes(q)} onClick={() => toggle(quals, setQuals, q)}>{QUALIFICATION_LABELS[q]}</Chip>)}
       </div>
 
-      {/* Targeting by tag is the fastest way to build a useful list — a blast to
-          every Hot lead is a real campaign, a blast to every lead is not. */}
-      <label style={labelStyle}>Tag</label>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-        {TEMPERATURES.map((t) => (
-          <Chip key={t} on={temps.includes(t)} onClick={() => toggle(temps, setTemps, t)}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: tempStyle(t).dot }} />
-              {tempStyle(t).label}
-            </span>
-          </Chip>
-        ))}
-      </div>
-
-      <label style={labelStyle}>Lead status <span style={{ fontWeight: 500, color: 'rgba(27,76,94,.4)' }}>· before the call</span></label>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-        {LEAD_STAGES.map((s) => <Chip key={s} on={statuses.includes(s)} onClick={() => toggle(statuses, setStatuses, s)}>{s}</Chip>)}
-      </div>
-
-      <label style={labelStyle}>Deal stage <span style={{ fontWeight: 500, color: 'rgba(27,76,94,.4)' }}>· after the call</span></label>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
-        {DEAL_STAGES.map((s) => <Chip key={s} on={statuses.includes(s)} onClick={() => toggle(statuses, setStatuses, s)}>{s}</Chip>)}
-      </div>
+      {PIPELINES.map(section => <div key={section.key}>
+        <label style={labelStyle}>{section.key} · {section.label}</label>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          {sections[section.key].map(s => <Chip key={s} on={statuses.includes(s)} onClick={() => toggle(statuses, setStatuses, s)}>{stageLabel(s)}</Chip>)}
+        </div>
+      </div>)}
 
       </>)}
 
@@ -502,7 +486,7 @@ function Builder({ onClose, onDone, isMobile }) {
 
       <div style={{ display: audienceSource === 'csv' ? 'none' : 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <button onClick={preview} style={{ background: '#fff', border: '1px solid rgba(27,76,94,.18)', color: FOREST, fontSize: 12.5, fontWeight: 700, padding: '9px 14px', borderRadius: 9, cursor: 'pointer' }}>Preview recipients</button>
-        {count !== null && <span style={{ fontSize: 13, fontWeight: 700, color: FOREST }}>{count} {count === 1 ? 'person' : 'people'}{(!dateFrom && !dateTo && !quals.length && !statuses.length && !temps.length) ? ' (everyone)' : ''}</span>}
+        {count !== null && <span style={{ fontSize: 13, fontWeight: 700, color: FOREST }}>{count} {count === 1 ? 'person' : 'people'}{(!dateFrom && !dateTo && !quals.length && !statuses.length) ? ' (everyone)' : ''}</span>}
       </div>
 
       {err && <div style={{ fontSize: 12.5, color: '#C0392B', marginBottom: 12 }}>{err}</div>}

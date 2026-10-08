@@ -1,16 +1,16 @@
+import { DEFAULT_SECTIONS, PIPELINES, stageLabel } from '../pipeline';
 import { useState, useEffect } from 'react';
 import {
-  getStageConfig, savePipelineStages, saveDealStages, getTeamLive, addTeamMember, removeTeamMember,
+  getStageConfig, saveStageConfig, getTeamLive, addTeamMember, removeTeamMember,
   getSettings, getTemplatesLive, getFlowList,
 } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
-import { IconPlus, IconX, IconWhatsApp, IconDb, IconMail, IconZap, IconTemplate, IconPeople } from '../icons';
+import { IconX, IconWhatsApp, IconDb, IconMail, IconZap, IconTemplate, IconPeople } from '../icons';
 import { enablePush, disablePush, pushStatus, pushSupported } from '../push';
 import CalendarSettings from '../components/CalendarSettings';
 
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 16, padding: 22, marginBottom: 18 };
 const inputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid rgba(27,76,94,.18)', borderRadius: 9, padding: '10px 12px', fontSize: 13, color: 'var(--brand-primary)', outline: 'none', fontFamily: 'inherit', background: '#fff' };
-const labelStyle = { fontSize: 11.5, fontWeight: 700, color: 'rgba(27,76,94,.6)', display: 'block', marginBottom: 6, letterSpacing: '.03em' };
 
 function SectionHead({ Icon, title, sub }) {
   return (
@@ -41,8 +41,7 @@ function ConnRow({ Icon, label, value, ok }) {
 
 export default function AccountSettings() {
   const isMobile = useIsMobile();
-  const [stages, setStages] = useState([]);
-  const [dealStages, setDealStages] = useState([]);
+  const [sections, setSections] = useState(DEFAULT_SECTIONS);
   const [savingStages, setSavingStages] = useState(false);
   const [stageMsg, setStageMsg] = useState('');
   const [team, setTeam] = useState([]);
@@ -63,7 +62,7 @@ export default function AccountSettings() {
   }
 
   useEffect(() => {
-    getStageConfig().then(c => { setStages(c.lead); setDealStages(c.deal); });
+    getStageConfig().then(setSections);
     getTeamLive().then(setTeam);
     pushStatus().then(setPush);
     (async () => {
@@ -77,41 +76,12 @@ export default function AccountSettings() {
     })();
   }, []);
 
-  // Both boards edit the same way, so the handlers take the setter rather than
-  // being written out twice.
-  const editors = (set) => ({
-    setStage: (i, v) => set(st => st.map((s, idx) => idx === i ? v : s)),
-    removeStage: (i) => set(st => st.filter((_, idx) => idx !== i)),
-    addStage: () => set(st => [...st, '']),
-    moveStage: (i, dir) => set(st => {
-      const j = i + dir;
-      if (j < 0 || j >= st.length) return st;
-      const next = [...st];
-      [next[i], next[j]] = [next[j], next[i]];
-      return next;
-    }),
-  });
-  const leadEd = editors(setStages);
-  const dealEd = editors(setDealStages);
-
+  function editSection(key, next) { setSections(s => ({ ...s, [key]: next })); }
   async function saveStages() {
     setSavingStages(true); setStageMsg('');
-    const lead = stages.map(s => s.trim()).filter(Boolean);
-    const deal = dealStages.map(s => s.trim()).filter(Boolean);
-    // A name in both lists would make the pipeline a contact belongs to
-    // ambiguous, and the DB derives the board from the stage name.
-    const clash = lead.filter(s => deal.includes(s));
-    if (clash.length) {
-      setSavingStages(false);
-      setStageMsg(`"${clash[0]}" is in both boards. Stage names must be unique across the two.`);
-      setTimeout(() => setStageMsg(''), 4000);
-      return;
-    }
-    const [a, b] = await Promise.all([savePipelineStages(lead), saveDealStages(deal)]);
+    const result = await saveStageConfig(sections);
     setSavingStages(false);
-    if (a.ok && b.ok) { setStageMsg('Pipelines saved.'); setStages(lead); setDealStages(deal); }
-    else setStageMsg(a.error || b.error || 'Could not save.');
-    setTimeout(() => setStageMsg(''), 2500);
+    setStageMsg(result.ok ? 'Pipeline saved.' : result.error || 'Could not save.');
   }
 
   async function handleAddMember() {
@@ -134,39 +104,32 @@ export default function AccountSettings() {
 
       <div style={{ padding: isMobile ? '6px 16px 28px' : '6px 30px 40px', maxWidth: 760 }}>
 
-        {/* ── CRM SETTINGS: both pipeline editors ── */}
         <div style={CARD}>
-          <SectionHead Icon={IconDb} title="CRM pipelines" sub="Two boards: leads before the call, deals after it. A contact sits on whichever board its stage belongs to." />
-
-          {[
-            { key: 'lead', title: 'Lead pipeline', blurb: 'Before the call. No money attached yet.', list: stages, ed: leadEd },
-            { key: 'deal', title: 'Deal pipeline', blurb: 'After the call. Every contact here carries a deal value.', list: dealStages, ed: dealEd },
-          ].map(board => (
-            <div key={board.key} style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{board.title}</div>
-              <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', margin: '2px 0 10px' }}>{board.blurb}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {board.list.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(27,76,94,.4)', width: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
-                    <input value={s} onChange={e => board.ed.setStage(i, e.target.value)} placeholder="Stage name" style={{ ...inputStyle, flex: 1 }} />
-                    <button onClick={() => board.ed.moveStage(i, -1)} disabled={i === 0} title="Move up" style={{ ...arrowBtn, opacity: i === 0 ? 0.35 : 1 }}>↑</button>
-                    <button onClick={() => board.ed.moveStage(i, 1)} disabled={i === board.list.length - 1} title="Move down" style={{ ...arrowBtn, opacity: i === board.list.length - 1 ? 0.35 : 1 }}>↓</button>
-                    <button onClick={() => board.ed.removeStage(i)} title="Remove stage" style={{ width: 38, height: 38, flexShrink: 0, border: 'none', background: '#FDECEA', borderRadius: 8, cursor: 'pointer', color: '#C7503B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><IconX size={14} /></button>
-                  </div>
-                ))}
+          <SectionHead Icon={IconDb} title="E → S → O → V → D pipeline" sub="Eligible, Status, Options, Visit, Deal. Every contact stays in one stage." />
+          {PIPELINES.map(section => (
+            <div key={section.key} style={{ marginBottom: 22 }}>
+              <div style={{ borderLeft: `4px solid ${section.color}`, paddingLeft: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: section.color }}>{section.key} · {section.label}</div>
+                <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 3 }}>{section.blurb}</div>
               </div>
-              <button onClick={board.ed.addStage} style={{ marginTop: 10, border: '1px dashed rgba(27,76,94,.3)', background: '#fff', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: 'var(--brand-primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}><IconPlus size={14} /> Add stage</button>
+              {sections[section.key].map((stage, i) => {
+                const fixed = DEFAULT_SECTIONS[section.key].includes(stage);
+                return <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, width: 18 }}>{i + 1}</span>
+                  <input aria-label={`${section.label} stage ${i + 1}`} value={fixed ? stageLabel(stage) : stage} readOnly={fixed}
+                    onChange={e => editSection(section.key, sections[section.key].map((v, j) => j === i ? e.target.value : v))}
+                    style={{ ...inputStyle, flex: 1, minWidth: 0, background: fixed ? '#F6F8F7' : '#fff' }} />
+                  {!fixed && <button aria-label={`Remove ${stage || 'new stage'}`} onClick={() => editSection(section.key, sections[section.key].filter((_, j) => j !== i))}
+                    style={{ border: 'none', minWidth: 44, minHeight: 44, borderRadius: 8, color: '#B4432F', cursor: 'pointer' }}><IconX size={14} /></button>}
+                </div>;
+              })}
+              <button onClick={() => editSection(section.key, [...sections[section.key], ''])}
+                style={{ border: '1px dashed rgba(27,76,94,.3)', background: '#fff', borderRadius: 9, padding: '10px 14px', color: 'var(--brand-primary)', cursor: 'pointer' }}>+ Add stage to {section.label}</button>
             </div>
           ))}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
-            <button onClick={saveStages} disabled={savingStages} style={{ background: 'var(--brand-accent-soft)', border: 'none', color: 'var(--brand-primary-dark)', fontSize: 13, fontWeight: 800, padding: '10px 18px', borderRadius: 10, cursor: savingStages ? 'default' : 'pointer', opacity: savingStages ? 0.6 : 1 }}>{savingStages ? 'Saving…' : 'Save pipelines'}</button>
-            {stageMsg && <span style={{ fontSize: 12.5, fontWeight: 600, color: stageMsg.includes('saved') ? '#3B6B45' : '#C7503B' }}>{stageMsg}</span>}
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)', marginTop: 10, lineHeight: 1.5 }}>
-            A stage name decides which board a contact appears on, so the same name cannot be used in both lists. Renaming a stage won't move leads already in the old one — keep existing names if you have active leads, or re-drag them after.
-          </div>
+          <button onClick={saveStages} disabled={savingStages} style={{ background: 'var(--brand-accent-soft)', border: 'none', borderRadius: 10, padding: '12px 18px', color: 'var(--brand-primary-dark)', fontWeight: 800, cursor: 'pointer' }}>{savingStages ? 'Saving…' : 'Save pipeline'}</button>
+          {stageMsg && <p role="status" style={{ fontSize: 13 }}>{stageMsg}</p>}
+          <p style={{ fontSize: 12, lineHeight: 1.6, color: 'rgba(27,76,94,.55)' }}>The standard Baynest stages are kept in place. You can add custom stages; stages containing contacts cannot be removed. New contacts await qualification in E.</p>
         </div>
 
         {/* ── TEAM ── */}
@@ -250,5 +213,3 @@ export default function AccountSettings() {
     </div>
   );
 }
-
-const arrowBtn = { width: 38, height: 38, flexShrink: 0, border: '1px solid rgba(27,76,94,.16)', background: '#fff', borderRadius: 8, cursor: 'pointer', color: 'var(--brand-primary)', fontSize: 14, fontWeight: 700 };

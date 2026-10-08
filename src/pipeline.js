@@ -1,81 +1,59 @@
-// ── The two pipelines ────────────────────────────────────────────────────────
-// Everything before the advisor gets the lead on a call lives in the Lead
-// pipeline. The moment a call has happened it becomes a Deal, with a rupee
-// value attached. These lists mirror app_settings.pipeline_stages /
-// deal_stages; they are the fallback when settings have not loaded yet, and
-// the DB trigger uses the same names to decide which board a contact sits on.
-
-export const LEAD_STAGES = ['New', 'Attempted', 'Contacted', 'Follow Up', 'Qualified', 'Junk'];
-export const DEAL_STAGES = ['Visit Scheduled', 'Visited', 'Offer Made', 'Negotiation', 'Booked', 'Lost'];
-
+// Baynest's E → S → O → V → D pipeline. The legacy database `pipeline`
+// column stays compatible with existing workers; the UI uses these sections.
 export const PIPELINES = [
-  { key: 'lead', label: 'Leads', blurb: 'Before the call' },
-  { key: 'deal', label: 'Deals', blurb: 'After the call' },
+  { key: 'E', label: 'Eligible', blurb: 'Qualification', color: '#8B5A20' },
+  { key: 'S', label: 'Status', blurb: 'Contact outcome', color: '#147D68' },
+  { key: 'O', label: 'Options', blurb: 'Properties shared', color: '#B7592C' },
+  { key: 'V', label: 'Visit', blurb: 'Schedule and visit', color: '#5747B8' },
+  { key: 'D', label: 'Deal', blurb: 'Outcome', color: '#4B4B59' },
 ];
-
-// Terminal stages: still on the board, but out of the forecast and out of the
-// "needs chasing" counts.
-export const DEAD_STAGES = ['Junk', 'Lost'];
-export const WON_STAGES  = ['Booked'];
-
-export function pipelineOf(stage, dealStages = DEAL_STAGES) {
-  return (dealStages || DEAL_STAGES).includes(stage) ? 'deal' : 'lead';
+export const DEFAULT_SECTIONS = {
+  E: ['New', 'Qualified', 'Not qualified'],
+  S: ['Contacted', "Didn't pick up", 'Call back later', 'Not interested'],
+  O: ['Options sent'],
+  V: ['Schedule visit', 'Visit scheduled', 'Visited'],
+  D: ['Negotiation', 'Lost', 'Deal closed'],
+};
+let activeSections = DEFAULT_SECTIONS;
+export function usePipelineSections(sections) {
+  activeSections = sections || DEFAULT_SECTIONS;
+  return activeSections;
 }
-
-export function stagesFor(pipeline, leadStages = LEAD_STAGES, dealStages = DEAL_STAGES) {
-  return pipeline === 'deal' ? (dealStages || DEAL_STAGES) : (leadStages || LEAD_STAGES);
-}
-
-// ── Temperature ──────────────────────────────────────────────────────────────
-// Computed in Postgres from budget + timeline (see lead_temperature()), so the
-// rule lives in exactly one place and the board can sort on it. Repeated here
-// only as the label/colour lookup and for the "why" text in the editor.
-
+export const STAGE_ALIASES = {
+  'Not Qualified': 'Not qualified', NotQualified: 'Not qualified', Junk: 'Not qualified',
+  'Didn’t Pick Call': "Didn't pick up", "Didn't Pick Call": "Didn't pick up", Attempted: "Didn't pick up",
+  'Follow Up': 'Call back later', 'Looking to schedule visit': 'Schedule visit',
+  Hot: 'Call back later', Warm: 'Contacted', Cool: 'New',
+  'Visit Scheduled': 'Visit scheduled', Visits: 'Visit scheduled',
+  'Offer Made': 'Negotiation', Booked: 'Deal closed', Won: 'Deal closed', Closed: 'Deal closed',
+};
+export const canonicalStage = stage => STAGE_ALIASES[stage] || stage || 'New';
+export const stageLabel = stage => canonicalStage(stage) === 'New' ? 'New / awaiting qualification' : canonicalStage(stage);
+export const DEAD_STAGES = ['Not qualified', 'Not interested', 'Lost'];
+export const WON_STAGES = ['Deal closed'];
+export const ALL_STAGES = Object.values(DEFAULT_SECTIONS).flat();
+// Retained only for legacy data-layer compatibility, never two UI boards.
+export const LEAD_STAGES = [...DEFAULT_SECTIONS.E, ...DEFAULT_SECTIONS.S, ...DEFAULT_SECTIONS.O];
+export const DEAL_STAGES = [...DEFAULT_SECTIONS.V, ...DEFAULT_SECTIONS.D];
 export const TEMPERATURES = ['hot', 'warm', 'cold'];
-
-export const TEMP_STYLE = {
-  hot:  { label: 'Hot',  bg: 'rgba(199,80,59,.13)',  fg: '#B4432F', dot: '#C7503B' },
-  warm: { label: 'Warm', bg: 'rgba(192,138,69,.20)', fg: '#8A5E22', dot: '#C08A45' },
-  cold: { label: 'Cold', bg: 'rgba(27,76,94,.08)',   fg: 'rgba(27,76,94,.6)', dot: 'rgba(27,76,94,.4)' },
-};
-
-export function tempStyle(t) {
-  return TEMP_STYLE[t] || TEMP_STYLE.cold;
+export function pipelineOf(stage, sections = activeSections) {
+  const value = canonicalStage(stage);
+  const config = sections && !Array.isArray(sections) ? sections : DEFAULT_SECTIONS;
+  return PIPELINES.find(p => (config[p.key] || DEFAULT_SECTIONS[p.key]).includes(value))?.key || 'E';
 }
-
-export const TEMP_RULE = {
-  hot:  'Buying within 3 months and budget ₹5 Cr or above.',
-  warm: 'Has a budget and a timeline, but not both in the hot band.',
-  cold: 'Just exploring, under ₹3 Cr, or has not told us yet.',
-};
-
-// ── Stage chips ──────────────────────────────────────────────────────────────
-// Both boards run cool-to-committed: faint at the start, solid forest by
-// Negotiation, green once won, greyed out once dead. Lived in three separate
-// copies before the pipeline split and had already drifted out of sync, so it
-// is defined once here and imported everywhere a stage is drawn.
-export const STAGE_CHIP = {
-  New:               { bg: 'rgba(27,76,94,.07)',   fg: 'var(--brand-primary)' },
-  Attempted:         { bg: 'rgba(27,76,94,.10)',   fg: 'var(--brand-primary)' },
-  Contacted:         { bg: 'rgba(27,76,94,.13)',   fg: 'var(--brand-primary)' },
-  'Follow Up':       { bg: 'rgba(192,138,69,.18)', fg: '#8A5E22' },
-  Qualified:         { bg: 'rgba(115,167,111,.22)', fg: '#3B6B45' },
-  Junk:              { bg: 'rgba(27,76,94,.05)',   fg: 'rgba(27,76,94,.45)' },
-  'Visit Scheduled': { bg: 'rgba(192,138,69,.14)', fg: '#8A5E22' },
-  Visited:           { bg: 'rgba(192,138,69,.22)', fg: '#7A4E18' },
-  'Offer Made':      { bg: 'rgba(192,138,69,.30)', fg: '#6E440F' },
-  Negotiation:       { bg: 'var(--brand-primary)', fg: 'var(--app-bg)' },
-  Booked:            { bg: 'rgba(115,167,111,.28)', fg: '#3B6B45' },
-  Lost:              { bg: 'rgba(27,76,94,.05)',   fg: 'rgba(27,76,94,.45)' },
-};
-
+export function stagesFor(key, sections = DEFAULT_SECTIONS) { return sections[key] || DEFAULT_SECTIONS[key] || []; }
+export function sectionStyle(stage, sections = activeSections) {
+  const section = PIPELINES.find(p => p.key === pipelineOf(stage, sections));
+  return { label: `${section.key} · ${section.label}`, color: section.color };
+}
+export const STAGE_CHIP = Object.fromEntries(ALL_STAGES.map(stage => {
+  const color = sectionStyle(stage).color;
+  return [stage, { bg: `${color}18`, fg: color }];
+}));
 export function leadChip(stage) {
-  const c = STAGE_CHIP[stage] || { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' };
-  return {
-    display: 'inline-flex', alignItems: 'center', gap: 5,
-    background: c.bg, color: c.fg, fontSize: 11.5, fontWeight: 700,
-    padding: '3px 10px', borderRadius: 999, whiteSpace: 'nowrap',
-  };
+  const c = STAGE_CHIP[canonicalStage(stage)] || { bg: 'rgba(27,76,94,.07)', fg: 'var(--brand-primary)' };
+  return { display: 'inline-flex', alignItems: 'center', gap: 5, background: c.bg, color: c.fg,
+    fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 999, whiteSpace: 'nowrap' };
 }
 
 // ── Money ────────────────────────────────────────────────────────────────────
@@ -84,7 +62,7 @@ export function leadChip(stage) {
 export function formatCr(n, { dash = '—' } = {}) {
   const v = Number(n);
   if (!Number.isFinite(v) || v <= 0) return dash;
-  const s = v >= 100 ? v.toFixed(0) : v.toFixed(v % 1 === 0 ? 0 : 2).replace(/\.?0+$/, '');
+  const s = v >= 100 || Number.isInteger(v) ? v.toFixed(0) : v.toFixed(2).replace(/\.?0+$/, '');
   return `₹${s} Cr`;
 }
 

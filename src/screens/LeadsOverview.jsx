@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getLeadsOverview, LEAD_SOURCES_META } from '../liveData';
 import { useIsMobile } from '../useIsMobile';
 import { IconSearch, IconRefresh } from '../icons';
-import TemperatureTag from '../components/TemperatureTag';
+import PipelineTag from '../components/PipelineTag';
 import { leadChip, formatCr } from '../pipeline';
 
 // Brand palette (matches the rest of the app).
@@ -117,13 +117,13 @@ export default function LeadsOverview() {
                     <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: FOREST, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
                     <span style={{ display: 'block', fontSize: 12, color: 'rgba(27,76,94,.45)' }}>{r.phone}</span>
                   </span>
-                  <TemperatureTag temp={r.temperature} />
+                  <PipelineTag stage={r.lead_status} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginTop: 10 }}>
                   <span style={leadChip(r.lead_status)}>{r.lead_status}</span>
                   <Badge map={TYPE_BADGE} k={r.type} />
                   <Badge map={SOURCE_BADGE} k={r.source} />
-                  {r.pipeline === 'deal' && r.deal_value_cr
+                  {r.pipeline === 'D' && r.deal_value_cr
                     ? <span style={{ fontSize: 12.5, fontWeight: 800, color: FOREST }}>{formatCr(r.deal_value_cr)}</span>
                     : null}
                 </div>
@@ -155,7 +155,7 @@ export default function LeadsOverview() {
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                       <span style={{ fontWeight: 700, color: FOREST, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
-                      <TemperatureTag temp={r.temperature} />
+                      <PipelineTag stage={r.lead_status} />
                     </div>
                     <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)' }}>{r.phone}</div>
                   </div>
@@ -164,7 +164,7 @@ export default function LeadsOverview() {
                   <div><Badge map={TYPE_BADGE} k={r.type} /></div>
                   <div style={{ minWidth: 0 }}>
                     <span style={leadChip(r.lead_status)}>{r.lead_status}</span>
-                    {r.pipeline === 'deal' && r.deal_value_cr
+                    {r.pipeline === 'D' && r.deal_value_cr
                       ? <div style={{ fontSize: 11, fontWeight: 800, color: FOREST, marginTop: 3 }}>{formatCr(r.deal_value_cr)}</div>
                       : null}
                   </div>
