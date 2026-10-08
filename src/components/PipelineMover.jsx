@@ -1,23 +1,18 @@
 import { useState, useEffect } from 'react';
 import { getStageConfig, moveLeadToPipeline, setDealValue } from '../liveData';
 import {
-  LEAD_STAGES, DEAL_STAGES, PIPELINES, DEAD_STAGES, pipelineOf, formatCr,
+  DEFAULT_SECTIONS, PIPELINES, pipelineOf, formatCr, stageLabel,
 } from '../pipeline';
 
 const selectArrow = `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2315514B' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`;
 
-// Move a lead between the two boards, and set where it lands.
-//
-// This is the control Manish reaches for on a phone, where dragging a kanban
-// card is not realistic. It lives in every lead detail view — CRM, Inbox,
-// Visits — so wherever he opens a lead he can re-file it without going back to
-// the board. On the Deal side it also carries the rupee value, because that is
-// the only thing that separates a deal from a lead.
+// Move a contact between the five sections from any contact detail view.
+// Deal values remain available within D.
 export default function PipelineMover({
   contactId, stage, dealValue = null, dealValueIsManual = false,
   onMoved, onValueChange, compact = false,
 }) {
-  const [cfg, setCfg] = useState({ lead: LEAD_STAGES, deal: DEAL_STAGES });
+  const [cfg, setCfg] = useState(DEFAULT_SECTIONS);
   const [cur, setCur] = useState(stage || 'New');
   const [busy, setBusy] = useState(false);
   const [editingValue, setEditingValue] = useState(false);
@@ -29,8 +24,8 @@ export default function PipelineMover({
   useEffect(() => { setCur(stage || 'New'); }, [stage]);
   useEffect(() => { setValue(dealValue); setManual(dealValueIsManual); }, [dealValue, dealValueIsManual]);
 
-  const pipeline = pipelineOf(cur, cfg.deal);
-  const stages = pipeline === 'deal' ? cfg.deal : cfg.lead;
+  const pipeline = pipelineOf(cur, cfg);
+  const stages = cfg[pipeline];
 
   async function apply(nextPipeline, nextStage) {
     if (busy || nextStage === cur) return;
@@ -50,11 +45,8 @@ export default function PipelineMover({
 
   function switchPipeline(key) {
     if (key === pipeline) return;
-    const list = key === 'deal' ? cfg.deal : cfg.lead;
-    // Into Deals, land on the first stage. Back into Leads, land on the last
-    // live stage rather than New — going back is a correction, not a reset.
-    const live = list.filter(s => !DEAD_STAGES.includes(s));
-    apply(key, key === 'deal' ? (live[0] || list[0]) : (live[live.length - 1] || list[0]));
+    const list = cfg[key];
+    apply(key, list[0]);
   }
 
   async function saveValue() {
@@ -77,18 +69,18 @@ export default function PipelineMover({
       <div style={label}>Pipeline</div>
 
       {/* Board switch */}
-      <div style={{ display: 'flex', gap: 3, background: '#F2F6F3', border: '1px solid rgba(27,76,94,.12)', borderRadius: 10, padding: 3, marginBottom: 10 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, background: '#F2F6F3', border: '1px solid rgba(27,76,94,.12)', borderRadius: 10, padding: 3, marginBottom: 10 }}>
         {PIPELINES.map(p => {
           const on = pipeline === p.key;
           return (
             <button key={p.key} type="button" disabled={busy} onClick={() => switchPipeline(p.key)}
               style={{
-                flex: 1, padding: compact ? '7px 6px' : '8px 6px', borderRadius: 8, border: 'none',
+                flex: '1 1 70px', minHeight: 44, padding: compact ? '7px 6px' : '8px 6px', borderRadius: 8, border: 'none',
                 cursor: busy ? 'default' : 'pointer', fontFamily: 'inherit', lineHeight: 1.25,
                 background: on ? 'var(--brand-primary)' : 'transparent',
                 color: on ? '#fff' : 'rgba(27,76,94,.65)',
               }}>
-              <span style={{ display: 'block', fontSize: 12.5, fontWeight: on ? 800 : 600 }}>{p.label}</span>
+              <span style={{ display: 'block', fontSize: 12.5, fontWeight: on ? 800 : 600 }}>{p.key} · {p.label}</span>
               <span style={{ display: 'block', fontSize: 9.5, fontWeight: 600, opacity: on ? .75 : .55 }}>{p.blurb}</span>
             </button>
           );
@@ -96,7 +88,7 @@ export default function PipelineMover({
       </div>
 
       {/* Stage within that board */}
-      <div style={label}>{pipeline === 'deal' ? 'Deal stage' : 'Lead status'}</div>
+      <div style={label}>Stage</div>
       <select value={cur} disabled={busy} onChange={e => apply(pipeline, e.target.value)}
         style={{
           width: '100%', boxSizing: 'border-box', padding: '10px 30px 10px 12px',
@@ -105,11 +97,11 @@ export default function PipelineMover({
           appearance: 'none', backgroundImage: selectArrow, backgroundRepeat: 'no-repeat',
           backgroundPosition: 'right 11px center', cursor: busy ? 'default' : 'pointer',
         }}>
-        {stages.map(s => <option key={s} value={s}>{s}</option>)}
+        {stages.map(s => <option key={s} value={s}>{stageLabel(s)}</option>)}
       </select>
 
       {/* Deal value — only meaningful once there is a deal */}
-      {pipeline === 'deal' && (
+      {pipeline === 'D' && (
         <div style={{ marginTop: 12 }}>
           <div style={{ ...label, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <span>Deal value</span>

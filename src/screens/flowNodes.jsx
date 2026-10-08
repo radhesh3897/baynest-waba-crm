@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Handle, Position, useReactFlow, useUpdateNodeInternals } from '@xyflow/react';
-import { getCachedTemplates as getFlowTemplates, getCachedTemplateButtons as getTemplateButtons } from '../liveData';
+import { getCachedTemplates as getFlowTemplates, getCachedTemplateButtons as getTemplateButtons, getStageConfig } from '../liveData';
 import { IconWhatsApp, IconClock, IconBranch, IconPeople, IconFlow, IconInbox, IconFacebook, IconTemplate, IconDb, IconInstagram } from '../icons';
-import { LEAD_STAGES, DEAL_STAGES } from '../pipeline';
+import { PIPELINES, DEFAULT_SECTIONS, stageLabel, canonicalStage } from '../pipeline';
 
 const FOREST = 'var(--brand-primary)';
 const LIME = 'var(--brand-accent-soft)';
@@ -358,6 +358,8 @@ export function WaitReplyNode({ id }) {
 
 const ACTION_LABELS = { status: 'Update Lead Status', score: 'Update Lead Score', tag: 'Add Tag' };
 export function ActionNode({ id, data }) {
+  const [sections, setSections] = useState(DEFAULT_SECTIONS);
+  useEffect(() => { getStageConfig().then(setSections); }, []);
   const { updateNodeData } = useReactFlow();
   return (
     <Shell nodeId={id} icon={IconDb} title={ACTION_LABELS[data.action] || 'Action'} tint="#F3ECFB">
@@ -365,13 +367,10 @@ export function ActionNode({ id, data }) {
       {data.action === 'status' && (
         // Grouped by board: picking a Deal stage here moves the lead across
         // pipelines, which is worth seeing before you choose it.
-        <select className="nodrag" value={data.value || 'Contacted'} onChange={e => updateNodeData(id, { value: e.target.value })} style={selectStyle}>
-          <optgroup label="Leads — before the call">
-            {LEAD_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-          </optgroup>
-          <optgroup label="Deals — after the call">
-            {DEAL_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-          </optgroup>
+        <select className="nodrag" value={canonicalStage(data.value || 'Contacted')} onChange={e => updateNodeData(id, { value: e.target.value })} style={selectStyle}>
+          {PIPELINES.map(section => <optgroup key={section.key} label={`${section.key} · ${section.label}`}>
+            {sections[section.key].map(s => <option key={s} value={s}>{stageLabel(s)}</option>)}
+          </optgroup>)}
         </select>
       )}
       {data.action === 'score' && (
@@ -427,7 +426,7 @@ export const PALETTE = [
     { type: 'waitReply', label: 'Wait for Reply', Icon: IconInbox, data: {} },
   ]},
   { group: 'ACTIONS', items: [
-    { type: 'action', label: 'Update Lead Status', Icon: IconDb, data: { action: 'status', value: 'Hot' } },
+    { type: 'action', label: 'Update Lead Status', Icon: IconDb, data: { action: 'status', value: 'Contacted' } },
     { type: 'action', label: 'Update Lead Score', Icon: IconDb, data: { action: 'score', value: '+10' } },
     { type: 'action', label: 'Add Tag', Icon: IconPeople, data: { action: 'tag', value: '' } },
   ]},

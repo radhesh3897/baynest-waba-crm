@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getFormsLive, getPeopleLive, updateLeadStatusLive, addLeadLive, getStageConfig } from '../liveData';
+import { getFormsLive, getPeopleLive, moveLeadToPipeline, addLeadLive, getStageConfig } from '../liveData';
 import { IconPlus, IconSearch, IconChevDown, IconX } from '../icons';
 import { useIsMobile } from '../useIsMobile';
-import TemperatureTag from '../components/TemperatureTag';
+import PipelineTag from '../components/PipelineTag';
 import LeadDetailModal from '../components/LeadDetailModal';
 import {
-  LEAD_STAGES, DEAL_STAGES, PIPELINES, DEAD_STAGES, WON_STAGES,
-  pipelineOf, formatCr, sumDealValue, openDealValue, TEMPERATURES, tempStyle, leadChip, STAGE_CHIP,
+  DEFAULT_SECTIONS, PIPELINES, DEAD_STAGES, WON_STAGES,
+  pipelineOf, formatCr, sumDealValue, openDealValue, stageLabel, leadChip, STAGE_CHIP,
 } from '../pipeline';
 
 // ── Pipeline stages ──────────────────────────────────────────────────────────
-const STAGES = LEAD_STAGES;
+const STAGES = Object.values(DEFAULT_SECTIONS).flat();
 
 const LEAD_SOURCES = [
   { key: 'Meta Lead Ads', label: 'Meta Ads', icon: '📘' },
@@ -21,22 +21,20 @@ const LEAD_SOURCES = [
   { key: 'Manual',        label: 'Manual', icon: '✍️' },
 ];
 
-// Both boards run cool-to-committed left to right: faint at New, solid forest
-// by Negotiation, green at Booked, and greyed out once a lead is dead.
+// Stage colors preserve the existing Baynest board styling.
 const STAGE_STYLE = {
   // Lead pipeline
   New:              { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.25)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
-  Attempted:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.35)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
+  "Didn't pick up": { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.35)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.08)' },
   Contacted:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.5)',  fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.10)' },
-  'Follow Up':      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.18)' },
+  'Call back later': { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.18)' },
   Qualified:        { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#3B6B45', fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
-  Junk:             { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
+  'Not qualified':  { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
   // Deal pipeline
-  'Visit Scheduled': { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(192,138,69,.55)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.16)' },
+  'Visit scheduled': { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(192,138,69,.55)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.16)' },
   Visited:          { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-accent-soft)', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.20)' },
-  'Offer Made':     { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#C08A45', fg: 'var(--brand-primary)', count: 'rgba(192,138,69,.24)' },
   Negotiation:      { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'var(--brand-primary)', fg: 'var(--brand-primary)', count: 'rgba(27,76,94,.13)' },
-  Booked:           { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#3B6B45', fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
+  'Deal closed':    { col: 'var(--app-bg)', hd: '#E2EBE6', dot: '#3B6B45', fg: 'var(--brand-primary)', count: 'rgba(115,167,111,.20)' },
   Lost:             { col: 'var(--app-bg)', hd: '#E2EBE6', dot: 'rgba(27,76,94,.18)', fg: 'rgba(27,76,94,.5)', count: 'rgba(27,76,94,.06)' },
 };
 
@@ -72,7 +70,7 @@ function KanbanCard({ lead, formDef, onDragStart, onClick, showValue = false }) 
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
-            <TemperatureTag temp={lead.temperature} override={lead.temperature_override} />
+            <PipelineTag stage={lead.lead_status} />
           </div>
           {lead.company !== '-' && <div style={{ fontSize: 10.5, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.company}</div>}
         </div>
@@ -214,7 +212,7 @@ function AddLeadDrawer({ formDef, onClose, onSave, stages = STAGES }) {
             <div style={fieldWrap}>
               <label style={labelStyle}>Pipeline Stage</label>
               <select value={form.lead_status} onChange={e => set('lead_status', e.target.value)} style={{ ...inputStyle(), appearance: 'none', paddingRight: 30, backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%2315514B' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}>
-                {stages.map(s => <option key={s} value={s}>{s}</option>)}
+                {stages.map(s => <option key={s} value={s}>{stageLabel(s)}</option>)}
               </select>
             </div>
             <div style={fieldWrap}>
@@ -268,9 +266,8 @@ export default function CRM({ onOpenChat }) {
   const [selContact, setSelContact] = useState(null);
   const [showFormDropdown, setShowFormDropdown] = useState(false);
   const [showAddLead, setShowAddLead] = useState(false);
-  const [cfg, setCfg] = useState({ lead: LEAD_STAGES, deal: DEAL_STAGES });
-  const [pipeline, setPipeline] = useState('lead');
-  const [tempFilter, setTempFilter] = useState('all');
+  const [cfg, setCfg] = useState(DEFAULT_SECTIONS);
+  const [pipeline, setPipeline] = useState('E');
 
   async function load() {
     const [f, l, st] = await Promise.all([getFormsLive(), getPeopleLive(), getStageConfig()]);
@@ -279,7 +276,7 @@ export default function CRM({ onOpenChat }) {
   useEffect(() => { load(); }, []);
 
   const formDef = forms.find(f => f.id === formId) || null;
-  const stages = pipeline === 'deal' ? cfg.deal : cfg.lead;
+  const stages = cfg[pipeline];
 
   // Patch one lead in place rather than refetching all 92 — the detail panel
   // stays open and the card just re-renders where it is.
@@ -292,7 +289,7 @@ export default function CRM({ onOpenChat }) {
   // board toggle counts read off this so both numbers stay honest.
   const matching = useMemo(() => allLeads.filter(l => {
     if (formId && l.form_uuid !== formId) return false;
-    if (tempFilter !== 'all' && l.temperature !== tempFilter) return false;
+
     if (stageFilter !== 'all' && l.lead_status !== stageFilter) return false;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -301,29 +298,29 @@ export default function CRM({ onOpenChat }) {
           !(l.phone || '').toLowerCase().includes(q)) return false;
     }
     return true;
-  }), [allLeads, formId, search, tempFilter, stageFilter]);
+  }), [allLeads, formId, search, stageFilter]);
 
-  const counts = useMemo(() => ({
-    lead: matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === 'lead').length,
-    deal: matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === 'deal').length,
-  }), [matching, cfg.deal]);
+  const counts = useMemo(() => Object.fromEntries(PIPELINES.map(p => [p.key,
+    allLeads.filter(l => (!formId || l.form_uuid === formId) &&
+      (!search.trim() || [l.profile_name, l.company, l.phone].some(v => (v || '').toLowerCase().includes(search.trim().toLowerCase()))) &&
+      pipelineOf(l.lead_status, cfg) === p.key).length])), [allLeads, formId, search, cfg]);
 
   // Per-stage counts for the filter pills. Derived before the stage filter is
   // applied, otherwise every pill would show the count of itself.
   const stageCounts = useMemo(() => {
     const base = allLeads.filter(l => {
       if (formId && l.form_uuid !== formId) return false;
-      if (tempFilter !== 'all' && l.temperature !== tempFilter) return false;
-      return pipelineOf(l.lead_status, cfg.deal) === pipeline;
+
+      return pipelineOf(l.lead_status, cfg) === pipeline;
     });
     const out = { all: base.length };
     stages.forEach(st => { out[st] = base.filter(l => l.lead_status === st).length; });
     return out;
-  }, [allLeads, formId, tempFilter, pipeline, cfg.deal, stages]);
+  }, [allLeads, formId, pipeline, cfg, stages]);
 
   const leads = useMemo(
-    () => matching.filter(l => pipelineOf(l.lead_status, cfg.deal) === pipeline),
-    [matching, pipeline, cfg.deal]);
+    () => matching.filter(l => pipelineOf(l.lead_status, cfg) === pipeline),
+    [matching, pipeline, cfg]);
 
   // Only what is still in play. Booked has already landed and Lost never will.
   const boardValue = useMemo(() => openDealValue(leads), [leads]);
@@ -344,23 +341,19 @@ export default function CRM({ onOpenChat }) {
 
   // Stage change from the list. `lead_status` is authoritative and the DB
   // derives the board from it, so this is the same write the kanban drag makes.
-  function changeStage(id, stage) {
+  const [moveError, setMoveError] = useState('');
+  async function changeStage(id, stage) {
     const lead = allLeads.find(l => l.id === id);
     if (!lead || lead.lead_status === stage) return;
-    updateLeadStatusLive(id, stage);
-    patchLead(id, { lead_status: stage, pipeline: pipelineOf(stage, cfg.deal) });
+    setMoveError('');
+    const res = await moveLeadToPipeline(id, pipelineOf(stage, cfg), stage);
+    if (res.ok) patchLead(id, { lead_status: res.lead_status, pipeline: res.pipeline });
+    else setMoveError(res.error || 'Could not move this contact.');
   }
-
-  function handleDrop(stage) {
-    const lead = allLeads.find(l => l.id === dragId);
-    if (lead && lead.lead_status !== stage) {
-      updateLeadStatusLive(dragId, stage);
-      // The DB derives `pipeline` from the stage; mirror that here so the card
-      // does not flicker onto the wrong board before the next load.
-      patchLead(dragId, { lead_status: stage, pipeline: pipelineOf(stage, cfg.deal) });
-    }
-    setDragId(null);
-    setDragOver(null);
+  async function handleDrop(stage) {
+    const id = dragId;
+    setDragId(null); setDragOver(null);
+    if (id) await changeStage(id, stage);
   }
 
   const byStage = stage => leads.filter(l => l.lead_status === stage);
@@ -376,21 +369,20 @@ export default function CRM({ onOpenChat }) {
             <h1 style={{ margin: '5px 0 0', fontSize: 22, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--brand-primary)' }}>CRM</h1>
           </div>
 
-          {/* Board switch. Two genuinely separate funnels, so this sits at the
-              top rather than hiding as a filter. */}
-          <div style={{ display: 'flex', gap: 3, background: '#fff', border: '1px solid rgba(27,76,94,.14)', borderRadius: 12, padding: 3, flex: isMobile ? '1 1 100%' : 'none', order: isMobile ? 3 : 0 }}>
+          {/* Five pipeline sections, with contact counts. */}
+          <div style={{ display: 'flex', gap: 3, background: '#fff', border: '1px solid rgba(27,76,94,.14)', borderRadius: 12, padding: 3, flex: '1 1 100%', order: 3, flexWrap: 'wrap' }}>
             {PIPELINES.map(p => {
               const on = pipeline === p.key;
               return (
                 <button key={p.key} onClick={() => { setPipeline(p.key); setStageFilter('all'); setSelContact(null); }}
                   style={{
-                    flex: isMobile ? 1 : 'none', padding: '7px 16px', borderRadius: 9, border: 'none',
+                    flex: '1 1 100px', minHeight: 48, padding: '7px 10px', borderRadius: 9, border: 'none',
                     cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.3, textAlign: 'center',
                     background: on ? 'var(--brand-primary)' : 'transparent',
                     color: on ? '#EAF6E4' : 'rgba(27,76,94,.65)',
                   }}>
                   <span style={{ display: 'block', fontSize: 13, fontWeight: on ? 800 : 600 }}>
-                    {p.label} <span style={{ opacity: .65, fontWeight: 700 }}>{counts[p.key]}</span>
+                    {p.key} · {p.label} <span style={{ opacity: .65, fontWeight: 700 }}>{counts[p.key]}</span>
                   </span>
                   <span style={{ display: 'block', fontSize: 9.5, fontWeight: 600, opacity: on ? .7 : .5 }}>{p.blurb}</span>
                 </button>
@@ -439,29 +431,7 @@ export default function CRM({ onOpenChat }) {
 
         {/* Tag filter + what the board is worth */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 12, flexWrap: 'wrap' }}>
-          {[{ key: 'all', label: 'All' }, ...TEMPERATURES.map(t => ({ key: t, label: tempStyle(t).label }))].map(f => {
-            const on = tempFilter === f.key;
-            const n = f.key === 'all'
-              ? matching.length
-              : matching.filter(l => l.temperature === f.key).length;
-            const s = f.key === 'all' ? null : tempStyle(f.key);
-            return (
-              <button key={f.key} onClick={() => setTempFilter(f.key)} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700,
-                padding: '9px 13px', minHeight: 38, borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
-                border: '1px solid ' + (on ? 'var(--brand-primary)' : 'rgba(27,76,94,.16)'),
-                background: on ? 'var(--brand-primary)' : '#fff',
-                color: on ? '#EAF6E4' : 'rgba(27,76,94,.7)',
-              }}>
-                {s && <span style={{ width: 7, height: 7, borderRadius: '50%', background: on ? '#EAF6E4' : s.dot }} />}
-                {f.label} <span style={{ opacity: .65 }}>{n}</span>
-              </button>
-            );
-          })}
-
-          <span style={{ flex: isMobile ? 'none' : 1 }} />
-
-          {pipeline === 'deal' && (
+          {pipeline === 'D' && (
             <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 7, fontSize: 12, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>
               <span>In play</span>
               <strong style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{formatCr(boardValue)}</strong>
@@ -470,11 +440,13 @@ export default function CRM({ onOpenChat }) {
           )}
         </div>
 
+        {moveError && <div role="alert" style={{ color: '#B4432F', paddingBottom: 10 }}>{moveError}</div>}
+
         {/* Stage filter. The board itself is the desktop filter; on a phone the
             list is all there is, so the stages need to be reachable here. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, paddingBottom: 12, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          {[{ key: 'all', label: pipeline === 'deal' ? 'All deals' : 'All leads' },
-            ...stages.map(st => ({ key: st, label: st }))].map(f => {
+          {[{ key: 'all', label: 'All stages' },
+            ...stages.map(st => ({ key: st, label: stageLabel(st) }))].map(f => {
             const on = stageFilter === f.key;
             const n = stageCounts[f.key] ?? 0;
             const tone = f.key === 'all' ? null : (STAGE_CHIP[f.key] || {});
@@ -508,7 +480,7 @@ export default function CRM({ onOpenChat }) {
             <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>All leads across every form</span>
           )}
           <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.45)', marginLeft: 6 }}>
-            {leads.length} {pipeline === 'deal' ? 'deal' : 'lead'}{leads.length === 1 ? '' : 's'} on this board
+            {leads.length} {pipeline === 'D' ? 'deal' : 'lead'}{leads.length === 1 ? '' : 's'} in this section
           </span>
         </div>
       </header>
@@ -538,10 +510,10 @@ export default function CRM({ onOpenChat }) {
                   <div style={{ padding: '11px 13px 10px', flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ width: 8, height: 8, borderRadius: '50%', background: ss.dot, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12.5, fontWeight: 800, color: ss.fg, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stage}</span>
+                      <span style={{ fontSize: 12.5, fontWeight: 800, color: ss.fg, flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>{stageLabel(stage)}</span>
                       <span style={{ fontSize: 11, fontWeight: 800, background: ss.count, color: ss.fg, padding: '2px 8px', borderRadius: 999, flexShrink: 0 }}>{cards.length}</span>
                     </div>
-                    {pipeline === 'deal' && cards.length > 0 && (
+                    {pipeline === 'D' && cards.length > 0 && (
                       <div style={{ fontSize: 11.5, fontWeight: 800, color: DEAD_STAGES.includes(stage) ? 'rgba(27,76,94,.35)' : 'rgba(27,76,94,.6)', marginTop: 4, marginLeft: 16 }}>
                         {formatCr(sumDealValue(cards))}
                       </div>
@@ -555,7 +527,7 @@ export default function CRM({ onOpenChat }) {
                         key={lead.id}
                         lead={lead}
                         formDef={formDef}
-                        showValue={pipeline === 'deal'}
+                        showValue={pipeline === 'D'}
                         onDragStart={() => setDragId(lead.id)}
                         onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)}
                       />
@@ -589,7 +561,7 @@ export default function CRM({ onOpenChat }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 {leads.length === 0 && (
                   <div style={{ background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, padding: '24px 16px', textAlign: 'center', fontSize: 13, color: 'rgba(27,76,94,.5)' }}>
-                    No {pipeline === 'deal' ? 'deals' : 'leads'} match this view.
+                    No {pipeline === 'D' ? 'deals' : 'leads'} match this view.
                   </div>
                 )}
                 {leads.map(lead => (
@@ -602,7 +574,7 @@ export default function CRM({ onOpenChat }) {
                           {lead.company !== '-' ? lead.company : lead.phone}
                         </span>
                       </span>
-                      <TemperatureTag temp={lead.temperature} override={lead.temperature_override} />
+                      <PipelineTag stage={lead.lead_status} />
                     </button>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11 }}>
@@ -620,14 +592,9 @@ export default function CRM({ onOpenChat }) {
                           backgroundImage: SELECT_ARROW, backgroundRepeat: 'no-repeat',
                           backgroundPosition: 'right 10px center',
                         }}>
-                        <optgroup label="Leads — before the call">
-                          {cfg.lead.map(st => <option key={st} value={st}>{st}</option>)}
-                        </optgroup>
-                        <optgroup label="Deals — after the call">
-                          {cfg.deal.map(st => <option key={st} value={st}>{st}</option>)}
-                        </optgroup>
+                        {PIPELINES.map(section => <optgroup key={section.key} label={`${section.key} · ${section.label}`}>{cfg[section.key].map(st => <option key={st} value={st}>{stageLabel(st)}</option>)}</optgroup>)}
                       </select>
-                      {pipeline === 'deal' && (
+                      {pipeline === 'D' && (
                         <span style={{ fontSize: 13.5, fontWeight: 800, color: lead.deal_value_cr ? 'var(--brand-primary)' : 'rgba(27,76,94,.3)', flexShrink: 0 }}>
                           {formatCr(lead.deal_value_cr, { dash: '—' })}
                         </span>
@@ -642,21 +609,21 @@ export default function CRM({ onOpenChat }) {
 
           <div style={{ display: isMobile ? 'none' : 'block', background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14, overflow: 'hidden' }}>
             {/* Dynamic column headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'deal' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'D' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '12px 18px', background: '#F6FAF6', borderBottom: '1px solid rgba(27,76,94,.08)', fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: 'rgba(27,76,94,.5)' }}>
               <span>NAME</span>
               {(formDef?.fields || []).map(f => <span key={f.key}>{f.label.toUpperCase()}</span>)}
-              <span>{pipeline === 'deal' ? 'DEAL STAGE' : 'STATUS'}</span>
-              {pipeline === 'deal' && <span>VALUE</span>}
+              <span>{pipeline === 'D' ? 'DEAL STAGE' : 'STATUS'}</span>
+              {pipeline === 'D' && <span>VALUE</span>}
               <span>SCORE</span>
               <span>LAST SEEN</span>
             </div>
 
             {/* Rows */}
             {leads.map(lead => (
-              <div key={lead.id} onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)} style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'deal' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.05)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: lead.id === selContact?.id ? '#F2F8F2' : 'transparent' }}>
+              <div key={lead.id} onClick={() => setSelContact(selContact?.id === lead.id ? null : lead)} style={{ display: 'grid', gridTemplateColumns: `2fr ${(formDef?.fields || []).map(() => '1fr').join(' ')} 1.1fr ${pipeline === 'D' ? '.9fr ' : ''}.7fr 1fr`, gap: 10, padding: '13px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.05)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: lead.id === selContact?.id ? '#F2F8F2' : 'transparent' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.profile_name}</span>
-                  <TemperatureTag temp={lead.temperature} override={lead.temperature_override} />
+                  <PipelineTag stage={lead.lead_status} />
                 </span>
                 {(formDef?.fields || []).map(f => (
                   <span key={f.key} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{(lead.attributes || {})[f.key] || '-'}</span>
@@ -665,15 +632,10 @@ export default function CRM({ onOpenChat }) {
                   <select value={lead.lead_status} onChange={e => changeStage(lead.id, e.target.value)}
                     aria-label={`Stage for ${lead.profile_name}`}
                     style={{ ...leadChip(lead.lead_status), maxWidth: '100%', fontSize: 11.5, padding: '4px 24px 4px 11px', border: 'none', borderRadius: 999, fontFamily: 'inherit', cursor: 'pointer', appearance: 'none', backgroundImage: SELECT_ARROW, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 9px center' }}>
-                    <optgroup label="Leads — before the call">
-                      {cfg.lead.map(st => <option key={st} value={st}>{st}</option>)}
-                    </optgroup>
-                    <optgroup label="Deals — after the call">
-                      {cfg.deal.map(st => <option key={st} value={st}>{st}</option>)}
-                    </optgroup>
+                    {PIPELINES.map(section => <optgroup key={section.key} label={`${section.key} · ${section.label}`}>{cfg[section.key].map(st => <option key={st} value={st}>{stageLabel(st)}</option>)}</optgroup>)}
                   </select>
                 </span>
-                {pipeline === 'deal' && (
+                {pipeline === 'D' && (
                   <span style={{ fontWeight: 800, color: lead.deal_value_cr ? 'var(--brand-primary)' : 'rgba(27,76,94,.3)' }}>{formatCr(lead.deal_value_cr)}</span>
                 )}
                 <span style={{ fontWeight: 700, color: scoreColor(lead.lead_score) }}>{lead.lead_score}</span>
@@ -698,7 +660,7 @@ export default function CRM({ onOpenChat }) {
       {showAddLead && (
         <AddLeadDrawer
           formDef={formDef}
-          stages={cfg.lead}
+          stages={Object.values(cfg).flat()}
           onClose={() => setShowAddLead(false)}
           onSave={handleAddLead}
         />

@@ -6,7 +6,7 @@ import ContactNotes from './ContactNotes';
 import LeadCustomFields from './LeadCustomFields';
 import LeadAnswersEditable from './LeadAnswersEditable';
 import LeadProperties from './LeadProperties';
-import TemperatureTag from './TemperatureTag';
+import PipelineTag from './PipelineTag';
 import PipelineMover from './PipelineMover';
 
 // The lead detail pop-up, shared by every screen that shows a lead name.
@@ -130,11 +130,7 @@ export default function LeadDetailModal({ contact: given, contactId, onClose, on
             see the answers the automatic call was made from. */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)' }}>{view.profile_name}</span>
-          <TemperatureTag
-            temp={view.temperature} override={view.temperature_override}
-            contactId={view.id} editable size="md"
-            onChange={(t, o) => applyUpdate(view.id, { temperature: t, temperature_override: o })}
-          />
+          <PipelineTag stage={view.lead_status} />
         </div>
         <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{view.jobTitle !== '-' ? `${view.jobTitle} · ` : ''}{view.company !== '-' ? view.company : ''}</div>
         {view.phone && (

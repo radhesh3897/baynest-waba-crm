@@ -13,7 +13,7 @@ import { useIsMobile } from '../useIsMobile';
 import ContactNotes from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
 import LeadCustomFields from '../components/LeadCustomFields';
-import TemperatureTag from '../components/TemperatureTag';
+import PipelineTag from '../components/PipelineTag';
 import PipelineMover from '../components/PipelineMover';
 import { formatCr, pipelineOf, leadChip } from '../pipeline';
 import LeadAnswersEditable from '../components/LeadAnswersEditable';
@@ -450,7 +450,7 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7 }}>
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: conv.status === 'closed' ? 'rgba(27,76,94,.08)' : '#EAF6E4', color: conv.status === 'closed' ? 'rgba(27,76,94,.55)' : '#3B6B45' }}>{conv.status === 'closed' ? 'Closed' : 'Open'}</span>
             {/* Which lead is worth answering first, without opening the thread. */}
-            <TemperatureTag temp={conv.contact?.temperature} override={conv.contact?.temperature_override} />
+            <PipelineTag stage={conv.contact?.lead_status} />
             {conv.unread_count > 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-accent-soft)' }} />}
           </div>
         </div>
@@ -650,11 +650,7 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
       <div style={{ padding: '22px 20px 16px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--brand-primary)' }}>{contact.profile_name}</span>
-          <TemperatureTag
-            temp={contact.temperature} override={contact.temperature_override}
-            contactId={contact.id} editable size="md"
-            onChange={(t, o) => patchContact(contact.id, { temperature: t, temperature_override: o })}
-          />
+          <PipelineTag stage={contact.lead_status} />
         </div>
         <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{contact.jobTitle !== '-' ? contact.jobTitle + ' · ' : ''}{contact.company !== '-' ? contact.company : ''}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
@@ -664,9 +660,9 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
           </div>
           <div style={{ flex: 1, background: '#F2F8F2', border: '1px solid rgba(27,76,94,.10)', borderRadius: 10, padding: '9px 10px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>
-              {pipelineOf(contact.lead_status) === 'deal' ? 'DEAL VALUE' : 'LEAD STATUS'}
+              {pipelineOf(contact.lead_status) === 'D' ? 'DEAL VALUE' : 'LEAD STATUS'}
             </div>
-            {pipelineOf(contact.lead_status) === 'deal'
+            {pipelineOf(contact.lead_status) === 'D'
               ? <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 3 }}>{formatCr(contact.deal_value_cr, { dash: 'Not set' })}</div>
               : <div style={{ marginTop: 5 }}><span style={leadChip(contact.lead_status)}>{contact.lead_status}</span></div>}
           </div>
@@ -835,7 +831,7 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
                   <div style={{ flex: 1, minWidth: 0 }} onClick={() => setContactPanelOpen(true)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
                       <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</span>
-                      <TemperatureTag temp={contact?.temperature} override={contact?.temperature_override} />
+                      <PipelineTag stage={contact?.lead_status} />
                     </div>
                     <div style={{ fontSize: 11, color: 'rgba(27,76,94,.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {selConv?.lastSeen ? `last seen ${relativeTime(selConv.lastSeen)}` : `${contact?.company !== '-' ? contact?.company + ' · ' : ''}WhatsApp`}
@@ -937,7 +933,7 @@ export default function Inbox({ channel = 'whatsapp', scope = null, openContactI
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
                       <span style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact?.profile_name}</span>
-                      <TemperatureTag temp={contact?.temperature} override={contact?.temperature_override} />
+                      <PipelineTag stage={contact?.lead_status} />
                     </div>
                     <div style={{ fontSize: 11.5, color: 'rgba(27,76,94,.55)' }}>
                       {contact?.company !== '-' ? contact?.company + ' · ' : ''}WhatsApp

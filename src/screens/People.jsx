@@ -4,7 +4,7 @@ import { IconSearch, IconPlus, IconX, IconEdit, IconChevDown, IconRefresh } from
 import { useIsMobile } from '../useIsMobile';
 import ContactNotes, { LeadAnswers } from '../components/ContactNotes';
 import LeadProperties from '../components/LeadProperties';
-import TemperatureTag from '../components/TemperatureTag';
+import PipelineTag from '../components/PipelineTag';
 import PipelineMover from '../components/PipelineMover';
 import { leadChip, formatCr, pipelineOf } from '../pipeline';
 
@@ -135,7 +135,7 @@ export default function People({ onOpenChat }) {
                     <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profile_name}</span>
                     <span style={{ display: 'block', fontSize: 12, color: 'rgba(27,76,94,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.phone}</span>
                   </span>
-                  <TemperatureTag temp={p.temperature} override={p.temperature_override} />
+                  <PipelineTag stage={p.lead_status} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
                   <span style={leadChip(p.lead_status)}>{p.lead_status}</span>
@@ -181,7 +181,7 @@ export default function People({ onOpenChat }) {
               <div key={p.id} onClick={() => setSelId(p.id === selId ? null : p.id)} style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 10, padding: '12px 18px', alignItems: 'center', borderBottom: '1px solid rgba(27,76,94,.06)', cursor: 'pointer', fontSize: 12.5, color: 'rgba(27,76,94,.7)', background: p.id === selId ? '#F2F8F2' : 'transparent' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                   <span style={{ fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.profile_name}</span>
-                  <TemperatureTag temp={p.temperature} override={p.temperature_override} />
+                  <PipelineTag stage={p.lead_status} />
                 </span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.phone}</span>
                 <span><span style={leadChip(p.lead_status)}>{p.lead_status}</span></span>
@@ -214,11 +214,7 @@ export default function People({ onOpenChat }) {
           <div style={{ padding: '6px 18px 16px', textAlign: 'center', borderBottom: '1px solid rgba(27,76,94,.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--brand-primary)' }}>{sel.profile_name}</span>
-              <TemperatureTag
-                temp={sel.temperature} override={sel.temperature_override}
-                contactId={sel.id} editable size="md"
-                onChange={(t, o) => setContacts(cs => cs.map(c => c.id === sel.id ? { ...c, temperature: t, temperature_override: o } : c))}
-              />
+              <PipelineTag stage={sel.lead_status} />
             </div>
             <div style={{ fontSize: 12, color: 'rgba(27,76,94,.55)', marginTop: 2 }}>{sel.jobTitle !== '-' ? `${sel.jobTitle} · ` : ''}{sel.company !== '-' ? sel.company : ''}</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
@@ -228,9 +224,9 @@ export default function People({ onOpenChat }) {
               </div>
               <div style={{ flex: 1, background: '#F2F8F2', border: '1px solid rgba(27,76,94,.10)', borderRadius: 10, padding: '8px 10px' }}>
                 <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(27,76,94,.5)' }}>
-                  {pipelineOf(sel.lead_status) === 'deal' ? 'DEAL VALUE' : 'STATUS'}
+                  {pipelineOf(sel.lead_status) === 'D' ? 'DEAL VALUE' : 'STATUS'}
                 </div>
-                {pipelineOf(sel.lead_status) === 'deal'
+                {pipelineOf(sel.lead_status) === 'D'
                   ? <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 3 }}>{formatCr(sel.deal_value_cr, { dash: 'Not set' })}</div>
                   : <div style={{ marginTop: 4 }}><span style={leadChip(sel.lead_status)}>{sel.lead_status}</span></div>}
               </div>

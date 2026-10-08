@@ -1,7 +1,7 @@
 // Supabase-backed data layer for the live Inbox.
 // Maps raw DB rows into the shape the UI components already expect.
 import { supabase } from './supabaseClient';
-import { LEAD_STAGES, DEAL_STAGES, TEMPERATURES } from './pipeline';
+import { TEMPERATURES, DEFAULT_SECTIONS, PIPELINES, canonicalStage, pipelineOf, usePipelineSections } from './pipeline';
 
 const AVATAR_COLORS = ['#356E63', '#2E7BA8', '#7A5BB9', '#B6743A', '#C7503B', '#3B6B45', '#15514B', '#4A6EA8'];
 
@@ -66,8 +66,8 @@ function mapContact(c) {
     email: c.email || '',
     phone: c.wa_id || '',
     lead_score: c.lead_score ?? 0,
-    lead_status: c.lead_status || 'New',
-    pipeline: c.pipeline || 'lead',
+    lead_status: canonicalStage(c.lead_status),
+    pipeline: pipelineOf(c.lead_status),
     temperature: c.temperature || 'cold',
     temperature_override: c.temperature_override || null,
     deal_value_cr: c.deal_value_cr ?? null,
@@ -87,6 +87,7 @@ function mapContact(c) {
 // A campaign reply still arrives over WhatsApp, so the channel must stay
 // 'whatsapp' or the 24-hour window and the template picker stop working.
 export async function getConversationsLive(channel, scope) {
+  await getStageConfig();
   let query = supabase
     .from('conversations')
     .select('id, contact_id, channel, last_message_at, window_expires_at, unread_count, status, campaign_id, campaigns(id, name), contacts(*)')
@@ -884,13 +885,14 @@ const EMPTY_STATS = {
 export async function getHomeStatsLive() {
   const { data, error } = await supabase.rpc('home_stats');
   if (error || !data) { console.error('getHomeStatsLive', error); return EMPTY_STATS; }
+  usePipelineSections(data.pipelineSections);
   return {
     ...EMPTY_STATS,
     ...data,
     recent: (data.recent || []).map(c => ({
-      id: c.id, name: c.name, source: c.source, status: c.status,
+      id: c.id, name: c.name, source: c.source, status: canonicalStage(c.status),
       temperature: c.temperature || 'cold',
-      pipeline: c.pipeline || 'lead',
+      pipeline: pipelineOf(c.status),
       deal_value_cr: c.deal_value_cr ?? null,
       received: exactTime(c.created_at),
     })),
@@ -903,6 +905,7 @@ export async function getHomeStatsLive() {
 // without loading the whole contact table.
 export async function getContactLive(id) {
   if (!id) return null;
+  await getStageConfig();
   const { data, error } = await supabase
     .from('contacts').select('*, conversations(id, channel)').eq('id', id).maybeSingle();
   if (error) { console.error('getContactLive', error); return null; }
@@ -932,34 +935,22 @@ export async function saveSettings(patch) {
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-export const DEFAULT_STAGES = LEAD_STAGES;
-export async function getPipelineStages() {
-  const s = await getSettings();
-  const st = s?.pipeline_stages;
-  return Array.isArray(st) && st.length ? st : LEAD_STAGES;
-}
-export async function savePipelineStages(stages) {
-  const clean = (stages || []).map(s => String(s).trim()).filter(Boolean);
-  if (!clean.length) return { ok: false, error: 'Keep at least one stage.' };
-  return saveSettings({ pipeline_stages: clean });
-}
-export async function getDealStages() {
-  const s = await getSettings();
-  const st = s?.deal_stages;
-  return Array.isArray(st) && st.length ? st : DEAL_STAGES;
-}
-export async function saveDealStages(stages) {
-  const clean = (stages || []).map(s => String(s).trim()).filter(Boolean);
-  if (!clean.length) return { ok: false, error: 'Keep at least one stage.' };
-  return saveSettings({ deal_stages: clean });
-}
-// Both boards in one round trip — every screen that renders a stage needs both
-// lists, if only to work out which board a contact belongs to.
+export const DEFAULT_STAGES = Object.values(DEFAULT_SECTIONS).flat();
+export async function getPipelineStages() { return Object.values(await getStageConfig()).flat(); }
 export async function getStageConfig() {
   const s = await getSettings();
-  const lead = Array.isArray(s?.pipeline_stages) && s.pipeline_stages.length ? s.pipeline_stages : LEAD_STAGES;
-  const deal = Array.isArray(s?.deal_stages)     && s.deal_stages.length     ? s.deal_stages     : DEAL_STAGES;
-  return { lead, deal };
+  return usePipelineSections(Object.fromEntries(PIPELINES.map(p => [p.key,
+    Array.isArray(s?.pipeline_sections?.[p.key]) && s.pipeline_sections[p.key].length
+      ? s.pipeline_sections[p.key] : DEFAULT_SECTIONS[p.key]])));
+}
+export async function saveStageConfig(sections) {
+  const clean = Object.fromEntries(PIPELINES.map(p => [p.key, (sections[p.key] || []).map(s => s.trim()).filter(Boolean)]));
+  const values = Object.values(clean).flat();
+  if (Object.values(clean).some(a => !a.length)) return { ok: false, error: 'Keep at least one stage in each section.' };
+  if (new Set(values.map(s => s.toLowerCase())).size !== values.length) return { ok: false, error: 'Each stage name must be unique.' };
+  const { error } = await supabase.rpc('save_pipeline_sections', { p_sections: clean });
+  if (!error) usePipelineSections(clean);
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 // ─── Temperature + deal value ───────────────────────────────────────────────
@@ -993,11 +984,10 @@ export async function setDealValue(id, cr) {
 // trigger derives `pipeline` from it — so this is a stage write with a guard
 // that the stage actually belongs to the board being asked for.
 export async function moveLeadToPipeline(id, pipeline, stage) {
-  const { lead, deal } = await getStageConfig();
-  const list = pipeline === 'deal' ? deal : lead;
-  const target = list.includes(stage) ? stage : list[0];
-  const { error } = await supabase.from('contacts').update({ lead_status: target }).eq('id', id);
-  return error ? { ok: false, error: error.message } : { ok: true, lead_status: target, pipeline };
+  const sections = await getStageConfig();
+  if (!sections[pipeline]?.includes(stage)) return { ok: false, error: 'Choose a stage in this section.' };
+  const { data, error } = await supabase.from('contacts').update({ lead_status: stage }).eq('id', id).select('lead_status').single();
+  return error ? { ok: false, error: error.message } : { ok: true, lead_status: data.lead_status, pipeline: pipelineOf(data.lead_status, sections) };
 }
 
 // ─── Team roster ────────────────────────────────────────────────────────────────
@@ -1029,6 +1019,7 @@ export async function getFormsLive() {
 }
 
 export async function getPeopleLive() {
+  await getStageConfig();
   const { data, error } = await supabase
     .from('contacts')
     .select('*, fb_forms(id, name), conversations(id, channel)')
@@ -1046,9 +1037,9 @@ export async function getPeopleLive() {
       email: c.email || '',
       company: c.company || '-',
       jobTitle: c.job_title || '-',
-      lead_status: c.lead_status || 'New',
+      lead_status: canonicalStage(c.lead_status),
       lead_score: c.lead_score ?? 0,
-      pipeline: c.pipeline || 'lead',
+      pipeline: pipelineOf(c.lead_status),
       temperature: c.temperature || 'cold',
       temperature_override: c.temperature_override || null,
       deal_value_cr: c.deal_value_cr ?? null,
@@ -1116,6 +1107,7 @@ function deriveSource(c) {
 }
 
 export async function getLeadsOverview() {
+  await getStageConfig();
   const { data, error } = await supabase
     .from('contacts')
     .select('id, profile_name, wa_id, ig_id, ig_username, source, source_type, ctwa_clid, form_id, qualification, created_at, attributes, temperature, lead_status, pipeline, deal_value_cr, fb_forms(name), campaign_recipients(created_at, campaigns(name, source))')
@@ -1134,8 +1126,8 @@ export async function getLeadsOverview() {
       funnel: src.detail,
       type: c.qualification || 'Intake',
       temperature: c.temperature || 'cold',
-      lead_status: c.lead_status || 'New',
-      pipeline: c.pipeline || 'lead',
+      lead_status: canonicalStage(c.lead_status),
+      pipeline: pipelineOf(c.lead_status),
       deal_value_cr: c.deal_value_cr ?? null,
       created_at: c.created_at,
       created_rel: relativeTime(c.created_at),

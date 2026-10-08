@@ -7,9 +7,9 @@ import {
   IconInbox, IconInstagram, IconPeople, IconBuilding, IconZap,
   IconTemplate, IconSend, IconDb, IconCalendar,
 } from '../icons';
-import TemperatureTag from '../components/TemperatureTag';
+import PipelineTag from '../components/PipelineTag';
 import LeadDetailModal from '../components/LeadDetailModal';
-import { leadChip, formatCr } from '../pipeline';
+import { leadChip, formatCr, PIPELINES } from '../pipeline';
 
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14 };
@@ -73,15 +73,7 @@ function QuickTile({ icon: Icon, tint, fg, count, label, onClick }) {
 // Rupees rather than a lead count, because after the call that is the number
 // that matters and it is the whole point of splitting the pipelines.
 function PipelineSummary({ stats, onNav }) {
-  const boards = [
-    { key: 'lead', label: 'Leads',  sub: 'before the call', n: stats.leadPipeline },
-    { key: 'deal', label: 'Deals',  sub: 'after the call',  n: stats.dealPipeline },
-  ];
-  const tags = [
-    { k: 'hot',  label: 'Hot',  n: stats.hotLeads,  dot: '#C7503B' },
-    { k: 'warm', label: 'Warm', n: stats.warmLeads, dot: '#C08A45' },
-    { k: 'cold', label: 'Cold', n: stats.coldLeads, dot: 'rgba(27,76,94,.4)' },
-  ];
+  const boards = PIPELINES.map(p => ({ ...p, sub: p.blurb, n: stats.sectionCounts?.[p.key] || 0 }));
   return (
     <div style={{ ...CARD, padding: '15px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
@@ -91,14 +83,14 @@ function PipelineSummary({ stats, onNav }) {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10 }}>
         {boards.map(b => (
           <button key={b.key} onClick={() => onNav?.('crm')} style={{
             textAlign: 'left', border: '1px solid rgba(27,76,94,.10)', background: 'var(--brand-tint-soft, #F2F8F2)',
             borderRadius: 11, padding: '11px 12px', cursor: 'pointer', fontFamily: 'inherit',
           }}>
             <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--brand-primary)', letterSpacing: '-.02em', lineHeight: 1.05 }}>{fmt(b.n)}</div>
-            <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 3 }}>{b.label}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--brand-primary)', marginTop: 3 }}>{b.key} · {b.label}</div>
             <div style={{ fontSize: 10.5, color: 'rgba(27,76,94,.45)' }}>{b.sub}</div>
           </button>
         ))}
@@ -108,18 +100,11 @@ function PipelineSummary({ stats, onNav }) {
         <span style={{ fontSize: 11.5, color: 'rgba(27,76,94,.5)', fontWeight: 600 }}>In play</span>
         <strong style={{ fontSize: 19, fontWeight: 900, color: 'var(--brand-primary)', letterSpacing: '-.01em' }}>{formatCr(stats.dealValueOpen, { dash: '₹0 Cr' })}</strong>
         {stats.dealValueBooked > 0 && (
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#3B6B45' }}>· {formatCr(stats.dealValueBooked)} booked</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#3B6B45' }}>· {formatCr(stats.dealValueBooked)} closed</span>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 9 }}>
-        {tags.map(t => (
-          <span key={t.k} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'rgba(27,76,94,.6)', fontWeight: 600 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: t.dot }} />
-            {t.label} <strong style={{ color: 'var(--brand-primary)', fontWeight: 800 }}>{fmt(t.n)}</strong>
-          </span>
-        ))}
-      </div>
+
     </div>
   );
 }
@@ -157,7 +142,7 @@ export default function Home({ onNav, onOpenChat }) {
     { label: 'Leads In', count: stats.leadsIn, conv: null, accent: 'rgba(27,76,94,.55)' },
     { label: 'Conversations', count: stats.conversations, conv: pct(stats.conversations, stats.leadsIn), accent: 'var(--brand-primary)' },
     { label: 'Qualified', count: stats.qualified, conv: pct(stats.qualified, stats.conversations || stats.leadsIn), accent: 'var(--brand-muted)' },
-    { label: 'Booked', count: stats.won, conv: pct(stats.won, stats.qualified || stats.leadsIn), accent: 'var(--brand-accent-soft)' },
+    { label: 'Deal closed', count: stats.won, conv: pct(stats.won, stats.qualified || stats.leadsIn), accent: 'var(--brand-accent-soft)' },
   ];
 
   // Quick Links tiles. Each one is a real count and a real destination; nothing
@@ -217,7 +202,7 @@ export default function Home({ onNav, onOpenChat }) {
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                       <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
-                      <TemperatureTag temp={r.temperature} />
+                      <PipelineTag stage={r.status} />
                     </div>
                     <div style={{ fontSize: 11, color: 'rgba(27,76,94,.45)' }}>{r.source}</div>
                   </div>
