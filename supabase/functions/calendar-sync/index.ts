@@ -1,223 +1,129 @@
-// Mirrors CRM reminders into Manish's Google Calendar.
-//
-// Auth is a SERVICE ACCOUNT, not OAuth: one static JSON key in Edge Function
-// secrets, no consent screen, nobody ever logs in. Google has no API-key path
-// that can write events — a key only reads public calendars — so this is the
-// only way to get "one fixed credential" and still create events.
-//
-// Called three ways:
-//   { action: "test" }        → prove the credential + calendar work
-//   { reminder_id: "<uuid>" } → sync one row immediately (from the UI)
-//   { }  or the cron tick     → sweep everything still pending/failed
+// Authenticated staff and the private retry worker mirror reminders to Manish.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.108.2";
+import { eventBody, eventId } from "./event.ts";
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const URL = Deno.env.get("SUPABASE_URL") ?? "";
+const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const CALENDAR = "manish@baynestrealty.com";
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+const message = (e: unknown) => (e instanceof Error ? e.message : String(e)).slice(0, 400);
+const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const encoded = (v: unknown) => b64(new TextEncoder().encode(JSON.stringify(v)));
+let cached: { token: string; expires: number } | null = null;
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
-const SA_JSON = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON") ?? "";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
-};
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
-
-// ── Service-account auth ────────────────────────────────────────────────────
-const b64url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-const b64urlStr = (s: string) => b64url(new TextEncoder().encode(s));
-
-// The PEM in the JSON key arrives with literal backslash-n when it round-trips
-// through an env var, so unescape before stripping the armour.
-async function importKey(pem: string): Promise<CryptoKey> {
-  const body = pem
-    .replace(/\\n/g, "\n")
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
-    .replace(/\s+/g, "");
-  const der = Uint8Array.from(atob(body), (c) => c.charCodeAt(0));
-  return crypto.subtle.importKey("pkcs8", der.buffer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
-}
-
-let cachedToken: { token: string; expires: number } | null = null;
-
-async function accessToken(): Promise<string> {
-  // Tokens last an hour; a warm function should not re-mint one per reminder.
-  if (cachedToken && cachedToken.expires > Date.now() + 60_000) return cachedToken.token;
-  if (!SA_JSON) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is not set");
-
-  let sa: { client_email?: string; private_key?: string };
-  try {
-    sa = JSON.parse(SA_JSON);
-  } catch {
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON — paste the whole downloaded file");
-  }
-  if (!sa.client_email || !sa.private_key) throw new Error("service account JSON has no client_email/private_key");
-
+async function accessToken(sa: any) {
+  if (cached && cached.expires > Date.now() + 60_000) return cached.token;
+  if (!sa?.client_email || !sa?.private_key) throw new Error("Google Calendar credential is not configured.");
   const now = Math.floor(Date.now() / 1000);
-  const claim = {
-    iss: sa.client_email,
-    scope: "https://www.googleapis.com/auth/calendar",
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-  };
-  const unsigned = `${b64urlStr(JSON.stringify({ alg: "RS256", typ: "JWT" }))}.${b64urlStr(JSON.stringify(claim))}`;
-  const sig = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    await importKey(sa.private_key),
-    new TextEncoder().encode(unsigned),
-  );
-  const assertion = `${unsigned}.${b64url(new Uint8Array(sig))}`;
-
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || !body.access_token) {
-    throw new Error(`token exchange failed: ${body.error_description ?? body.error ?? res.status}`);
-  }
-  cachedToken = { token: body.access_token, expires: Date.now() + (body.expires_in ?? 3600) * 1000 };
-  return cachedToken.token;
+  const jwt = `${encoded({ alg: "RS256", typ: "JWT" })}.${encoded({ iss: sa.client_email, scope: "https://www.googleapis.com/auth/calendar", aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 })}`;
+  const pem = sa.private_key.replace(/\\n/g, "\n").replace(/-----[^-]+-----/g, "").replace(/\s/g, "");
+  const key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(jwt));
+  const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: `${jwt}.${b64(new Uint8Array(signature))}` }), signal: AbortSignal.timeout(15000) });
+  const body = await res.json();
+  if (!res.ok || !body.access_token) throw new Error("Google Calendar credential was rejected. Check the connection in Account Settings.");
+  cached = { token: body.access_token, expires: Date.now() + body.expires_in * 1000 };
+  return cached.token;
 }
 
-async function gcal(path: string, init: RequestInit = {}) {
-  const token = await accessToken();
-  const res = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
-    ...init,
-    headers: { ...(init.headers ?? {}), Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-  });
+class GoogleError extends Error { constructor(public status: number, detail: string) { super(detail); } }
+async function google(token: string, path: string, method = "GET", data?: unknown) {
+  const res = await fetch(`https://www.googleapis.com/calendar/v3${path}`, { method, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: data ? JSON.stringify(data) : undefined, signal: AbortSignal.timeout(15000) });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body?.error?.message ?? `calendar ${res.status}`);
+  if (!res.ok) throw new GoogleError(res.status, body.error?.message || `Google Calendar returned ${res.status}.`);
   return body;
 }
 
-// ── Turning a reminder into an event ────────────────────────────────────────
-function eventBody(r: any, tz: string) {
-  const start = new Date(r.due_at);
-  const end = new Date(start.getTime() + (r.duration_min ?? 30) * 60_000);
-  const who = r.contacts?.name || r.contacts?.phone || "";
-  const lines = [
-    r.notes || "",
-    who ? `Lead: ${who}${r.contacts?.phone ? ` · ${r.contacts.phone}` : ""}` : "",
-    r.contacts?.lead_status ? `Stage: ${r.contacts.lead_status}` : "",
-    "",
-    "Created from the Baynest CRM.",
-  ].filter(Boolean);
-
-  return {
-    summary: r.title,
-    description: lines.join("\n"),
-    start: { dateTime: start.toISOString(), timeZone: tz },
-    end: { dateTime: end.toISOString(), timeZone: tz },
-    reminders: {
-      useDefault: false,
-      overrides: [
-        { method: "popup", minutes: Math.max(0, r.remind_min_before ?? 10) },
-        { method: "popup", minutes: 0 },
-      ],
-    },
-  };
-}
-
-async function syncOne(db: any, r: any, calendarId: string, tz: string) {
-  const cal = encodeURIComponent(calendarId);
+async function syncOne(db: any, token: string, id: string) {
+  const { data: claimed, error } = await db.rpc("claim_calendar_reminder", { p_id: id });
+  if (error) throw error;
+  const r = claimed?.[0];
+  if (!r) return { id, ok: false, pending: true, error: "Sync is already in progress. Please retry shortly." };
+  const base = `/calendars/${encodeURIComponent(CALENDAR)}/events`;
+  const eid = r.google_event_id || eventId(r.id);
   try {
-    if (r.status === "cancelled" && r.google_event_id) {
-      await gcal(`/calendars/${cal}/events/${r.google_event_id}?sendUpdates=none`, { method: "DELETE" }).catch((e) => {
-        // Already gone on Google's side is a success, not a failure.
-        if (!/410|404|deleted/i.test(String(e))) throw e;
-      });
-      await db.from("reminders").update({ sync_status: "synced", google_event_id: null, sync_error: null }).eq("id", r.id);
-      return { id: r.id, ok: true, action: "deleted" };
+    let patch: any;
+    if (r.status !== "open") {
+      try { await google(token, `${base}/${encodeURIComponent(eid)}?sendUpdates=none`, "DELETE"); }
+      catch (e) { if (!(e instanceof GoogleError) || ![404, 410].includes(e.status)) throw e; }
+      patch = { google_event_id: null, google_link: null };
+    } else {
+      let contact = null;
+      if (r.contact_id) {
+        const response = await db.from("contacts").select("profile_name,wa_id,lead_status").eq("id", r.contact_id).maybeSingle();
+        if (response.error) throw response.error;
+        contact = response.data;
+      }
+      const body = eventBody({ ...r, contacts: contact }, "Asia/Kolkata");
+      let ev;
+      if (r.google_event_id) {
+        ev = await google(token, `${base}/${encodeURIComponent(eid)}?sendUpdates=none`, "PATCH", body);
+      } else {
+        try { ev = await google(token, `${base}?sendUpdates=none`, "POST", { ...body, id: eid }); }
+        catch (e) {
+          // A retry after a response was lost must update the same event.
+          if (!(e instanceof GoogleError) || e.status !== 409) throw e;
+          ev = await google(token, `${base}/${encodeURIComponent(eid)}?sendUpdates=none`, "PATCH", body);
+        }
+      }
+      patch = { google_event_id: ev.id, google_link: ev.htmlLink };
     }
-
-    const body = eventBody(r, tz);
-    const ev = r.google_event_id
-      ? await gcal(`/calendars/${cal}/events/${r.google_event_id}?sendUpdates=none`, {
-          method: "PATCH",
-          body: JSON.stringify(body),
-        })
-      : await gcal(`/calendars/${cal}/events?sendUpdates=none`, { method: "POST", body: JSON.stringify(body) });
-
-    await db
-      .from("reminders")
-      .update({ google_event_id: ev.id, google_link: ev.htmlLink, sync_status: "synced", sync_error: null })
-      .eq("id", r.id);
-    return { id: r.id, ok: true, action: r.google_event_id ? "updated" : "created", link: ev.htmlLink };
+    const { data: saved, error: saveError } = await db.from("reminders").update({ ...patch, sync_status: "synced", sync_error: null, sync_attempts: 0 }).eq("id", id).eq("sync_revision", r.sync_revision).select("id");
+    if (saveError) throw saveError;
+    return { id, ok: !!saved?.length, pending: !saved?.length };
   } catch (e) {
-    const msg = String(e instanceof Error ? e.message : e).slice(0, 400);
-    await db
-      .from("reminders")
-      .update({ sync_status: "failed", sync_error: msg, sync_attempts: (r.sync_attempts ?? 0) + 1 })
-      .eq("id", r.id);
-    return { id: r.id, ok: false, error: msg };
+    await db.from("reminders").update({ sync_status: "failed", sync_error: message(e), sync_attempts: r.sync_attempts + 1 }).eq("id", id).eq("sync_revision", r.sync_revision);
+    return { id, ok: false, error: message(e) };
+  } finally {
+    await db.from("reminders").update({ sync_claimed_at: null }).eq("id", id).eq("sync_claimed_at", r.sync_claimed_at);
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-
-  const auth = req.headers.get("Authorization")?.replace("Bearer ", "");
-  const cron = req.headers.get("x-cron-secret");
-  const isTrusted = (CRON_SECRET && cron === CRON_SECRET) || (auth && auth === SERVICE_ROLE);
-  // Signed-in staff may trigger their own reminder sync; anonymous callers may not.
-  if (!isTrusted && !auth) return json({ error: "unauthorized" }, 401);
-
-  const db = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
-  const payload = await req.json().catch(() => ({}));
-
-  const { data: acct } = await db.from("google_calendar_account").select("*").limit(1).maybeSingle();
-  const tz = acct?.time_zone || "Asia/Kolkata";
-
-  // ── Connection test. Listing what the credential can see is the fastest way
-  // to tell "the key is wrong" apart from "the calendar was never shared".
-  if (payload.action === "test") {
-    try {
-      const list = await gcal("/users/me/calendarList");
-      const cals = (list.items ?? []).map((c: any) => ({ id: c.id, summary: c.summary, access: c.accessRole }));
-      const writable = cals.filter((c: any) => ["owner", "writer"].includes(c.access));
-      const sa = JSON.parse(SA_JSON || "{}");
-      if (writable.length) {
-        await db
-          .from("google_calendar_account")
-          .update({
-            calendar_id: acct?.calendar_id || writable[0].id,
-            service_account_email: sa.client_email ?? null,
-            last_error: null,
-          })
-          .eq("singleton", true);
-      }
-      return json({ ok: true, service_account: sa.client_email ?? null, calendars: cals, writable });
-    } catch (e) {
-      const msg = String(e instanceof Error ? e.message : e);
-      await db.from("google_calendar_account").update({ last_error: msg }).eq("singleton", true);
-      return json({ ok: false, error: msg }, 200);
+  if (req.method !== "POST") return json({ error: "POST required" }, 405);
+  const auth = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") || "";
+  const cron = req.headers.get("x-cron-secret") || "";
+  if (!auth && !cron) return json({ error: "Sign in first." }, 401);
+  const db = createClient(URL, KEY, { auth: { persistSession: false } });
+  try {
+    const { data: config, error: configError } = await db.rpc("calendar_worker_config");
+    if (configError) throw new Error("Calendar worker setup is incomplete.");
+    const trusted = auth === KEY || (cron.length > 20 && cron === config?.cron_secret);
+    if (!trusted) {
+      const { data, error } = await db.auth.getUser(auth);
+      if (error || !data.user) return json({ error: "Sign in first." }, 401);
+      const { data: profile } = await db.from("profiles").select("id").eq("id", data.user.id).maybeSingle();
+      if (!profile) return json({ error: "Staff access required." }, 403);
     }
+    const payload = await req.json().catch(() => ({}));
+    if (!trusted && !payload.reminder_id && payload.action !== "test") return json({ error: "Choose a reminder." }, 400);
+    const token = await accessToken(config?.service_account);
+    if (payload.action === "test") {
+      const access = await google(token, `/calendars/${encodeURIComponent(CALENDAR)}/events?maxResults=1&fields=accessRole`);
+      if (!["writer", "owner"].includes(access.accessRole)) throw new Error("Share Manish's calendar with dfy-crm-baynest@dfy-waba-crm.iam.gserviceaccount.com using Make changes to events.");
+      await db.from("google_calendar_account").update({ calendar_id: CALENDAR, service_account_email: config.service_account.client_email, verified_at: new Date().toISOString(), last_error: null }).eq("singleton", true);
+      return json({ ok: true, calendar_id: CALENDAR });
+    }
+    let ids: string[];
+    if (payload.reminder_id) {
+      if (!/^[0-9a-f-]{36}$/i.test(payload.reminder_id)) return json({ error: "Invalid reminder." }, 400);
+      ids = [payload.reminder_id];
+    } else {
+      const { data, error } = await db.from("reminders").select("id").in("sync_status", ["pending", "failed"]).lt("sync_attempts", 5).or(`status.neq.open,due_at.gt.${new Date().toISOString()}`).order("due_at").limit(10);
+      if (error) throw error;
+      ids = (data || []).map((r: any) => r.id);
+    }
+    const results = [];
+    for (const id of ids) results.push(await syncOne(db, token, id));
+    if (results.length) {
+      const failed = results.find(r => !r.ok);
+      await db.from("google_calendar_account").update({ last_sync_at: new Date().toISOString(), last_error: failed?.error || null, ...(failed ? {} : { verified_at: new Date().toISOString() }), service_account_email: config.service_account.client_email }).eq("singleton", true);
+    }
+    return json({ ok: results.every(r => r.ok), results });
+  } catch (e) {
+    await db.from("google_calendar_account").update({ last_error: message(e) }).eq("singleton", true);
+    return json({ ok: false, error: message(e) }, 200);
   }
-
-  const calendarId = acct?.calendar_id;
-  if (!calendarId) return json({ ok: false, error: "No calendar selected yet — run the connection test first." }, 200);
-
-  const sel = "*, contacts(name, phone, lead_status)";
-  const q = db.from("reminders").select(sel);
-  const { data: rows, error } = payload.reminder_id
-    ? await q.eq("id", payload.reminder_id).limit(1)
-    : await q.in("sync_status", ["pending", "failed"]).lt("sync_attempts", 5).order("due_at").limit(25);
-  if (error) return json({ ok: false, error: error.message }, 500);
-
-  const results = [];
-  for (const r of rows ?? []) results.push(await syncOne(db, r, calendarId, tz));
-  await db.from("google_calendar_account").update({ last_sync_at: new Date().toISOString() }).eq("singleton", true);
-
-  return json({
-    ok: true,
-    synced: results.filter((r) => r.ok).length,
-    failed: results.filter((r) => !r.ok).length,
-    results,
-  });
 });

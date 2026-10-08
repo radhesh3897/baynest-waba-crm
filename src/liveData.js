@@ -1566,7 +1566,7 @@ export async function getReminders(contactId) {
     .eq('contact_id', contactId)
     .neq('status', 'cancelled')
     .order('due_at', { ascending: true });
-  if (error) { console.error('getReminders', error); return []; }
+  if (error) throw new Error(error.message);
   return data || [];
 }
 
@@ -1574,7 +1574,7 @@ export async function getReminders(contactId) {
 export async function getUpcomingReminders(limit = 20) {
   const { data, error } = await supabase
     .from('reminders')
-    .select('*, contacts(id, name, phone, lead_status)')
+    .select('*, contacts(id, profile_name, wa_id, lead_status)')
     .eq('status', 'open')
     .order('due_at', { ascending: true })
     .limit(limit);
@@ -1582,12 +1582,13 @@ export async function getUpcomingReminders(limit = 20) {
   return data || [];
 }
 
-// Fire-and-forget: the reminder is already saved, so a failed sync must not
-// surface as a failed save. The cron sweep picks up anything left pending.
-function pushToCalendar(reminderId) {
-  supabase.functions
-    .invoke('calendar-sync', { body: { reminder_id: reminderId } })
-    .catch(err => console.warn('calendar sync deferred to cron:', err?.message));
+// The reminder is saved first. Await the mirror attempt so the panel can show
+// its actual state; the retry worker handles temporary Google failures.
+export async function pushToCalendar(reminderId) {
+  try {
+    const { data, error } = await supabase.functions.invoke('calendar-sync', { body: { reminder_id: reminderId } });
+    return error ? { ok: false, error: error.message } : data;
+  } catch (error) { return { ok: false, error: error.message }; }
 }
 
 export async function createReminder({ contactId, conversationId, title, notes, kind = 'call',
@@ -1605,8 +1606,9 @@ export async function createReminder({ contactId, conversationId, title, notes, 
     created_by: session?.user?.id || null,
   }).select().single();
   if (error) throw new Error(error.message);
-  pushToCalendar(data.id);
-  return data;
+  await pushToCalendar(data.id);
+  const { data: synced } = await supabase.from('reminders').select('*').eq('id', data.id).single();
+  return synced || data;
 }
 
 export async function updateReminder(id, patch) {
@@ -1616,8 +1618,9 @@ export async function updateReminder(id, patch) {
   if (error) throw new Error(error.message);
   // The touch trigger flips sync_status back to pending on a real change, so
   // re-pushing here keeps the calendar in step without waiting for cron.
-  if (data.sync_status === 'pending') pushToCalendar(id);
-  return data;
+  if (data.sync_status === 'pending') await pushToCalendar(id);
+  const { data: synced } = await supabase.from('reminders').select('*').eq('id', id).single();
+  return synced || data;
 }
 
 export const completeReminder = (id) => updateReminder(id, { status: 'done' });

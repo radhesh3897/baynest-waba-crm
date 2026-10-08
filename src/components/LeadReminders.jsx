@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getReminders, completeReminder, cancelReminder, REMINDER_KINDS } from '../liveData';
+import { getReminders, completeReminder, cancelReminder, pushToCalendar, REMINDER_KINDS } from '../liveData';
 import ReminderModal from './ReminderModal';
 
 const FOREST = 'var(--brand-primary)';
@@ -27,11 +27,11 @@ function SyncNote({ r }) {
   if (r.sync_status === 'failed') {
     return (
       <span title={r.sync_error || ''} style={{ fontSize: 11, color: '#B4541F', fontWeight: 700 }}>
-        Not in calendar — retrying
+        Not in calendar
       </span>
     );
   }
-  return <span style={{ fontSize: 11, color: 'rgba(27,76,94,.42)' }}>Adding to calendar…</span>;
+  return <span style={{ fontSize: 11, color: 'rgba(27,76,94,.42)' }}>Calendar sync pending</span>;
 }
 
 export default function LeadReminders({ contact }) {
@@ -39,21 +39,21 @@ export default function LeadReminders({ contact }) {
   const [loading, setLoading] = useState(true);
   const [composing, setComposing] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(null);
 
   const load = useCallback(() => {
     if (!contact?.id) return;
-    getReminders(contact.id).then((r) => { setRows(r); setLoading(false); });
+    getReminders(contact.id).then(setRows).catch(e => setError(e.message)).finally(() => setLoading(false));
   }, [contact?.id]);
 
   useEffect(() => { setLoading(true); load(); }, [load]);
 
   async function mark(r, action) {
-    // Optimistic: the row disappears (or ticks) immediately, then reconciles.
-    setRows((prev) => (action === 'done'
-      ? prev.map((x) => (x.id === r.id ? { ...x, status: 'done' } : x))
-      : prev.filter((x) => x.id !== r.id)));
+    setBusy(r.id); setError('');
     try { await (action === 'done' ? completeReminder(r.id) : cancelReminder(r.id)); }
-    finally { load(); }
+    catch (e) { setError(e.message || 'Could not update the reminder.'); }
+    finally { setBusy(null); load(); }
   }
 
   const open = rows.filter((r) => r.status === 'open');
@@ -62,9 +62,10 @@ export default function LeadReminders({ contact }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: FOREST }}>REMINDERS</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', color: FOREST }}>GOOGLE REMINDERS</div>
         <button
           onClick={() => setComposing(true)}
+          aria-label="Add Google reminder"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 36, padding: '0 12px',
             borderRadius: 10, border: `1px solid ${FOREST}`, background: '#fff', color: FOREST,
@@ -77,11 +78,13 @@ export default function LeadReminders({ contact }) {
 
       {loading && <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.45)' }}>Loading…</div>}
 
-      {!loading && !rows.length && (
+      {!loading && !error && !rows.length && (
         <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.5)', lineHeight: 1.5 }}>
-          No reminders yet. Add one and it lands on the Google Calendar with an alert.
+          Add a timed reminder to Manish’s Google Calendar.
         </div>
       )}
+
+      {error && <div role="alert" style={{ color: '#B4541F', fontSize: 12, marginBottom: 10 }}>{error}</div>}
 
       {open.map((r) => {
         const overdue = new Date(r.due_at).getTime() < Date.now();
@@ -110,9 +113,15 @@ export default function LeadReminders({ contact }) {
                 <div style={{ fontSize: 12, color: 'rgba(27,76,94,.6)', marginTop: 4, lineHeight: 1.45 }}>{r.notes}</div>
               )}
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <button onClick={() => mark(r, 'done')} style={miniBtn(true)}>Done</button>
-                <button onClick={() => setEditing(r)} style={miniBtn(false)}>Edit</button>
-                <button onClick={() => mark(r, 'cancel')} style={miniBtn(false)}>Remove</button>
+                <button disabled={busy===r.id} onClick={() => mark(r, 'done')} style={miniBtn(true)}>Done</button>
+                <button disabled={busy===r.id} onClick={() => setEditing(r)} style={miniBtn(false)}>Edit</button>
+                <button disabled={busy===r.id} onClick={() => mark(r, 'cancel')} style={miniBtn(false)}>Remove</button>
+                {r.sync_status !== 'synced' && <button disabled={busy===r.id} onClick={async () => {
+                  setBusy(r.id); setError('');
+                  const result = await pushToCalendar(r.id);
+                  if (!result?.ok) setError(result?.error || result?.results?.[0]?.error || 'Calendar sync is pending. Retry shortly.');
+                  setBusy(null); load();
+                }} style={miniBtn(false)}>Retry sync</button>}
                 {r.google_link && (
                   <a href={r.google_link} target="_blank" rel="noreferrer" style={{ ...miniBtn(false), textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                     Calendar

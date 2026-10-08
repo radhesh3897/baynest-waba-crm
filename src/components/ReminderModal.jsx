@@ -17,6 +17,7 @@ function toLocalInput(d) {
 }
 
 function fromLocalInput(s) {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s || '')) return new Date(NaN);
   const [date, time] = String(s).split('T');
   const [y, m, d] = date.split('-').map(Number);
   const [hh, mm] = time.split(':').map(Number);
@@ -51,9 +52,6 @@ function quickPicks() {
   return out;
 }
 
-const fmtWhen = (d) =>
-  d.toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
-
 /**
  * Create or edit a reminder on a lead.
  * Pass `reminder` to edit an existing one, or `contact` to create a new one.
@@ -62,7 +60,7 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
   const isMobile = useIsMobile();
   const editing = !!reminder;
 
-  const leadName = contact?.name || contact?.phone || reminder?.contacts?.name || 'this lead';
+  const leadName = contact?.name || contact?.profile_name || contact?.phone || reminder?.contacts?.profile_name || 'this lead';
 
   const [kind, setKind] = useState(reminder?.kind || 'call');
   const [title, setTitle] = useState(reminder?.title || '');
@@ -98,6 +96,7 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
   async function save() {
     if (!title.trim()) { setError('Give the reminder a title.'); return; }
     if (Number.isNaN(dueDate.getTime())) { setError('That date and time is not valid.'); return; }
+    if (inPast) { setError('Choose a future date and time for the reminder.'); return; }
     setSaving(true); setError('');
     try {
       const saved = editing
@@ -169,6 +168,8 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
         <div style={{ overflowY: 'auto', flex: 1, minHeight: 0, padding: 16 }}>
           <div style={{ fontSize: 12.5, color: 'rgba(27,76,94,.6)', marginBottom: 14 }}>
             For <strong style={{ color: '#123642' }}>{leadName}</strong>
+            <div style={{ marginTop: 6 }}>Calendar: <strong>manish@baynestrealty.com</strong></div>
+            <div style={{ marginTop: 4, fontSize: 11 }}>Times use {Intl.DateTimeFormat().resolvedOptions().timeZone}.</div>
           </div>
 
           {/* Kind */}
@@ -218,10 +219,10 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
                 );
               })}
             </div>
-            <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} style={field} />
+            <input aria-label="Reminder date and time" type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} style={field} />
             {inPast && (
               <div style={{ fontSize: 12, color: '#B4541F', marginTop: 7 }}>
-                That time has already passed — the calendar event will be created, but no alert can fire.
+                Choose a future time so Manish can receive the reminder.
               </div>
             )}
           </div>
@@ -230,6 +231,7 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
           <div style={{ marginBottom: 16 }}>
             <span style={label}>Title</span>
             <input
+              aria-label="Reminder title"
               value={title}
               onChange={(e) => { setTitle(e.target.value); setTitleTouched(true); }}
               placeholder="Call Rajesh about the Worli flat"
@@ -241,13 +243,13 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <span style={label}>Length</span>
-              <select value={duration} onChange={(e) => setDuration(e.target.value)} style={field}>
+              <select aria-label="Reminder duration" value={duration} onChange={(e) => setDuration(e.target.value)} style={field}>
                 {[15, 30, 45, 60, 90].map((m) => <option key={m} value={m}>{m} min</option>)}
               </select>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={label}>Alert me</span>
-              <select value={remindBefore} onChange={(e) => setRemindBefore(e.target.value)} style={field}>
+              <span style={label}>Calendar alert</span>
+              <select aria-label="Calendar alert" value={remindBefore} onChange={(e) => setRemindBefore(e.target.value)} style={field}>
                 <option value={0}>At the time</option>
                 <option value={10}>10 min before</option>
                 <option value={30}>30 min before</option>
@@ -301,7 +303,7 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
               cursor: saving ? 'default' : 'pointer',
             }}
           >
-            {saving ? 'Saving…' : editing ? 'Save changes' : `Remind me ${fmtWhen(dueDate)}`}
+            {saving ? 'Saving…' : editing ? 'Save changes' : 'Add Google reminder'}
           </button>
         </div>
       </div>

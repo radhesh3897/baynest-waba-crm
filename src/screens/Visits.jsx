@@ -4,6 +4,7 @@ import { useIsMobile } from '../useIsMobile';
 import { IconPlus, IconCalendar, IconX } from '../icons';
 import SearchSelect from '../components/SearchSelect';
 import PipelineTag from '../components/PipelineTag';
+import LeadDetailModal from '../components/LeadDetailModal';
 import { stageLabel } from '../pipeline';
 
 const CARD = { background: '#fff', border: '1px solid rgba(27,76,94,.10)', borderRadius: 14 };
@@ -151,6 +152,7 @@ function ScheduleDrawer({ onClose, onSaved, isMobile }) {
 }
 
 export default function Visits() {
+  const [selectedLead, setSelectedLead] = useState(null);
   const isMobile = useIsMobile();
   const [scope, setScope] = useState('upcoming');
   const [rows, setRows] = useState([]);
@@ -212,7 +214,7 @@ export default function Visits() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)' }}>{v.leadName}</span>
+                  <button onClick={() => setSelectedLead(v.contact_id)} style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}>{v.leadName}</button>
                   <PipelineTag stage={v.leadStage} />
                 </div>
                 {v.propertyName && (
@@ -244,6 +246,7 @@ export default function Visits() {
       })}
 
       {adding && <ScheduleDrawer isMobile={isMobile} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); load(scope); }} />}
+      {selectedLead && <LeadDetailModal contactId={selectedLead} onClose={() => setSelectedLead(null)} />}
     </div>
   );
 }
