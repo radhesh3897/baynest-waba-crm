@@ -1,7 +1,7 @@
 // Baynest's E → S → O → V → D pipeline. The legacy database `pipeline`
 // column stays compatible with existing workers; the UI uses these sections.
 export const PIPELINES = [
-  { key: 'E', label: 'Eligible', blurb: 'Qualification', color: '#8B5A20' },
+  { key: 'E', label: 'Eligibility', blurb: 'Qualification', color: '#8B5A20' },
   { key: 'S', label: 'Status', blurb: 'Contact outcome', color: '#147D68' },
   { key: 'O', label: 'Options', blurb: 'Properties shared', color: '#B7592C' },
   { key: 'V', label: 'Visit', blurb: 'Schedule and visit', color: '#5747B8' },

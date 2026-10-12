@@ -105,7 +105,7 @@ export default function AccountSettings() {
       <div style={{ padding: isMobile ? '6px 16px 28px' : '6px 30px 40px', maxWidth: 760 }}>
 
         <div style={CARD}>
-          <SectionHead Icon={IconDb} title="E → S → O → V → D pipeline" sub="Eligible, Status, Options, Visit, Deal. Every contact stays in one stage." />
+          <SectionHead Icon={IconDb} title="E → S → O → V → D pipeline" sub="Eligibility, Status, Options, Visit, Deal. Every contact stays in one stage." />
           {PIPELINES.map(section => (
             <div key={section.key} style={{ marginBottom: 22 }}>
               <div style={{ borderLeft: `4px solid ${section.color}`, paddingLeft: 10, marginBottom: 10 }}>
