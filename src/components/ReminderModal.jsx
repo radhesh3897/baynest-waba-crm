@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useId } from 'react';
 import { IconX } from '../icons';
 import { useIsMobile } from '../useIsMobile';
-import { REMINDER_KINDS, createReminder, updateReminder } from '../liveData';
+import { REMINDER_KINDS, createReminder, updateReminder, getProperties, getLeadProperties } from '../liveData';
 
 const FOREST = 'var(--brand-primary)';
 const LINE = 'rgba(27,76,94,.14)';
@@ -63,7 +63,9 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
   const leadName = contact?.name || contact?.profile_name || contact?.phone || reminder?.contacts?.profile_name || 'this lead';
 
   const [kind, setKind] = useState(reminder?.kind || 'call');
-  const [title, setTitle] = useState(reminder?.title || '');
+  const [propertyName, setPropertyName] = useState(reminder?.property_name ?? null);
+  const [propertyNames, setPropertyNames] = useState([]);
+  const propertyListId = useId();
   const [notes, setNotes] = useState(reminder?.notes || '');
   const [when, setWhen] = useState(
     toLocalInput(reminder?.due_at ? new Date(reminder.due_at) : nextQuarterHour(atTime(0, new Date().getHours() + 1))),
@@ -75,14 +77,18 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
 
   const picks = useMemo(quickPicks, []);
 
-  // The title writes itself from the kind and the lead, so the common case is
-  // pick-a-time-and-save. Only stop auto-filling once it has been hand-edited.
-  const [titleTouched, setTitleTouched] = useState(editing);
   useEffect(() => {
-    if (titleTouched) return;
-    const label = REMINDER_KINDS.find((k) => k.key === kind)?.label || 'Follow up';
-    setTitle(`${label} — ${leadName}`);
-  }, [kind, leadName, titleTouched]);
+    let cancelled = false;
+    Promise.all([getProperties(), getLeadProperties(contact?.id || reminder?.contact_id)])
+      .then(([properties, linked]) => {
+        if (cancelled) return;
+        const linkedNames = [...new Set(linked.filter(p => p.status !== 'rejected').map(p => p.property?.name).filter(Boolean))];
+        setPropertyNames([...new Set([...linkedNames, ...properties.map(p => p.name).filter(Boolean)])]);
+        // Only pick a property when the lead has one unambiguous choice.
+        setPropertyName(current => current ?? (linkedNames.length === 1 ? linkedNames[0] : ''));
+      }).catch(() => { /* Manual property entry remains available. */ });
+    return () => { cancelled = true; };
+  }, [contact?.id, reminder?.contact_id]);
 
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose?.(); };
@@ -92,20 +98,22 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
 
   const dueDate = fromLocalInput(when);
   const inPast = dueDate.getTime() < Date.now() - 60_000;
+  const time = Number.isNaN(dueDate.getTime()) ? '' : dueDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const title = `${leadName.trim()} - ${(propertyName || '').trim()} - ${time}`;
 
   async function save() {
-    if (!title.trim()) { setError('Give the reminder a title.'); return; }
     if (Number.isNaN(dueDate.getTime())) { setError('That date and time is not valid.'); return; }
     if (inPast) { setError('Choose a future date and time for the reminder.'); return; }
+    if (!propertyName?.trim()) { setError('Choose or enter the property name.'); return; }
     setSaving(true); setError('');
     try {
       const saved = editing
         ? await updateReminder(reminder.id, {
-            title: title.trim(), notes: notes.trim() || null, kind,
+            title, property_name: propertyName.trim(), notes: notes.trim() || null, kind,
             dueAt: dueDate, duration_min: Number(duration), remind_min_before: Number(remindBefore),
           })
         : await createReminder({
-            contactId: contact?.id, title: title.trim(), notes: notes.trim() || null, kind,
+            contactId: contact?.id, title, propertyName: propertyName.trim(), notes: notes.trim() || null, kind,
             dueAt: dueDate, durationMin: Number(duration), remindMinBefore: Number(remindBefore),
           });
       onSaved?.(saved);
@@ -227,16 +235,31 @@ export default function ReminderModal({ contact, reminder, onClose, onSaved }) {
             )}
           </div>
 
-          {/* Title */}
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor={`${propertyListId}-input`} style={label}>Property name</label>
+            <input
+              id={`${propertyListId}-input`}
+              list={propertyListId}
+              value={propertyName || ''}
+              onChange={(e) => setPropertyName(e.target.value)}
+              placeholder="Choose or enter a property"
+              style={field}
+            />
+            <datalist id={propertyListId}>
+              {propertyNames.map(name => <option key={name} value={name} />)}
+            </datalist>
+          </div>
+
+          {/* Keep the title in step with the selected property and time. */}
           <div style={{ marginBottom: 16 }}>
             <span style={label}>Title</span>
             <input
               aria-label="Reminder title"
               value={title}
-              onChange={(e) => { setTitle(e.target.value); setTitleTouched(true); }}
-              placeholder="Call Rajesh about the Worli flat"
+              readOnly
               style={field}
             />
+            <div style={{ marginTop: 6, fontSize: 11, color: 'rgba(27,76,94,.6)' }}>Lead Name - Property Name - Time</div>
           </div>
 
           {/* Duration + alert */}

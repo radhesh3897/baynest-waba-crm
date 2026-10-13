@@ -1591,13 +1591,14 @@ export async function pushToCalendar(reminderId) {
   } catch (error) { return { ok: false, error: error.message }; }
 }
 
-export async function createReminder({ contactId, conversationId, title, notes, kind = 'call',
+export async function createReminder({ contactId, conversationId, title, propertyName, notes, kind = 'call',
                                        dueAt, durationMin = 30, remindMinBefore = 10 }) {
   const { data: session } = await supabase.auth.getUser();
   const { data, error } = await supabase.from('reminders').insert({
     contact_id: contactId,
     conversation_id: conversationId || null,
     title,
+    property_name: propertyName?.trim() || null,
     notes: notes || null,
     kind,
     due_at: new Date(dueAt).toISOString(),
