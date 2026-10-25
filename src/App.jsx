@@ -13,6 +13,7 @@ import Properties from './screens/Properties';
 import Visits from './screens/Visits';
 import MetaDashboard from './screens/MetaDashboard';
 import Reports from './screens/Reports';
+import Tracking from './screens/Tracking';
 import Campaigns from './screens/Campaigns';
 import LeadsOverview from './screens/LeadsOverview';
 import Stub from './screens/Stub';
@@ -89,8 +90,7 @@ export default function App() {
     if (screen === 'properties') return <Properties />;
     if (screen === 'visits')     return <Visits />;
     if (screen === 'ads')        return <MetaDashboard />;
-    // 'tracking' is intentionally locked — the nav greys it out and the route is
-    // removed, so it cannot be reached even by restoring a stale nav state.
+    if (screen === 'tracking')   return <Tracking />;
     if (screen === 'reports')    return <Reports />;
     if (screen === 'campaigns')  return <Campaigns />;
     if (screen === 'leads-overview') return <LeadsOverview />;

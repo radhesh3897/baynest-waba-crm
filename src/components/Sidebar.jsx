@@ -27,8 +27,7 @@ const NAV_ITEMS_LEAD_MGMT = [
 const NAV_ITEMS_ANALYTICS = [
   { key: 'ads', label: 'Ads Dashboard', Icon: IconMeta },
   { key: 'reports', label: 'Reports', Icon: IconReport },
-  // Locked: CAPI lead-qualification tooling is not part of this rollout.
-  { key: 'tracking', label: 'Tracking', Icon: IconTarget, locked: true },
+  { key: 'tracking', label: 'Tracking', Icon: IconTarget },
 ];
 const NAV_ITEMS_BOTTOM = [
   { key: 'account', label: 'Account settings', Icon: IconSettings },

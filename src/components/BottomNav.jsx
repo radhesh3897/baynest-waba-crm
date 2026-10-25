@@ -25,7 +25,7 @@ const MORE = [
   { key: 'leads-overview', label: 'Leads Overview', Icon: IconFunnel },
   { key: 'ads',       label: 'Ads Dashboard',    Icon: IconMeta },
   { key: 'reports',   label: 'Reports',          Icon: IconReport },
-  { key: 'tracking',  label: 'Tracking',         Icon: IconTarget, locked: true },
+  { key: 'tracking',  label: 'Tracking',         Icon: IconTarget },
   { key: 'campaigns', label: 'Campaigns',        Icon: IconSend },
   { key: 'people',    label: 'People',           Icon: IconPeople },
   { key: 'whatsapp',  label: 'WhatsApp Settings', Icon: IconWhatsApp },
