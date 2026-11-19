@@ -426,6 +426,11 @@ verify_jwt = false
 [functions.calendar-sync]
 verify_jwt = false
 
+# The MCP handler validates the user with Supabase Auth and checks mcp_access.
+# OAuth discovery must remain reachable before a client has signed in.
+[functions.waba-mcp]
+verify_jwt = false
+
 # Experimental features may be deprecated any time
 [experimental]
 # Configures Postgres storage engine to use OrioleDB (S3)

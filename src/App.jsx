@@ -18,6 +18,7 @@ import Campaigns from './screens/Campaigns';
 import LeadsOverview from './screens/LeadsOverview';
 import Stub from './screens/Stub';
 import Login from './screens/Login';
+import OAuthConsent from './screens/OAuthConsent';
 import WhatsAppSettings from './screens/WhatsAppSettings';
 import AccountSettings from './screens/AccountSettings';
 import { supabase } from './supabaseClient';
@@ -75,6 +76,7 @@ export default function App() {
   }
 
   if (!session) return <Login />;
+  if (window.location.pathname === '/oauth/consent') return <OAuthConsent session={session} />;
 
   function renderMain() {
     if (screen === 'home')       return <Home onNav={navigate} onOpenChat={openChat} />;

@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "@mcp/server": "npm:@modelcontextprotocol/server@2.4.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.119.0",
+    "zod": "npm:zod@4.6.7"
+  },
+  "tasks": {
+    "check": "deno check index.ts server.ts",
+    "test": "deno test --allow-env server_test.ts"
+  }
+}
