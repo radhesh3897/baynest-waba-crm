@@ -9,10 +9,11 @@ user's `mcp_access` record on every request. Only the two CRM accounts present
 when this migration ran were provisioned. New sign-ups require an administrator
 to grant access explicitly.
 
-The owner selected **read-only client access on 20 November 2026**. The
-`baynest_mcp_read_only` migration sets `can_write` and `can_send` to false for
-the provisioned accounts. Claude and ChatGPT receive the six viewing tools
-listed below. Permissions are checked on every request.
+The client's permissions allow CRM reading, WhatsApp template creation and
+submission for Meta review, and sending approved templates to CRM contacts.
+`can_write` controls lead editing. `can_manage_templates` controls template
+submission, and `can_send` controls the template sender. Permissions are
+checked on every request and again when reserving a mutation.
 
 ## Tools
 
@@ -24,13 +25,29 @@ listed below. Permissions are checked on every request.
 | `get_conversation` | Read paginated WhatsApp history and the current reply window. |
 | `list_templates` | Read approved template bodies, variables, languages, and buttons. |
 | `get_operation` | Read the receipt for a change or message send. |
+| `get_template_status` | Read an exact template and language's live Meta approval status and components. |
+| `create_template` | Submit approved copy, category, and components to Meta for review. |
+| `send_template_message` | Check Meta approval live and send a template to one CRM contact. |
 
-`update_lead` and `add_note` require `can_write`. `send_whatsapp` requires
-`can_send`. The tool list hides unavailable actions. Each mutation requires a
+Each mutation requires a
 UUID `request_id`. Repeating that UUID with the same arguments returns the
 stored receipt. Reusing it with different arguments fails. `pending` and
 `unknown` deliveries must be checked in the CRM before any new send attempt.
 The database limits new mutations to 20 per minute per agent.
+
+The client workflow is to approve the template copy and category, call
+`create_template`, check `get_template_status`, and call
+`send_template_message` once Meta reports `APPROVED`. Meta controls approval.
+The send must specify the recipient, template language, and any placeholder
+parameters. Pending, rejected, paused, disabled, or missing templates fail
+the live approval check. A first WhatsApp conversation is created for an
+existing CRM contact when required. Sent messages use the existing CRM sender
+and record the signed-in sender and Meta message ID.
+
+For rollout, apply `baynest_mcp_templates`, deploy MCP version 1.1.0, then grant
+`can_manage_templates=true` and `can_send=true` to the selected enabled
+`mcp_access` users. Set `can_write` according to the user's lead-editing needs.
+Refresh the connector in Claude or ChatGPT to reload the updated tool list.
 
 WhatsApp conversation and template data comes from the existing CRM. This
 connection uses the signed-in CRM user's account and the existing database

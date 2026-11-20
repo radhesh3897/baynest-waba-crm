@@ -18,7 +18,7 @@ export default function OAuthConsent({ session }) {
       }
       const [authorization, permission] = await Promise.all([
         supabase.auth.oauth.getAuthorizationDetails(authorizationId),
-        supabase.from('mcp_access').select('enabled,can_write,can_send').eq('user_id', session.user.id).maybeSingle(),
+        supabase.from('mcp_access').select('enabled,can_write,can_send,can_manage_templates').eq('user_id', session.user.id).maybeSingle(),
       ]);
       if (cancelled) return;
       if (authorization.error || permission.error) {
@@ -81,7 +81,8 @@ export default function OAuthConsent({ session }) {
             <li>Find leads, read enquiry answers, notes, and WhatsApp conversations</li>
             <li>View pipeline counts and approved WhatsApp templates</li>
             {access.can_write && <li>Update lead details and stages, and add notes</li>}
-            {access.can_send && <li>Send WhatsApp messages through Baynest’s business number</li>}
+            {access.can_manage_templates && <li>Create WhatsApp templates and submit them to Meta for review</li>}
+            {access.can_send && <li>Send approved WhatsApp templates through Baynest’s business number</li>}
           </ul>
           <p style={{ fontSize: 13, lineHeight: 1.6 }}>The assistant can receive CRM and customer information you ask it to access. Review its requests to change leads or send messages. You can disconnect this app in Claude or ChatGPT.</p>
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>

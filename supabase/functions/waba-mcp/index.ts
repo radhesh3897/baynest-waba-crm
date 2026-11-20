@@ -6,6 +6,11 @@ const config = {
   anonKey: Deno.env.get("SUPABASE_ANON_KEY")!,
   serviceKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   endpoint: `${url}/functions/v1/waba-mcp`,
+  meta: {
+    token: Deno.env.get("WHATSAPP_TOKEN") ?? "",
+    wabaId: Deno.env.get("WHATSAPP_WABA_ID") ?? "",
+    apiVersion: Deno.env.get("META_API_VERSION") ?? "v21.0",
+  },
 };
 
 Deno.serve(async (req) => {

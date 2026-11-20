@@ -14,6 +14,7 @@ const config: Config = {
   anonKey: "test-anon",
   serviceKey: "test-service",
   endpoint: "https://crm.example.invalid/functions/v1/waba-mcp",
+  meta: { token: "test-meta", wabaId: "test-waba", apiVersion: "v23.0" },
 };
 
 function assert(
@@ -31,11 +32,18 @@ function fixture(
     expired?: boolean;
     sendError?: boolean;
     concurrentEdit?: boolean;
+    manageTemplates?: boolean;
+    templateStatus?: string;
+    templateExists?: boolean;
+    missingConversation?: boolean;
+    submissionError?: boolean;
   } = {},
 ) {
   const operations = new Map<string, any>();
   const calls: { path: string; method: string; body: any }[] = [];
   let deliveries = 0;
+  let submissions = 0;
+  let conversationCreated = false;
   const lead = {
     id: contactId,
     wa_id: "+919000000001",
@@ -70,6 +78,7 @@ function fixture(
         enabled: options.enabled ?? true,
         can_write: options.write ?? true,
         can_send: options.send ?? true,
+        can_manage_templates: options.manageTemplates ?? false,
       });
     }
     if (path === "/rest/v1/app_settings") {
@@ -89,6 +98,13 @@ function fixture(
       return respond(lead);
     }
     if (path === "/rest/v1/conversations") {
+      if (request.method === "POST") {
+        conversationCreated = true;
+        return respond(null);
+      }
+      if (options.missingConversation && !conversationCreated) {
+        return respond(null);
+      }
       return respond({
         id: contactId,
         window_expires_at: options.expired
@@ -104,6 +120,32 @@ function fixture(
       });
     }
     if (path === "/rest/v1/contact_notes") return respond(body);
+    if (path === "/v23.0/test-waba/message_templates") {
+      assert(request.headers.get("Authorization") === "Bearer test-meta");
+      return respond({
+        data: options.templateExists === false ? [] : [{
+          id: "meta-template-id",
+          name: url.searchParams.get("name"),
+          language: JSON.parse(url.searchParams.get("language")!)[0],
+          status: options.templateStatus ?? "APPROVED",
+          category: "UTILITY",
+          components: [{ type: "BODY", text: "Hello {{1}}" }],
+        }],
+      });
+    }
+    if (path === "/functions/v1/create-template") {
+      assert(request.headers.get("Authorization") === "Bearer test-service");
+      submissions++;
+      if (options.submissionError) {
+        return respond({ error: "Uncertain template submission" }, 500);
+      }
+      return respond({
+        ok: true,
+        id: "meta-created-template-id",
+        status: "PENDING",
+        category: body.category,
+      });
+    }
     if (path === "/rest/v1/rpc/mcp_reserve_operation") {
       const prior = operations.get(body.p_request_id);
       if (prior) {
@@ -149,7 +191,13 @@ function fixture(
     }
     throw new Error(`Unexpected external request ${request.method} ${path}`);
   };
-  return { fetcher, calls, operations, deliveries: () => deliveries };
+  return {
+    fetcher,
+    calls,
+    operations,
+    deliveries: () => deliveries,
+    submissions: () => submissions,
+  };
 }
 
 async function withFixture(
@@ -365,4 +413,144 @@ Deno.test("request identity covers the full payload and protects Meta lead IDs",
     });
     assert(invalid.isError);
   });
+});
+
+Deno.test("client template tools are available while lead edits stay unavailable", async () => {
+  await withFixture(
+    { write: false, send: true, manageTemplates: true },
+    async () => {
+      const response = await decode(await rpc("tools/list", {}));
+      const names = response.result.tools.map((t: { name: string }) => t.name);
+      assert(
+        names.includes("create_template") &&
+          names.includes("send_template_message") &&
+          names.includes("get_template_status"),
+      );
+      assert(
+        !names.includes("update_lead") && !names.includes("add_note") &&
+          !names.includes("send_whatsapp"),
+      );
+    },
+  );
+});
+
+Deno.test("template creation submits once and records Meta’s pending review receipt without a contact", async () => {
+  await withFixture({
+    write: false,
+    manageTemplates: true,
+    templateExists: false,
+  }, async (f) => {
+    const args = {
+      request_id: requestId,
+      name: "new_template",
+      language: "en",
+      category: "UTILITY",
+      components: [{ type: "BODY", text: "Your appointment is confirmed." }],
+    };
+    const first = await call("create_template", args);
+    const again = await call("create_template", args);
+    assert(
+      first.value.status === "completed" &&
+        first.value.result.status === "PENDING",
+      JSON.stringify(first),
+    );
+    assert(first.value.result.template_id === "meta-created-template-id");
+    assert(again.value.replayed && f.submissions() === 1);
+    assert(
+      f.calls.find((c) => c.path === "/rest/v1/rpc/mcp_reserve_operation")?.body
+        .p_contact_id === null,
+    );
+  });
+});
+
+Deno.test("existing names and ambiguous creation receipts prevent repeat submissions", async () => {
+  await withFixture({ manageTemplates: true }, async (f) => {
+    const reply = await call("create_template", {
+      request_id: requestId,
+      name: "test_template",
+      language: "en",
+      category: "UTILITY",
+      components: [{ type: "BODY", text: "Hello" }],
+    });
+    assert(reply.value.status === "failed" && f.submissions() === 0);
+  });
+  await withFixture({
+    manageTemplates: true,
+    templateExists: false,
+    submissionError: true,
+  }, async (f) => {
+    const args = {
+      request_id: requestId,
+      name: "new_template",
+      language: "en",
+      category: "UTILITY",
+      components: [{ type: "BODY", text: "Hello" }],
+    };
+    assert((await call("create_template", args)).value.status === "unknown");
+    assert((await call("create_template", args)).value.replayed);
+    assert(f.submissions() === 1);
+  });
+});
+
+Deno.test("pending, rejected, paused and missing Meta templates never send despite an approved CRM cache", async () => {
+  for (const status of ["PENDING", "REJECTED", "PAUSED", "DISABLED"]) {
+    await withFixture({ write: false, templateStatus: status }, async (f) => {
+      const args = {
+        contact_id: contactId,
+        request_id: requestId,
+        template_name: "test_template",
+        language: "en",
+      };
+      const reply = await call("send_template_message", args);
+      assert(reply.value.status === "failed", JSON.stringify(reply));
+      assert(f.deliveries() === 0);
+      const live = await call("get_template_status", {
+        name: "test_template",
+        language: "en",
+      });
+      assert(live.value.template.status === status && !live.value.send_allowed);
+    });
+  }
+  await withFixture({ write: false, templateExists: false }, async (f) => {
+    const reply = await call("send_template_message", {
+      contact_id: contactId,
+      request_id: requestId,
+      template_name: "missing",
+      language: "en",
+    });
+    assert(reply.value.status === "failed" && f.deliveries() === 0);
+  });
+});
+
+Deno.test("approved templates create a first conversation and send only once", async () => {
+  await withFixture(
+    { write: false, missingConversation: true, expired: true },
+    async (f) => {
+      const args = {
+        contact_id: contactId,
+        request_id: requestId,
+        template_name: "test_template",
+        language: "en",
+        components: [{
+          type: "body",
+          parameters: [{ type: "text", text: "Client" }],
+        }],
+      };
+      assert(
+        (await call("send_template_message", args)).value.status ===
+          "completed",
+      );
+      assert((await call("send_template_message", args)).value.replayed);
+      assert(f.deliveries() === 1);
+      const created = f.calls.find((c) =>
+        c.path === "/rest/v1/conversations" && c.method === "POST"
+      );
+      assert(created?.body.contact_id === contactId);
+      const send = f.calls.find((c) => c.path === "/functions/v1/send-message");
+      assert(
+        send?.body.type === "template" &&
+          send.body.template.components[0].parameters[0].text === "Client",
+      );
+    },
+  );
 });
