@@ -9,6 +9,11 @@ user's `mcp_access` record on every request. Only the two CRM accounts present
 when this migration ran were provisioned. New sign-ups require an administrator
 to grant access explicitly.
 
+The owner selected **read-only client access on 20 November 2026**. The
+`baynest_mcp_read_only` migration sets `can_write` and `can_send` to false for
+the provisioned accounts. Claude and ChatGPT receive the six viewing tools
+listed below. Permissions are checked on every request.
+
 ## Tools
 
 | Tool | Purpose |
@@ -18,9 +23,6 @@ to grant access explicitly.
 | `get_pipeline` | Count leads in each configured CRM stage. |
 | `get_conversation` | Read paginated WhatsApp history and the current reply window. |
 | `list_templates` | Read approved template bodies, variables, languages, and buttons. |
-| `update_lead` | Update supported lead fields with an `updated_at` concurrency check. |
-| `add_note` | Append a note attributed to the signed-in user. |
-| `send_whatsapp` | Send plain text within the reply window or an approved template. |
 | `get_operation` | Read the receipt for a change or message send. |
 
 `update_lead` and `add_note` require `can_write`. `send_whatsapp` requires
@@ -30,11 +32,9 @@ stored receipt. Reusing it with different arguments fails. `pending` and
 `unknown` deliveries must be checked in the CRM before any new send attempt.
 The database limits new mutations to 20 per minute per agent.
 
-WhatsApp messages go through the existing `send-message` Edge Function, retain
-the signed-in sender attribution, and appear in the CRM inbox. The MCP server
-does not need the Meta access token. The existing sender enforces WhatsApp's
-24-hour text reply window. Templates must be approved and use the exact
-language returned by `list_templates`.
+WhatsApp conversation and template data comes from the existing CRM. This
+connection uses the signed-in CRM user's account and the existing database
+access rules.
 
 ## Enable remote sign-in
 
@@ -73,10 +73,8 @@ account or workspace. Create a custom app named **Baynest WABA**, use the MCP
 endpoint above, and choose OAuth authentication. Complete the CRM sign-in and
 consent flow. Refresh the app after changing MCP tool definitions.
 
-Example first prompts are "Show the last five Baynest leads" and "Count our
-leads by stage." For messages, specify the lead and exact message text or the
-approved template and its parameters. Review the recipient before authorizing
-the send.
+Example first prompts are "Show the last five Baynest leads", "Count our
+leads by stage", and "Show this lead's enquiry answers and WhatsApp history."
 
 ## Development and verification
 
